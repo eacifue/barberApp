@@ -1,0 +1,70 @@
+2026-05-03 21:20:51.354 +00:00 [INF] HTTP POST /api/v1/auth/login responded 200 in 1104.8720 ms
+2026-05-03 21:22:33.830 +00:00 [INF] HTTP GET /api/v1/barberias/0f6b09e1-fa3a-474c-b2b7-ded8c3cdc822/servicios responded 200 in 387.8928 ms
+2026-05-03 21:22:35.245 +00:00 [INF] HTTP GET /api/v1/servicios/a3010f73-d250-4f49-aad0-7aeae7d37789/barberos responded 200 in 522.5375 ms
+2026-05-03 21:22:37.655 +00:00 [INF] HTTP GET /api/v1/barberos/adc9b37b-52b9-4039-aa4b-bc333e47a6ab/disponibilidad responded 200 in 35.0642 ms
+2026-05-03 21:29:31.612 +00:00 [INF] HTTP GET /api/v1/barberias/0f6b09e1-fa3a-474c-b2b7-ded8c3cdc822/servicios responded 200 in 512.4915 ms
+2026-05-03 21:29:33.592 +00:00 [INF] HTTP GET /api/v1/servicios/ef5baa64-42c8-4268-92ac-61e1301251cb/barberos responded 200 in 141.0860 ms
+2026-05-03 21:29:35.291 +00:00 [INF] HTTP GET /api/v1/barberos/adc9b37b-52b9-4039-aa4b-bc333e47a6ab/disponibilidad responded 200 in 30.3090 ms
+2026-05-03 21:29:46.705 +00:00 [INF] HTTP GET /api/v1/servicios/ef5baa64-42c8-4268-92ac-61e1301251cb/barberos responded 200 in 131.4908 ms
+2026-05-03 21:29:48.191 +00:00 [INF] HTTP GET /api/v1/barberos/fa84bc07-db41-4fb0-84c9-a0722f347562/disponibilidad responded 200 in 35.8688 ms
+2026-05-03 21:31:47.220 +00:00 [INF] HTTP GET /api/v1/barberias/0f6b09e1-fa3a-474c-b2b7-ded8c3cdc822/servicios responded 200 in 283.1151 ms
+2026-05-03 21:31:48.646 +00:00 [INF] HTTP GET /api/v1/servicios/ef5baa64-42c8-4268-92ac-61e1301251cb/barberos responded 200 in 72.3445 ms
+2026-05-03 21:31:50.693 +00:00 [INF] HTTP GET /api/v1/barberos/fa84bc07-db41-4fb0-84c9-a0722f347562/disponibilidad responded 200 in 125.1558 ms
+2026-05-03 21:31:56.681 +00:00 [INF] HTTP POST /api/v1/slots/bloquear responded 200 in 138.4771 ms
+2026-05-03 21:32:01.410 +00:00 [INF] HTTP GET /api/v1/barberias/0f6b09e1-fa3a-474c-b2b7-ded8c3cdc822/servicios responded 200 in 91.3037 ms
+2026-05-03 21:32:02.987 +00:00 [INF] HTTP GET /api/v1/citas/mis-citas responded 200 in 120.8432 ms
+2026-05-03 21:32:11.349 +00:00 [INF] HTTP GET /api/v1/citas/13c0ab58-daa3-42ac-85a7-b72182ce911a responded 200 in 300.0496 ms
+2026-05-03 21:32:17.660 +00:00 [INF] HTTP GET /api/v1/barberias/0f6b09e1-fa3a-474c-b2b7-ded8c3cdc822/servicios responded 200 in 69.0133 ms
+2026-05-03 21:32:19.105 +00:00 [INF] HTTP GET /api/v1/servicios/a3010f73-d250-4f49-aad0-7aeae7d37789/barberos responded 200 in 17.4717 ms
+2026-05-03 21:32:20.457 +00:00 [INF] HTTP GET /api/v1/barberos/adc9b37b-52b9-4039-aa4b-bc333e47a6ab/disponibilidad responded 200 in 97.5777 ms
+2026-05-03 21:32:23.087 +00:00 [INF] HTTP DELETE /api/v1/slots/liberar responded 200 in 138.4920 ms
+2026-05-03 21:32:23.169 +00:00 [INF] HTTP GET /api/v1/barberos/adc9b37b-52b9-4039-aa4b-bc333e47a6ab/disponibilidad responded 200 in 31.6652 ms
+2026-05-03 21:32:23.336 +00:00 [INF] HTTP GET /api/v1/barberos/adc9b37b-52b9-4039-aa4b-bc333e47a6ab/disponibilidad responded 200 in 20.5850 ms
+2026-05-03 21:32:24.538 +00:00 [INF] HTTP POST /api/v1/slots/bloquear responded 200 in 15.7953 ms
+2026-05-03 21:32:30.860 +00:00 [WRN] No se pudo enviar la notificación FCM para el barbero "adc9b37b-52b9-4039-aa4b-bc333e47a6ab"
+System.NullReferenceException: Object reference not set to an instance of an object.
+   at Barberia.Infrastructure.Services.FirebasePushNotificationService.SendToBarberoAsync(Guid barberoId, String titulo, String mensaje, CancellationToken cancellationToken) in /src/Barberia.Infrastructure/Services/FirebasePushNotificationService.cs:line 77
+2026-05-03 21:32:30.883 +00:00 [WRN] No se pudo enviar la notificación FCM para el cliente "cafb93b0-3cbf-4db7-9568-9c4996ad923c"
+System.NullReferenceException: Object reference not set to an instance of an object.
+   at Barberia.Infrastructure.Services.FirebasePushNotificationService.SendToClienteAsync(Guid clienteId, String titulo, String mensaje, CancellationToken cancellationToken) in /src/Barberia.Infrastructure/Services/FirebasePushNotificationService.cs:line 55
+2026-05-03 21:32:30.905 +00:00 [INF] HTTP POST /api/v1/citas responded 201 in 455.8208 ms
+2026-05-03 21:32:30.943 +00:00 [INF] HTTP DELETE /api/v1/slots/liberar responded 200 in 4.7536 ms
+2026-05-03 21:32:35.400 +00:00 [INF] HTTP GET /api/v1/citas/mis-citas responded 200 in 79.3191 ms
+2026-05-03 21:35:08.408 +00:00 [INF] HTTP GET /api/v1/barberias/0f6b09e1-fa3a-474c-b2b7-ded8c3cdc822/servicios responded 200 in 263.9639 ms
+2026-05-03 21:35:12.813 +00:00 [INF] HTTP GET /api/v1/servicios/a937e4b4-829b-4cca-a2f5-f6b1b1807991/barberos responded 200 in 180.6190 ms
+2026-05-03 21:35:14.982 +00:00 [INF] HTTP GET /api/v1/barberos/2bdc26c5-f0bb-4144-8474-4e59ddd8f8eb/disponibilidad responded 200 in 42.0290 ms
+2026-05-03 21:35:17.483 +00:00 [INF] HTTP GET /api/v1/barberos/2bdc26c5-f0bb-4144-8474-4e59ddd8f8eb/disponibilidad responded 200 in 31.1335 ms
+2026-05-03 21:35:17.505 +00:00 [INF] HTTP GET /api/v1/barberos/2bdc26c5-f0bb-4144-8474-4e59ddd8f8eb/disponibilidad responded 200 in 45.8738 ms
+2026-05-03 21:35:19.236 +00:00 [INF] HTTP POST /api/v1/slots/bloquear responded 200 in 28.1115 ms
+2026-05-03 21:35:22.963 +00:00 [WRN] No se pudo enviar la notificación FCM para el barbero "2bdc26c5-f0bb-4144-8474-4e59ddd8f8eb"
+System.NullReferenceException: Object reference not set to an instance of an object.
+   at Barberia.Infrastructure.Services.FirebasePushNotificationService.SendToBarberoAsync(Guid barberoId, String titulo, String mensaje, CancellationToken cancellationToken) in /src/Barberia.Infrastructure/Services/FirebasePushNotificationService.cs:line 77
+2026-05-03 21:35:22.969 +00:00 [WRN] No se pudo enviar la notificación FCM para el cliente "cafb93b0-3cbf-4db7-9568-9c4996ad923c"
+System.NullReferenceException: Object reference not set to an instance of an object.
+   at Barberia.Infrastructure.Services.FirebasePushNotificationService.SendToClienteAsync(Guid clienteId, String titulo, String mensaje, CancellationToken cancellationToken) in /src/Barberia.Infrastructure/Services/FirebasePushNotificationService.cs:line 55
+2026-05-03 21:35:22.973 +00:00 [INF] HTTP POST /api/v1/citas responded 201 in 92.4189 ms
+2026-05-03 21:35:22.994 +00:00 [INF] HTTP DELETE /api/v1/slots/liberar responded 200 in 4.0505 ms
+2026-05-03 21:35:28.762 +00:00 [INF] HTTP GET /api/v1/citas/mis-citas responded 200 in 131.2722 ms
+2026-05-03 21:39:27.699 +00:00 [INF] HTTP GET /api/v1/barberias/0f6b09e1-fa3a-474c-b2b7-ded8c3cdc822/servicios responded 200 in 59.6163 ms
+2026-05-03 21:39:32.856 +00:00 [INF] HTTP GET /api/v1/citas/mis-citas responded 200 in 147.0533 ms
+2026-05-03 21:39:37.376 +00:00 [INF] Cerrando sesión para cliente "cafb93b0-3cbf-4db7-9568-9c4996ad923c"
+2026-05-03 21:39:37.395 +00:00 [INF] HTTP POST /api/v1/auth/logout responded 200 in 29.4798 ms
+2026-05-03 21:40:33.861 +00:00 [INF] HTTP POST /api/v1/auth/login responded 200 in 275.7104 ms
+2026-05-03 21:40:40.096 +00:00 [INF] HTTP GET /api/v1/citas/mis-citas responded 403 in 121.8446 ms
+2026-05-03 21:40:41.920 +00:00 [INF] HTTP GET /api/v1/barberias/0f6b09e1-fa3a-474c-b2b7-ded8c3cdc822/servicios responded 200 in 120.8901 ms
+2026-05-03 21:40:45.121 +00:00 [INF] HTTP POST /api/v1/auth/logout responded 403 in 7.7510 ms
+2026-05-03 21:53:11.898 +00:00 [INF] HTTP POST /api/v1/auth/login responded 200 in 608.1341 ms
+2026-05-03 21:53:16.317 +00:00 [INF] HTTP GET /api/v1/admin/barberias responded 404 in 27.5024 ms
+2026-05-03 21:53:19.830 +00:00 [INF] HTTP GET /api/v1/admin/barberias responded 404 in 0.4553 ms
+2026-05-03 21:53:26.201 +00:00 [INF] HTTP GET /api/v1/admin/barberias responded 404 in 6.2451 ms
+2026-05-03 21:53:26.901 +00:00 [INF] HTTP GET /api/v1/admin/barberias responded 404 in 0.8847 ms
+2026-05-03 22:05:07.951 +00:00 [INF] HTTP GET /api/v1/admin/barberias responded 404 in 101.9940 ms
+2026-05-03 22:05:09.461 +00:00 [INF] HTTP GET /api/v1/admin/barberias responded 404 in 19.0240 ms
+2026-05-03 22:05:12.262 +00:00 [INF] HTTP GET /api/v1/admin/barberias responded 404 in 22.8497 ms
+2026-05-03 22:05:33.056 +00:00 [INF] HTTP GET /api/v1/admin/barberias responded 404 in 13.6421 ms
+2026-05-03 22:05:35.722 +00:00 [INF] HTTP GET /api/v1/admin/barberias responded 404 in 2.8883 ms
+2026-05-03 22:05:36.355 +00:00 [INF] HTTP GET /api/v1/admin/barberias responded 404 in 4.2515 ms
+2026-05-03 22:05:36.768 +00:00 [INF] HTTP GET /api/v1/admin/barberias responded 404 in 1.2129 ms
+2026-05-03 22:05:37.015 +00:00 [INF] HTTP GET /api/v1/admin/barberias responded 404 in 1.1698 ms
+2026-05-03 22:05:37.291 +00:00 [INF] HTTP GET /api/v1/admin/barberias responded 404 in 0.2615 ms
+2026-05-03 22:05:56.016 +00:00 [INF] HTTP GET /api/v1/admin/barberias responded 404 in 6.9884 ms

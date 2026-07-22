@@ -1,0 +1,17 @@
+/Volumes/DataMac/Developer/barberApp/backend/Barberia.Application/bin/Debug/net10.0/Barberia.Application.deps.json
+/Volumes/DataMac/Developer/barberApp/backend/Barberia.Application/bin/Debug/net10.0/Barberia.Application.dll
+/Volumes/DataMac/Developer/barberApp/backend/Barberia.Application/bin/Debug/net10.0/Barberia.Application.pdb
+/Volumes/DataMac/Developer/barberApp/backend/Barberia.Application/bin/Debug/net10.0/Barberia.Domain.dll
+/Volumes/DataMac/Developer/barberApp/backend/Barberia.Application/bin/Debug/net10.0/Barberia.Shared.dll
+/Volumes/DataMac/Developer/barberApp/backend/Barberia.Application/bin/Debug/net10.0/Barberia.Domain.pdb
+/Volumes/DataMac/Developer/barberApp/backend/Barberia.Application/bin/Debug/net10.0/Barberia.Shared.pdb
+/Volumes/DataMac/Developer/barberApp/backend/Barberia.Application/obj/Debug/net10.0/Barberia.Application.csproj.AssemblyReference.cache
+/Volumes/DataMac/Developer/barberApp/backend/Barberia.Application/obj/Debug/net10.0/Barberia.Application.GeneratedMSBuildEditorConfig.editorconfig
+/Volumes/DataMac/Developer/barberApp/backend/Barberia.Application/obj/Debug/net10.0/Barberia.Application.AssemblyInfoInputs.cache
+/Volumes/DataMac/Developer/barberApp/backend/Barberia.Application/obj/Debug/net10.0/Barberia.Application.AssemblyInfo.cs
+/Volumes/DataMac/Developer/barberApp/backend/Barberia.Application/obj/Debug/net10.0/Barberia.Application.csproj.CoreCompileInputs.cache
+/Volumes/DataMac/Developer/barberApp/backend/Barberia.Application/obj/Debug/net10.0/Barberia.F56CE701.Up2Date
+/Volumes/DataMac/Developer/barberApp/backend/Barberia.Application/obj/Debug/net10.0/Barberia.Application.dll
+/Volumes/DataMac/Developer/barberApp/backend/Barberia.Application/obj/Debug/net10.0/refint/Barberia.Application.dll
+/Volumes/DataMac/Developer/barberApp/backend/Barberia.Application/obj/Debug/net10.0/Barberia.Application.pdb
+/Volumes/DataMac/Developer/barberApp/backend/Barberia.Application/obj/Debug/net10.0/ref/Barberia.Application.dll

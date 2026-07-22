@@ -1,0 +1,42 @@
+2026-05-02 22:39:07.392 +00:00 [INF] Aplicando migraciones de AppDbContext... (intento 1/10)
+2026-05-02 22:39:08.393 +00:00 [INF] Aplicando migraciones de BarberiaDbContext...
+2026-05-02 22:39:08.763 +00:00 [INF] Ejecutando DataSeeder...
+2026-05-02 22:39:09.021 +00:00 [INF] Base de datos inicializada correctamente.
+2026-05-02 22:39:09.093 +00:00 [WRN] Storing keys in a directory '/root/.aspnet/DataProtection-Keys' that may not be persisted outside of the container. Protected data will be unavailable when container is destroyed. For more information go to https://aka.ms/aspnet/dataprotectionwarning
+2026-05-02 22:39:09.138 +00:00 [WRN] Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://+:8080'.
+2026-05-02 22:45:11.424 +00:00 [WRN] Failed to determine the https port for redirect.
+2026-05-02 22:45:12.580 +00:00 [INF] HTTP POST /api/v1/auth/login responded 200 in 1251.1065 ms
+2026-05-02 22:45:19.118 +00:00 [INF] HTTP GET /api/v1/barberias/0f6b09e1-fa3a-474c-b2b7-ded8c3cdc822/servicios responded 200 in 411.0950 ms
+2026-05-02 22:45:24.270 +00:00 [INF] HTTP GET /api/v1/servicios/a3010f73-d250-4f49-aad0-7aeae7d37789/barberos responded 200 in 653.8151 ms
+2026-05-02 22:45:26.505 +00:00 [INF] HTTP GET /api/v1/barberos/adc9b37b-52b9-4039-aa4b-bc333e47a6ab/disponibilidad responded 200 in 304.8476 ms
+2026-05-02 22:45:27.897 +00:00 [INF] HTTP POST /api/v1/slots/bloquear responded 200 in 63.2816 ms
+2026-05-02 22:45:31.540 +00:00 [INF] HTTP GET /api/v1/barberias/0f6b09e1-fa3a-474c-b2b7-ded8c3cdc822/servicios responded 200 in 53.4319 ms
+2026-05-02 22:45:34.210 +00:00 [INF] HTTP GET /api/v1/citas/mis-citas responded 200 in 212.5157 ms
+2026-05-02 22:45:37.672 +00:00 [WRN] No se pudo enviar la notificación FCM para el barbero "fa84bc07-db41-4fb0-84c9-a0722f347562"
+System.NullReferenceException: Object reference not set to an instance of an object.
+   at Barberia.Infrastructure.Services.FirebasePushNotificationService.SendToBarberoAsync(Guid barberoId, String titulo, String mensaje, CancellationToken cancellationToken) in /src/Barberia.Infrastructure/Services/FirebasePushNotificationService.cs:line 77
+2026-05-02 22:45:37.697 +00:00 [WRN] No se pudo enviar la notificación FCM para el cliente "cafb93b0-3cbf-4db7-9568-9c4996ad923c"
+System.NullReferenceException: Object reference not set to an instance of an object.
+   at Barberia.Infrastructure.Services.FirebasePushNotificationService.SendToClienteAsync(Guid clienteId, String titulo, String mensaje, CancellationToken cancellationToken) in /src/Barberia.Infrastructure/Services/FirebasePushNotificationService.cs:line 55
+2026-05-02 22:45:37.699 +00:00 [INF] HTTP PUT /api/v1/citas/13c0ab58-daa3-42ac-85a7-b72182ce911a/cancelar responded 200 in 271.9572 ms
+2026-05-02 22:45:37.756 +00:00 [INF] HTTP GET /api/v1/citas/mis-citas responded 200 in 18.7567 ms
+2026-05-02 23:04:14.074 +00:00 [INF] HTTP GET /api/v1/barberias/0f6b09e1-fa3a-474c-b2b7-ded8c3cdc822/servicios responded 200 in 456.5938 ms
+2026-05-02 23:04:21.604 +00:00 [INF] HTTP GET /api/v1/servicios/ef5baa64-42c8-4268-92ac-61e1301251cb/barberos responded 200 in 273.3811 ms
+2026-05-02 23:04:26.505 +00:00 [INF] HTTP GET /api/v1/barberos/2bdc26c5-f0bb-4144-8474-4e59ddd8f8eb/disponibilidad responded 200 in 221.2041 ms
+2026-05-02 23:04:41.333 +00:00 [INF] HTTP GET /api/v1/barberias/0f6b09e1-fa3a-474c-b2b7-ded8c3cdc822/servicios responded 200 in 76.9819 ms
+2026-05-02 23:04:44.678 +00:00 [INF] HTTP GET /api/v1/citas/mis-citas responded 200 in 125.7969 ms
+2026-05-02 23:04:53.178 +00:00 [INF] HTTP GET /api/v1/barberias/0f6b09e1-fa3a-474c-b2b7-ded8c3cdc822/servicios responded 200 in 135.2178 ms
+2026-05-02 23:04:55.200 +00:00 [INF] HTTP GET /api/v1/servicios/a3010f73-d250-4f49-aad0-7aeae7d37789/barberos responded 200 in 28.6506 ms
+2026-05-02 23:04:56.762 +00:00 [INF] HTTP GET /api/v1/barberos/adc9b37b-52b9-4039-aa4b-bc333e47a6ab/disponibilidad responded 200 in 39.8371 ms
+2026-05-02 23:08:14.338 +00:00 [INF] HTTP GET /api/v1/barberias/0f6b09e1-fa3a-474c-b2b7-ded8c3cdc822/servicios responded 200 in 200.0121 ms
+2026-05-02 23:08:15.533 +00:00 [INF] HTTP GET /api/v1/servicios/a3010f73-d250-4f49-aad0-7aeae7d37789/barberos responded 200 in 114.7685 ms
+2026-05-02 23:08:17.173 +00:00 [INF] HTTP GET /api/v1/barberos/adc9b37b-52b9-4039-aa4b-bc333e47a6ab/disponibilidad responded 200 in 50.0925 ms
+2026-05-02 23:11:20.102 +00:00 [INF] HTTP GET /api/v1/barberias/0f6b09e1-fa3a-474c-b2b7-ded8c3cdc822/servicios responded 200 in 591.7685 ms
+2026-05-02 23:11:21.914 +00:00 [INF] HTTP GET /api/v1/servicios/ef5baa64-42c8-4268-92ac-61e1301251cb/barberos responded 200 in 239.7674 ms
+2026-05-02 23:11:24.044 +00:00 [INF] HTTP GET /api/v1/barberos/fa84bc07-db41-4fb0-84c9-a0722f347562/disponibilidad responded 200 in 84.0169 ms
+2026-05-02 23:22:15.298 +00:00 [INF] HTTP GET /api/v1/barberias/0f6b09e1-fa3a-474c-b2b7-ded8c3cdc822/servicios responded 200 in 662.3567 ms
+2026-05-02 23:22:17.540 +00:00 [INF] HTTP GET /api/v1/servicios/6ec4729f-ee57-4337-aa11-6709be5a983b/barberos responded 200 in 66.8987 ms
+2026-05-02 23:22:20.310 +00:00 [INF] HTTP GET /api/v1/barberos/adc9b37b-52b9-4039-aa4b-bc333e47a6ab/disponibilidad responded 200 in 79.6759 ms
+2026-05-02 23:22:26.403 +00:00 [INF] HTTP GET /api/v1/citas/mis-citas responded 200 in 259.1853 ms
+2026-05-02 23:22:27.981 +00:00 [INF] Cerrando sesión para cliente "cafb93b0-3cbf-4db7-9568-9c4996ad923c"
+2026-05-02 23:22:28.082 +00:00 [INF] HTTP POST /api/v1/auth/logout responded 200 in 197.3979 ms
