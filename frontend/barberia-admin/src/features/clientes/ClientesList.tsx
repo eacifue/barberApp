@@ -82,6 +82,8 @@ export function ClientesList() {
   const clientes = clientesQuery.data ?? []
   const barberias = barberiasQuery.data ?? []
   const isSaving = createMutation.isPending || updateMutation.isPending
+  // AdministradorBarberia gestiona sus propios clientes; solo Admin puede reasignar barbería.
+  const canManage = isAdmin || isAdminBarberia
 
   const modalTitle = useMemo(() => (editing ? 'Editar cliente' : 'Nuevo cliente'), [editing])
   const barberiaOptions = useMemo(
@@ -100,7 +102,7 @@ export function ClientesList() {
   }
 
   const openCreateModal = () => {
-    if (!isAdmin) return
+    if (!canManage) return
     setEditing(null)
     setForm(initialForm)
     setError(null)
@@ -108,7 +110,7 @@ export function ClientesList() {
   }
 
   const openEditModal = (cliente: Cliente) => {
-    if (!isAdmin) return
+    if (!canManage) return
     setEditing(cliente)
     setForm({
       nombre: cliente.nombre,
@@ -127,7 +129,7 @@ export function ClientesList() {
     event.preventDefault()
     setError(null)
 
-    if (!isAdmin) {
+    if (!canManage) {
       setError('No tienes permisos para modificar clientes desde esta pantalla.')
       return
     }
@@ -160,7 +162,7 @@ export function ClientesList() {
   }
 
   const onToggleActivo = (cliente: Cliente) => {
-    if (!isAdmin) return
+    if (!canManage) return
     setConfirmTarget(cliente)
   }
 
@@ -223,7 +225,7 @@ export function ClientesList() {
             >
               Cards
             </Button>
-            {isAdmin ? <Button onClick={openCreateModal}>Nuevo cliente</Button> : null}
+            {canManage ? <Button onClick={openCreateModal}>Nuevo cliente</Button> : null}
           </div>
         }
       />
@@ -232,7 +234,7 @@ export function ClientesList() {
         <DataTable<Cliente>
           loading={clientesQuery.isLoading}
           emptyMessage="No hay clientes registrados"
-          onRowClick={isAdmin ? openEditModal : undefined}
+          onRowClick={canManage ? openEditModal : undefined}
           columns={[
             {
               key: 'nombre',
@@ -290,7 +292,7 @@ export function ClientesList() {
                 </Badge>
               ),
             },
-            ...(isAdmin
+            ...(canManage
               ? [
                   {
                     key: 'acciones',
@@ -322,7 +324,7 @@ export function ClientesList() {
           {clientes.map((cliente) => (
             <article
               key={cliente.id}
-              onClick={isAdmin ? () => openEditModal(cliente) : undefined}
+              onClick={canManage ? () => openEditModal(cliente) : undefined}
               className="cursor-pointer rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-4 transition hover:bg-[var(--surface-hover)]"
             >
               <div className="mb-4 flex items-center gap-3">
@@ -353,7 +355,7 @@ export function ClientesList() {
                 </div>
               ) : null}
 
-              {isAdmin ? (
+              {canManage ? (
                 <div className="mt-3 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   <Button size="sm" variant="ghost" onClick={() => openEditModal(cliente)}>
                     Editar

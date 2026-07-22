@@ -35,7 +35,7 @@ public sealed class ClientesController : ControllerBase
     }
 
     [HttpGet("api/v1/admin/clientes/{id:guid}")]
-    [Authorize(Policy = Roles.Admin)]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia}")]
     public async Task<ActionResult<ApiResponse<ClienteDto>>> GetByIdAsync(
         [FromRoute] Guid id,
         CancellationToken cancellationToken)
@@ -45,7 +45,7 @@ public sealed class ClientesController : ControllerBase
     }
 
     [HttpPost("api/v1/admin/clientes")]
-    [Authorize(Policy = Roles.Admin)]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia}")]
     public async Task<ActionResult<ApiResponse<ClienteDto>>> CreateAsync(
         [FromBody] CreateClienteAdminRequest request,
         CancellationToken cancellationToken)
@@ -55,7 +55,7 @@ public sealed class ClientesController : ControllerBase
     }
 
     [HttpPut("api/v1/admin/clientes/{id:guid}")]
-    [Authorize(Policy = Roles.Admin)]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia}")]
     public async Task<ActionResult<ApiResponse<ClienteDto>>> UpdateAsync(
         [FromRoute] Guid id,
         [FromBody] UpdateClienteAdminRequest request,
@@ -66,7 +66,7 @@ public sealed class ClientesController : ControllerBase
     }
 
     [HttpDelete("api/v1/admin/clientes/{id:guid}")]
-    [Authorize(Policy = Roles.Admin)]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia}")]
     public async Task<ActionResult<ApiResponse<object?>>> DeleteAsync(
         [FromRoute] Guid id,
         CancellationToken cancellationToken)

@@ -2,6 +2,7 @@ using AutoMapper;
 using Barberia.Application.DTOs.Clientes;
 using Barberia.Application.Exceptions;
 using Barberia.Application.Interfaces.Persistence.Context;
+using Barberia.Application.Interfaces.Services;
 using Barberia.Application.Interfaces.Services.Clientes;
 using Barberia.Domain.Entities;
 using Barberia.Shared.Constants;
@@ -17,17 +18,20 @@ public sealed class ClienteAdminService : IClienteAdminService
     private readonly IMapper mapper;
     private readonly IValidator<CreateClienteAdminRequest> createValidator;
     private readonly IValidator<UpdateClienteAdminRequest> updateValidator;
+    private readonly ICurrentUserService currentUserService;
 
     public ClienteAdminService(
         IBarberiaDbContext dbContext,
         IMapper mapper,
         IValidator<CreateClienteAdminRequest> createValidator,
-        IValidator<UpdateClienteAdminRequest> updateValidator)
+        IValidator<UpdateClienteAdminRequest> updateValidator,
+        ICurrentUserService currentUserService)
     {
         this.dbContext = dbContext;
         this.mapper = mapper;
         this.createValidator = createValidator;
         this.updateValidator = updateValidator;
+        this.currentUserService = currentUserService;
     }
 
     public async Task<List<ClienteDto>> GetAllAsync(CancellationToken cancellationToken)
@@ -90,9 +94,15 @@ public sealed class ClienteAdminService : IClienteAdminService
     {
         await ValidateAsync(request, cancellationToken);
 
-        if (request.BarberiaId.HasValue)
+        // Un AdministradorBarberia solo puede crear clientes de su propia barbería,
+        // sin importar lo que venga en el request.
+        var barberiaId = currentUserService.IsAdminBarberia
+            ? currentUserService.BarberiaId
+            : request.BarberiaId;
+
+        if (barberiaId.HasValue)
         {
-            await EnsureBarberiaExistsAsync(request.BarberiaId.Value, cancellationToken);
+            await EnsureBarberiaExistsAsync(barberiaId.Value, cancellationToken);
         }
 
         var correo = request.Correo.Trim().ToLowerInvariant();
@@ -105,7 +115,7 @@ public sealed class ClienteAdminService : IClienteAdminService
         var cliente = new Cliente
         {
             Rol = Roles.Cliente,
-            BarberiaId = request.BarberiaId,
+            BarberiaId = barberiaId,
             Nombre = request.Nombre.Trim(),
             Apellido = request.Apellido.Trim(),
             Telefono = request.Telefono.Trim(),
@@ -124,9 +134,15 @@ public sealed class ClienteAdminService : IClienteAdminService
     {
         await ValidateAsync(request, cancellationToken);
 
-        if (request.BarberiaId.HasValue)
+        // Un AdministradorBarberia no puede reasignar el cliente a otra barbería,
+        // sin importar lo que venga en el request.
+        var barberiaId = currentUserService.IsAdminBarberia
+            ? currentUserService.BarberiaId
+            : request.BarberiaId;
+
+        if (barberiaId.HasValue)
         {
-            await EnsureBarberiaExistsAsync(request.BarberiaId.Value, cancellationToken);
+            await EnsureBarberiaExistsAsync(barberiaId.Value, cancellationToken);
         }
 
         var cliente = await dbContext.Clientes
@@ -150,7 +166,7 @@ public sealed class ClienteAdminService : IClienteAdminService
         cliente.Apellido = request.Apellido.Trim();
         cliente.Telefono = request.Telefono.Trim();
         cliente.Correo = correo;
-        cliente.BarberiaId = request.BarberiaId;
+        cliente.BarberiaId = barberiaId;
 
         if (!string.IsNullOrWhiteSpace(request.Password))
         {
