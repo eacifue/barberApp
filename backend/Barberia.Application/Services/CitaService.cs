@@ -151,7 +151,10 @@ public class CitaService : ICitaService
 
         var clienteActualId = currentUserService.ClienteId;
         var esPropietario = currentUserService.IsCliente && clienteActualId == cita.ClienteId;
-        if (!currentUserService.IsAdmin && !esPropietario)
+        var esDeSuBarberia = currentUserService.IsAdminBarberia
+            && currentUserService.BarberiaId != null
+            && cita.Barbero.BarberiaId == currentUserService.BarberiaId;
+        if (!currentUserService.IsAdmin && !esPropietario && !esDeSuBarberia)
         {
             throw new UnauthorizedException("No tienes permisos para cancelar esta cita.");
         }
