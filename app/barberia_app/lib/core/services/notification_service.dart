@@ -136,7 +136,7 @@ class NotificationService {
 
     final citaId = data['citaId'] as String?;
     if (citaId != null && citaId.isNotEmpty) {
-      return '/mis-citas/$citaId';
+      return '/appointments/$citaId';
     }
 
     return null;

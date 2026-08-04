@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -19,6 +21,8 @@ import '../../features/servicios/presentation/screens/home_screen.dart';
 import '../../features/servicios/presentation/screens/seleccion_servicio_screen.dart';
 import '../auth/jwt_utils.dart';
 import '../storage/secure_storage.dart';
+
+const _sessionExpiryWarningThreshold = Duration(minutes: 30);
 
 final routerProvider = Provider<GoRouter>((ref) {
   final storage = ref.watch(secureStorageProvider);
@@ -170,7 +174,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-class _AppShell extends StatelessWidget {
+class _AppShell extends ConsumerStatefulWidget {
   const _AppShell({required this.child});
 
   final Widget child;
@@ -182,20 +186,87 @@ class _AppShell extends StatelessWidget {
   ];
 
   @override
+  ConsumerState<_AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends ConsumerState<_AppShell> {
+  Timer? _sessionCheckTimer;
+  bool _warningShown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSessionExpiry();
+    _sessionCheckTimer = Timer.periodic(
+      const Duration(minutes: 5),
+      (_) => _checkSessionExpiry(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _sessionCheckTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _checkSessionExpiry() async {
+    if (_warningShown || !mounted) {
+      return;
+    }
+
+    final storage = ref.read(secureStorageProvider);
+    final token = await storage.getToken();
+    if (token == null || token.isEmpty) {
+      return;
+    }
+
+    final expiry = JwtUtils.tryGetExpiry(token);
+    if (expiry == null) {
+      return;
+    }
+
+    final remaining = expiry.difference(DateTime.now());
+    if (remaining <= Duration.zero || remaining > _sessionExpiryWarningThreshold) {
+      return;
+    }
+
+    _warningShown = true;
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showMaterialBanner(
+      MaterialBanner(
+        content: const Text(
+          'Tu sesión expirará pronto. Si estás en medio de una reserva, '
+          'complétala pronto o inicia sesión de nuevo para no perderla.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                ScaffoldMessenger.of(context).hideCurrentMaterialBanner(),
+            child: const Text('Entendido'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).uri.toString();
-    final currentIndex = _tabs.indexWhere(
+    final currentIndex = _AppShell._tabs.indexWhere(
       (item) => location.startsWith(item.$1),
     );
 
     return Scaffold(
-      body: child,
+      body: widget.child,
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex < 0 ? 0 : currentIndex,
-        onDestinationSelected: (index) => context.go(_tabs[index].$1),
+        onDestinationSelected: (index) => context.go(_AppShell._tabs[index].$1),
         height: 72,
         destinations: [
-          for (final tab in _tabs)
+          for (final tab in _AppShell._tabs)
             NavigationDestination(icon: Icon(tab.$2), label: tab.$3),
         ],
       ),

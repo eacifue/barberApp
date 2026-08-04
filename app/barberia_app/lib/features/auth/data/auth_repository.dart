@@ -41,6 +41,41 @@ class AuthRepository {
     await _secureStorageService.saveToken(token);
   }
 
+  Future<void> registro({
+    required String nombre,
+    required String apellido,
+    required String telefono,
+    required String correo,
+    required String password,
+  }) async {
+    final response = await _apiClient.post<Map<String, dynamic>>(
+      ApiEndpoints.registro,
+      data: {
+        'nombre': nombre.trim(),
+        'apellido': apellido.trim(),
+        'telefono': telefono.trim(),
+        'correo': correo.trim(),
+        'password': password,
+      },
+      fromJson: (json) => json,
+    );
+
+    if (!response.success || response.data == null) {
+      throw AppException(
+        response.message.isEmpty
+            ? 'No se pudo crear la cuenta.'
+            : response.message,
+      );
+    }
+
+    final token = response.data!['token'] as String?;
+    if (token == null || token.isEmpty) {
+      throw AppException('La respuesta de registro no contiene token.');
+    }
+
+    await _secureStorageService.saveToken(token);
+  }
+
   Future<void> actualizarTokenFCM(String token) async {
     final response = await _apiClient.put<Map<String, dynamic>>(
       ApiEndpoints.authFcmToken,

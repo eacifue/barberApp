@@ -167,6 +167,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     onPressed: () => context.go('/registro'),
                     child: const Text('Crear cuenta'),
                   ),
+                  TextButton(
+                    onPressed: () => showDialog<void>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('¿Olvidaste tu contraseña?'),
+                        content: const Text(
+                          'La recuperación de contraseña dentro de la app '
+                          'todavía no está disponible. Comunícate con tu '
+                          'barbería para que te ayuden a restablecerla.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Entendido'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    child: const Text('¿Olvidaste tu contraseña?'),
+                  ),
                   const Spacer(),
                 ],
               ),

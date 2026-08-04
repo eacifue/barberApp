@@ -31,6 +31,26 @@ class JwtUtils {
     return null;
   }
 
+  static DateTime? tryGetExpiry(String token) {
+    final payload = _tryDecodePayload(token);
+    if (payload == null) return null;
+
+    final exp = payload['exp'];
+    if (exp is int) {
+      return DateTime.fromMillisecondsSinceEpoch(exp * 1000, isUtc: true)
+          .toLocal();
+    }
+    if (exp is String) {
+      final parsed = int.tryParse(exp);
+      if (parsed != null) {
+        return DateTime.fromMillisecondsSinceEpoch(parsed * 1000, isUtc: true)
+            .toLocal();
+      }
+    }
+
+    return null;
+  }
+
   static bool isAdminRole(String? role) {
     if (role == null || role.trim().isEmpty) {
       return false;

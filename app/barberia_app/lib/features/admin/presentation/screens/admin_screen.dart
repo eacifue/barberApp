@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../tabs/admin_barberias_tab.dart';
 import '../tabs/admin_barberos_tab.dart';
+import '../tabs/admin_clientes_tab.dart';
 import '../tabs/admin_servicios_tab.dart';
 
 class AdminScreen extends StatelessWidget {
@@ -10,15 +11,17 @@ class AdminScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Administración'),
           bottom: const TabBar(
+            isScrollable: true,
             tabs: [
               Tab(icon: Icon(Icons.store), text: 'Barberías'),
               Tab(icon: Icon(Icons.content_cut), text: 'Barberos'),
               Tab(icon: Icon(Icons.miscellaneous_services), text: 'Servicios'),
+              Tab(icon: Icon(Icons.people_alt_rounded), text: 'Clientes'),
             ],
           ),
         ),
@@ -27,6 +30,7 @@ class AdminScreen extends StatelessWidget {
             AdminBarberiasTab(),
             AdminBarberosTab(),
             AdminServiciosTab(),
+            AdminClientesTab(),
           ],
         ),
       ),
