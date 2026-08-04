@@ -1,0 +1,12 @@
+# .NET build output
+backend/**/bin/
+backend/**/obj/
+
+# Backend runtime logs
+backend/**/logs/
+*.log
+
+# Claude Code / agent skill installs (local tooling, not project source)
+.claude/skills/
+.agents/skills/impeccable/
+skills-lock.json
