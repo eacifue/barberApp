@@ -6,15 +6,11 @@ import type { ClienteUpsertInput } from '../types/cliente'
 
 export function useClientes() {
   const queryClient = useQueryClient()
-  const { isAdminBarberia, effectiveBarberiaId } = useTenantBarberia()
+  const { isAdminBarberia } = useTenantBarberia()
 
   const clientesQuery = useQuery({
-    queryKey: ['clientes', isAdminBarberia ? 'tenant' : 'admin', effectiveBarberiaId],
+    queryKey: ['clientes', isAdminBarberia ? 'tenant' : 'admin'],
     queryFn: () => (isAdminBarberia ? clienteService.getAllTenant() : clienteService.getAll()),
-    select: (clientes) => {
-      if (!isAdminBarberia || !effectiveBarberiaId) return clientes
-      return clientes.filter((cliente) => cliente.barberiaId === effectiveBarberiaId)
-    },
   })
 
   const createMutation = useMutation({

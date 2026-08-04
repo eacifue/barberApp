@@ -7,7 +7,6 @@ export type UserDto = {
   correo: string
   telefono: string
   rol: string
-  barberiaId: string | null
   barberoId: string | null
   activo: boolean
   createdAt: string
@@ -20,7 +19,6 @@ export type CreateUserPayload = {
   telefono: string
   password: string
   rol: string
-  barberiaId?: string | null
   barberoId?: string | null
 }
 
@@ -29,7 +27,6 @@ export type UpdateUserPayload = {
   apellido?: string
   telefono?: string
   rol?: string
-  barberiaId: string | null
   barberoId: string | null
   activo?: boolean
 }

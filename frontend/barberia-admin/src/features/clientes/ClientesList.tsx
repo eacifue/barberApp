@@ -20,7 +20,6 @@ const initialForm: ClienteUpsertInput = {
   correo: '',
   telefono: '',
   password: '',
-  barberiaId: null,
   activo: true,
 }
 
@@ -106,7 +105,6 @@ export function ClientesList() {
       correo: cliente.correo,
       telefono: cliente.telefono,
       password: '',
-      barberiaId: cliente.barberiaId ?? null,
       activo: cliente.activo,
     })
     setError(null)
@@ -165,7 +163,6 @@ export function ClientesList() {
           correo: confirmTarget.correo,
           telefono: confirmTarget.telefono,
           password: '',
-          barberiaId: confirmTarget.barberiaId ?? null,
           activo: !confirmTarget.activo,
         },
       })
@@ -238,17 +235,6 @@ export function ClientesList() {
             { key: 'correo', header: 'Correo', width: '1.4fr' },
             { key: 'telefono', header: 'Telefono', width: '1fr' },
             {
-              key: 'barberia',
-              header: 'Barbería',
-              width: '1fr',
-              render: (row) =>
-                row.barberiaNombre ? (
-                  <span>{row.barberiaNombre}</span>
-                ) : (
-                  <Badge variant="warning">Sin asignar</Badge>
-                ),
-            },
-            {
               key: 'fcm',
               header: 'FCM',
               width: '0.6fr',
@@ -320,9 +306,6 @@ export function ClientesList() {
                 <div>
                   <p className="text-sm font-semibold text-color-strong">{cliente.nombre} {cliente.apellido}</p>
                   <p className="text-xs text-color-muted">{cliente.correo}</p>
-                  <p className="text-xs text-[var(--text-muted)]">
-                    Barbería: {cliente.barberiaNombre ?? 'Sin asignar'}
-                  </p>
                 </div>
               </div>
 

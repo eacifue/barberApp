@@ -5,7 +5,6 @@ export type AuthUsuario = {
   id: string
   nombre: string
   rol: string
-  barberiaId?: string | null
   barberoId?: string | null
 }
 
@@ -28,25 +27,18 @@ export const useAuthStore = create<AuthState>()(
       usuario: null,
       login: (token, usuario) => {
         const role = usuario.rol
-        const barberiaId = usuario.barberiaId ?? null
 
         set({ token, usuario })
 
         localStorage.setItem('token', token)
         localStorage.setItem('user', JSON.stringify(usuario))
         localStorage.setItem('role', role)
-        if (barberiaId) {
-          localStorage.setItem('barberiaId', barberiaId)
-        } else {
-          localStorage.removeItem('barberiaId')
-        }
       },
       logout: () => {
         set({ token: null, usuario: null })
         localStorage.removeItem('token')
         localStorage.removeItem('user')
         localStorage.removeItem('role')
-        localStorage.removeItem('barberiaId')
       },
       isAuthenticated: () => Boolean(get().token),
       isAdmin: () => get().usuario?.rol === 'Admin',

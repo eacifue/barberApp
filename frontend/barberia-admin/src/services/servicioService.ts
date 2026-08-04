@@ -5,9 +5,8 @@ type ApiLikeResponse<T> = {
   data?: T
 }
 
-type ServicioApi = Omit<Servicio, 'tipo' | 'barberiaId' | 'precio' | 'duracionMinutos'> & {
+type ServicioApi = Omit<Servicio, 'tipo' | 'precio' | 'duracionMinutos'> & {
   tipo: number | string
-  barberiaId?: string
   precio: number | string
   duracionMinutos: number | string
 }
@@ -43,10 +42,9 @@ function normalizeTipo(tipo: unknown): Servicio['tipo'] {
   return TipoServicio.Otro
 }
 
-function normalizeServicio(raw: ServicioApi, fallbackBarberiaId?: string): Servicio {
+function normalizeServicio(raw: ServicioApi): Servicio {
   return {
     ...raw,
-    barberiaId: raw.barberiaId ?? fallbackBarberiaId ?? '',
     tipo: normalizeTipo(raw.tipo),
     duracionMinutos: Number(raw.duracionMinutos ?? 0),
     precio: Number(raw.precio ?? 0),
@@ -55,7 +53,6 @@ function normalizeServicio(raw: ServicioApi, fallbackBarberiaId?: string): Servi
 
 function toApiPayload(data: ServicioUpsertInput) {
   return {
-    barberiaId: data.barberiaId,
     nombre: data.nombre.trim(),
     descripcion: data.descripcion ?? '',
     tipo: Number(data.tipo),
@@ -69,7 +66,7 @@ export const servicioService = {
   async getByBarberia(barberiaId: string): Promise<Servicio[]> {
     const response = await http.get<ServicioApi[] | ApiLikeResponse<ServicioApi[]>>(`/v1/barberias/${barberiaId}/servicios`)
     const payload = unwrap(response.data) ?? []
-    return payload.map((item) => normalizeServicio(item, barberiaId))
+    return payload.map((item) => normalizeServicio(item))
   },
 
   async getById(id: string): Promise<Servicio> {
@@ -79,12 +76,12 @@ export const servicioService = {
 
   async create(data: ServicioUpsertInput): Promise<Servicio> {
     const response = await http.post<ServicioApi | ApiLikeResponse<ServicioApi>>('/v1/servicios', toApiPayload(data))
-    return normalizeServicio(unwrap(response.data), data.barberiaId)
+    return normalizeServicio(unwrap(response.data))
   },
 
   async update(id: string, data: ServicioUpsertInput): Promise<Servicio> {
     const response = await http.put<ServicioApi | ApiLikeResponse<ServicioApi>>(`/v1/servicios/${id}`, toApiPayload(data))
-    return normalizeServicio(unwrap(response.data), data.barberiaId)
+    return normalizeServicio(unwrap(response.data))
   },
 
   async remove(id: string): Promise<void> {

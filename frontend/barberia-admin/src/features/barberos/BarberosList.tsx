@@ -20,7 +20,6 @@ import { Modal } from '../../components/ui/Modal'
 import { toast } from '../../stores/toastStore'
 
 const initialForm: BarberoUpsertInput = {
-  barberiaId: '',
   nombre: '',
   apellido: '',
   telefono: '',
@@ -63,8 +62,7 @@ export function BarberosList() {
   const [dayOffDate, setDayOffDate] = useState('')
   const [dayOffReason, setDayOffReason] = useState('')
 
-  const serviciosBarberiaId = openModal ? form.barberiaId : (effectiveBarberiaId ?? '')
-  const { serviciosQuery } = useServicios(serviciosBarberiaId)
+  const { serviciosQuery } = useServicios(effectiveBarberiaId ?? '')
   const { availabilityQuery, upsertAvailabilityMutation, addDayOffMutation } = useAvailability(
     availabilityTarget?.id ?? '',
   )
@@ -93,14 +91,14 @@ export function BarberosList() {
   const resetForm = () => {
     setOpenModal(false)
     setEditing(null)
-    setForm({ ...initialForm, barberiaId: effectiveBarberiaId ?? '' })
+    setForm(initialForm)
     setSpecialityInput('')
     setError(null)
   }
 
   const openCreateModal = () => {
     setEditing(null)
-    setForm({ ...initialForm, barberiaId: effectiveBarberiaId ?? '' })
+    setForm(initialForm)
     setSpecialityInput('')
     setError(null)
     setOpenModal(true)
@@ -109,7 +107,6 @@ export function BarberosList() {
   const openEditModal = (barbero: Barbero) => {
     setEditing(barbero)
     setForm({
-      barberiaId: barbero.barberiaId,
       nombre: barbero.nombre,
       apellido: barbero.apellido,
       telefono: barbero.telefono,
@@ -146,8 +143,8 @@ export function BarberosList() {
     event.preventDefault()
     setError(null)
 
-    if (!form.nombre.trim() || !form.apellido.trim() || !form.correo.trim() || !form.barberiaId.trim()) {
-      setError('Completa los campos obligatorios: Nombre, Apellido, Correo y Barberia.')
+    if (!form.nombre.trim() || !form.apellido.trim() || !form.correo.trim()) {
+      setError('Completa los campos obligatorios: Nombre, Apellido y Correo.')
       return
     }
 
@@ -312,7 +309,7 @@ export function BarberosList() {
             key: 'barberiaNombre',
             header: 'Barberia',
             width: '1fr',
-            render: (row) => row.barberiaNombre || selectedBarberiaName,
+            render: () => selectedBarberiaName,
           },
           {
             key: 'citasHoy',

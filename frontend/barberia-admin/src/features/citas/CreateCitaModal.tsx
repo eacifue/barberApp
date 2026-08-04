@@ -12,7 +12,6 @@ import { FormSelect } from '../../components/ui/FormSelect'
 import { Modal } from '../../components/ui/Modal'
 
 type CreateCitaForm = {
-  barberiaId: string
   barberoId: string
   servicioId: string
   fechaCita: string
@@ -27,7 +26,6 @@ type CreateCitaModalProps = {
   onClose: () => void
   /** Se llama tras crear la cita con éxito, además de cerrar el modal — útil para refrescos propios del llamador. */
   onCreated?: () => void
-  initialBarberiaId?: string
   initialBarberoId?: string
   initialServicioId?: string
   initialFecha?: string
@@ -40,7 +38,6 @@ function todayIso() {
 
 function emptyForm(overrides: Partial<CreateCitaForm> = {}): CreateCitaForm {
   return {
-    barberiaId: '',
     barberoId: '',
     servicioId: '',
     fechaCita: todayIso(),
@@ -62,7 +59,6 @@ export function CreateCitaModal({
   open,
   onClose,
   onCreated,
-  initialBarberiaId,
   initialBarberoId,
   initialServicioId,
   initialFecha,
@@ -87,7 +83,6 @@ export function CreateCitaModal({
     if (!open) return
     setForm(
       emptyForm({
-        barberiaId: initialBarberiaId ?? effectiveBarberiaId ?? '',
         barberoId: initialBarberoId ?? '',
         servicioId: initialServicioId ?? '',
         fechaCita: initialFecha ?? todayIso(),
@@ -100,7 +95,7 @@ export function CreateCitaModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
-  const { barberosQuery } = useBarberos(form.barberiaId)
+  const { barberosQuery } = useBarberos(effectiveBarberiaId ?? '')
   const barberos = barberosQuery.data ?? []
 
   useEffect(() => {

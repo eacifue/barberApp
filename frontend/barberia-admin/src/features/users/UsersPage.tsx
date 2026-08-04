@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Plus } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { userService, type CreateUserPayload, type UpdateUserPayload, type UserDto } from '../../services/userService'
-import { barberiaService } from '../../services/barberiaService'
 import { PageHeader } from '../../components/shared/PageHeader'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
@@ -12,7 +11,6 @@ import { DataTable } from '../../components/ui/DataTable'
 import { FormInput } from '../../components/ui/FormInput'
 import { FormSelect } from '../../components/ui/FormSelect'
 import { Modal } from '../../components/ui/Modal'
-import { useAuthStore } from '../../stores/authStore'
 import { useToastStore } from '../../stores/toastStore'
 
 const ROLES = ['Admin', 'AdministradorBarberia', 'Barbero', 'Cliente'] as const
@@ -39,41 +37,17 @@ const EMPTY_FORM: CreateUserPayload = {
   telefono: '',
   password: '',
   rol: 'Cliente',
-  barberiaId: null,
   barberoId: null,
 }
 
 export function UsersPage() {
   const qc = useQueryClient()
   const addToast = useToastStore((s) => s.push)
-  const isGlobalAdmin = useAuthStore((s) => s.isAdmin())
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editUser, setEditUser] = useState<UserDto | null>(null)
   const [form, setForm] = useState<CreateUserPayload>(EMPTY_FORM)
   const [deleteConfirm, setDeleteConfirm] = useState<UserDto | null>(null)
-
-  const roleRequiresBarberia = form.rol === 'AdministradorBarberia' || form.rol === 'Barbero'
-
-  // The app only ever serves one barbershop, so a role that requires a
-  // BarberiaId is auto-assigned to it — no picker needed.
-  const barberiasQuery = useQuery({
-    queryKey: ['barberias-for-users-form'],
-    queryFn: barberiaService.getAll,
-    enabled: isGlobalAdmin,
-  })
-  const barberias = barberiasQuery.data ?? []
-
-  useEffect(() => {
-    if (!roleRequiresBarberia) {
-      setForm((prev) => ({ ...prev, barberiaId: null }))
-      return
-    }
-
-    if (!form.barberiaId && barberias.length > 0) {
-      setForm((prev) => ({ ...prev, barberiaId: barberias[0].id }))
-    }
-  }, [roleRequiresBarberia, form.barberiaId, barberias])
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
@@ -132,7 +106,6 @@ export function UsersPage() {
       telefono: user.telefono,
       password: '',
       rol: user.rol,
-      barberiaId: user.barberiaId,
       barberoId: user.barberoId,
     })
     setModalOpen(true)
@@ -147,18 +120,12 @@ export function UsersPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
-    if (roleRequiresBarberia && !form.barberiaId) {
-      addToast('No pudimos asignar la barbería a este usuario. Intenta de nuevo.', 'error')
-      return
-    }
-
     if (editUser) {
       const payload: UpdateUserPayload = {
         nombre: form.nombre,
         apellido: form.apellido,
         telefono: form.telefono,
         rol: form.rol,
-        barberiaId: form.barberiaId ?? null,
         barberoId: form.barberoId ?? null,
       }
       updateMutation.mutate({ id: editUser.id, payload })
@@ -219,7 +186,7 @@ export function UsersPage() {
         ),
       },
     ],
-    [barberias, barberiasQuery.isLoading],
+    [],
   )
 
   return (
@@ -257,10 +224,6 @@ export function UsersPage() {
           ) : null}
 
           <FormSelect label="Rol" value={form.rol} onChange={(e) => setForm((f) => ({ ...f, rol: e.target.value }))} options={roleOptions} />
-
-          {roleRequiresBarberia && !barberiasQuery.isLoading && barberias.length === 0 ? (
-            <p className="text-xs text-[var(--warning)]">No hay una barbería configurada para asociar a este usuario.</p>
-          ) : null}
 
           {form.rol === 'Barbero' ? (
             <FormInput

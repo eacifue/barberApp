@@ -1,7 +1,5 @@
 export interface Cliente {
   id: string
-  barberiaId?: string | null
-  barberiaNombre?: string | null
   nombre: string
   apellido: string
   telefono: string
@@ -13,6 +11,6 @@ export interface Cliente {
   activo: boolean
 }
 
-export type ClienteUpsertInput = Pick<Cliente, 'nombre' | 'apellido' | 'telefono' | 'correo' | 'activo' | 'barberiaId'> & {
+export type ClienteUpsertInput = Pick<Cliente, 'nombre' | 'apellido' | 'telefono' | 'correo' | 'activo'> & {
   password?: string
 }

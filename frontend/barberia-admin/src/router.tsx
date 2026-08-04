@@ -16,23 +16,7 @@ import { UsersPage } from './features/users/UsersPage'
 /** Protege las rutas privadas: redirige a /login si no hay token */
 function AuthGuard() {
   const token = useAuthStore((s) => s.token)
-  const usuario = useAuthStore((s) => s.usuario)
   if (!token) return <Navigate to="/login" replace />
-  if (usuario?.rol === 'AdministradorBarberia' && !usuario.barberiaId) {
-    return (
-      <div className="flex min-h-screen items-center justify-center px-6">
-        <div className="surface-panel max-w-md rounded-[28px] p-6 text-center">
-          <h2 className="font-display text-2xl text-[var(--text-strong)]">Acceso bloqueado</h2>
-          <p className="mt-3 text-sm text-[var(--danger)]">
-            Tu cuenta AdministradorBarberia no tiene una barbería asociada.
-          </p>
-          <p className="mt-2 text-xs leading-6 text-[var(--text-muted)]">
-            Solicita al administrador global que te asigne BarberiaId para continuar.
-          </p>
-        </div>
-      </div>
-    )
-  }
   return <Outlet />
 }
 

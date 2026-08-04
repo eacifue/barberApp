@@ -6,23 +6,13 @@ import type { BarberiaUpsertInput } from '../types/barberia'
 
 export function useBarberias() {
   const queryClient = useQueryClient()
-  const usuario = useAuthStore((s) => s.usuario)
+  const isAdmin = useAuthStore((s) => s.usuario?.rol === 'Admin')
 
-  const role = usuario?.rol ?? ''
-  const barberiaId = usuario?.barberiaId ?? null
-  const isAdmin = role === 'Admin'
-  const isAdminBarberia = role === 'AdministradorBarberia'
-
+  // /admin/barberias requiere rol Admin; AdministradorBarberia usa el
+  // endpoint público, que devuelve la misma (única) barbería.
   const barberiasQuery = useQuery({
-    queryKey: ['barberias', role, barberiaId],
-    enabled: isAdmin || (isAdminBarberia && Boolean(barberiaId)),
-    queryFn: async () => {
-      if (isAdminBarberia && barberiaId) {
-        const single = await barberiaService.getPublicById(barberiaId)
-        return [single]
-      }
-      return barberiaService.getAll()
-    },
+    queryKey: ['barberias', isAdmin],
+    queryFn: () => (isAdmin ? barberiaService.getAll() : barberiaService.getAllPublic()),
   })
 
   const updateMutation = useMutation({

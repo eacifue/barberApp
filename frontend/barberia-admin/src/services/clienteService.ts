@@ -14,7 +14,6 @@ function unwrap<T>(payload: T | ApiLikeResponse<T>): T {
 
 function toCreatePayload(data: ClienteUpsertInput) {
   return {
-    barberiaId: data.barberiaId || null,
     nombre: data.nombre.trim(),
     apellido: data.apellido.trim(),
     telefono: data.telefono.trim(),
@@ -25,7 +24,6 @@ function toCreatePayload(data: ClienteUpsertInput) {
 
 function toUpdatePayload(data: ClienteUpsertInput) {
   return {
-    barberiaId: data.barberiaId || null,
     nombre: data.nombre.trim(),
     apellido: data.apellido.trim(),
     telefono: data.telefono.trim(),

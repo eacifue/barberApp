@@ -16,7 +16,6 @@ import { Modal } from '../../components/ui/Modal'
 import { toast } from '../../stores/toastStore'
 
 const initialForm: ServicioUpsertInput = {
-  barberiaId: '',
   nombre: '',
   descripcion: '',
   tipo: TipoServicio.Corte,
@@ -102,13 +101,13 @@ export function ServiciosList() {
   const resetForm = () => {
     setOpenModal(false)
     setEditing(null)
-    setForm({ ...initialForm, barberiaId: effectiveBarberiaId ?? '' })
+    setForm(initialForm)
     setError(null)
   }
 
   const openCreateModal = () => {
     setEditing(null)
-    setForm({ ...initialForm, barberiaId: effectiveBarberiaId ?? '' })
+    setForm(initialForm)
     setError(null)
     setOpenModal(true)
   }
@@ -116,7 +115,6 @@ export function ServiciosList() {
   const openEditModal = (servicio: Servicio) => {
     setEditing(servicio)
     setForm({
-      barberiaId: servicio.barberiaId || effectiveBarberiaId || '',
       nombre: servicio.nombre,
       descripcion: servicio.descripcion ?? '',
       tipo: servicio.tipo,
@@ -133,8 +131,8 @@ export function ServiciosList() {
     event.preventDefault()
     setError(null)
 
-    if (!form.nombre.trim() || !form.barberiaId.trim()) {
-      setError('Completa Nombre y Barbería con valores válidos.')
+    if (!form.nombre.trim()) {
+      setError('Completa el nombre con un valor válido.')
       return
     }
 

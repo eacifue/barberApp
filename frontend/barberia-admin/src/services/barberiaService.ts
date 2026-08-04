@@ -60,6 +60,13 @@ export const barberiaService = {
     return raw.map(normalizeBarberia)
   },
 
+  /** Endpoint público (sin rol Admin) — usado por cuentas AdministradorBarberia. */
+  async getAllPublic(): Promise<Barberia[]> {
+    const response = await http.get<RawBarberia[] | ApiLikeResponse<RawBarberia[]>>('/v1/barberias')
+    const raw = unwrap(response.data) ?? []
+    return raw.map(normalizeBarberia)
+  },
+
   async getById(id: string): Promise<Barberia> {
     const response = await http.get<RawBarberia | ApiLikeResponse<RawBarberia>>(`/v1/admin/barberias/${id}`)
     return normalizeBarberia(unwrap(response.data))

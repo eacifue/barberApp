@@ -23,7 +23,6 @@ type WeeklyData = {
 }
 
 type CreateTarget = {
-  barberiaId: string
   barberoId: string
   servicioId: string
   fecha: string
@@ -94,8 +93,7 @@ export function DisponibilidadPage() {
     queryKey: ['barberos-for-barberia', effectiveBarberiaId],
     enabled: Boolean(effectiveBarberiaId),
     queryFn: async () => {
-      const list = await barberoService.getByBarberia(effectiveBarberiaId as string)
-      return list.map((barbero) => ({ ...barbero, barberiaId: barbero.barberiaId || '' }))
+      return barberoService.getByBarberia(effectiveBarberiaId as string)
     },
   })
 
@@ -189,7 +187,6 @@ export function DisponibilidadPage() {
   const onCreateFromCell = (date: string, hour: string) => {
     if (!selectedBarbero) return
     setCreateTarget({
-      barberiaId: selectedBarbero.barberiaId,
       barberoId: selectedBarbero.id,
       servicioId: filters.servicioId,
       fecha: date,
@@ -357,7 +354,6 @@ export function DisponibilidadPage() {
       <CreateCitaModal
         open={createTarget !== null}
         onClose={() => setCreateTarget(null)}
-        initialBarberiaId={createTarget?.barberiaId}
         initialBarberoId={createTarget?.barberoId}
         initialServicioId={createTarget?.servicioId}
         initialFecha={createTarget?.fecha}

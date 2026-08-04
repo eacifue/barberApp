@@ -13,7 +13,6 @@ type AuthPayload = {
   clienteId: string
   rol: string
   nombreCompleto: string
-  barberiaId?: string | null
   barberoId?: string | null
 }
 
@@ -22,22 +21,6 @@ type ApiResponse<T> = {
   message: string
   data: T | null
   errors: string[]
-}
-
-function getBarberiaIdFromToken(token: string): string | null {
-  try {
-    const payloadPart = token.split('.')[1]
-    if (!payloadPart) return null
-
-    const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/')
-    const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4)
-    const decoded = atob(padded)
-    const payload = JSON.parse(decoded) as { barberiaId?: string }
-    const raw = payload.barberiaId?.trim()
-    return raw ? raw : null
-  } catch {
-    return null
-  }
 }
 
 export function LoginPage() {
@@ -76,7 +59,6 @@ export function LoginPage() {
         id: payload.clienteId,
         nombre: payload.nombreCompleto,
         rol: payload.rol,
-        barberiaId: payload.barberiaId ?? getBarberiaIdFromToken(payload.token),
         barberoId: payload.barberoId,
       })
       navigate('/dashboard', { replace: true })

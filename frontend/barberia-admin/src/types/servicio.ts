@@ -23,7 +23,6 @@ export const TipoServicioLabel: Record<TipoServicio, string> = {
 
 export interface Servicio {
   id: string
-  barberiaId: string
   nombre: string
   descripcion?: string
   tipo: TipoServicio

@@ -1,6 +1,5 @@
 export interface Barbero {
   id: string
-  barberiaId: string
   nombre: string
   apellido: string
   telefono: string
@@ -13,7 +12,6 @@ export interface Barbero {
   disponible: boolean
   ratingPromedio: number
   activo: boolean
-  barberiaNombre?: string
   servicios?: Array<{
     id: string
     nombre: string
@@ -23,7 +21,6 @@ export interface Barbero {
 }
 
 export type BarberoUpsertInput = {
-  barberiaId: string
   nombre: string
   apellido: string
   telefono: string

@@ -7,7 +7,7 @@ import { useAuthStore } from '../stores/authStore'
 /**
  * Hook centralizado de logout.
  * 1. Limpia la cache de React Query (evita datos residuales entre sesiones).
- * 2. Limpia el estado de Zustand (token, usuario, barberiaId).
+ * 2. Limpia el estado de Zustand (token, usuario).
  * 3. Redirige a /login.
  */
 export function useLogout() {

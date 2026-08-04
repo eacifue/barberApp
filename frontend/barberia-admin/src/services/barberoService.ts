@@ -14,7 +14,6 @@ function unwrap<T>(payload: T | ApiLikeResponse<T>): T {
 
 type RawBarbero = {
   id: string
-  barberiaId?: string
   nombre: string
   apellido: string
   telefono: string
@@ -29,7 +28,6 @@ type RawBarbero = {
   disponible?: boolean
   ratingPromedio?: number
   activo?: boolean
-  barberiaNombre?: string
   servicios?: Array<{
     id: string
     nombre: string
@@ -38,10 +36,9 @@ type RawBarbero = {
   }>
 }
 
-function normalizeBarbero(raw: RawBarbero, fallbackBarberiaId?: string): Barbero {
+function normalizeBarbero(raw: RawBarbero): Barbero {
   return {
     id: raw.id,
-    barberiaId: raw.barberiaId ?? fallbackBarberiaId ?? '',
     nombre: raw.nombre,
     apellido: raw.apellido,
     telefono: raw.telefono,
@@ -54,14 +51,12 @@ function normalizeBarbero(raw: RawBarbero, fallbackBarberiaId?: string): Barbero
     disponible: Boolean(raw.disponible ?? true),
     ratingPromedio: Number(raw.ratingPromedio ?? 0),
     activo: Boolean(raw.activo ?? true),
-    barberiaNombre: raw.barberiaNombre,
     servicios: raw.servicios ?? [],
   }
 }
 
 function toApiPayload(data: BarberoUpsertInput) {
   return {
-    barberiaId: data.barberiaId,
     nombre: data.nombre.trim(),
     apellido: data.apellido.trim(),
     telefono: data.telefono.trim(),
@@ -78,7 +73,7 @@ export const barberoService = {
   async getByBarberia(barberiaId: string): Promise<Barbero[]> {
     const response = await http.get<RawBarbero[] | ApiLikeResponse<RawBarbero[]>>(`/v1/barberias/${barberiaId}/barberos`)
     const payload = unwrap(response.data) ?? []
-    return payload.map((item) => normalizeBarbero(item, barberiaId))
+    return payload.map((item) => normalizeBarbero(item))
   },
 
   async getById(id: string): Promise<Barbero> {
@@ -88,12 +83,12 @@ export const barberoService = {
 
   async create(data: BarberoUpsertInput): Promise<Barbero> {
     const response = await http.post<RawBarbero | ApiLikeResponse<RawBarbero>>('/v1/barberos', toApiPayload(data))
-    return normalizeBarbero(unwrap(response.data), data.barberiaId)
+    return normalizeBarbero(unwrap(response.data))
   },
 
   async update(id: string, data: BarberoUpsertInput): Promise<Barbero> {
     const response = await http.put<RawBarbero | ApiLikeResponse<RawBarbero>>(`/v1/barberos/${id}`, toApiPayload(data))
-    return normalizeBarbero(unwrap(response.data), data.barberiaId)
+    return normalizeBarbero(unwrap(response.data))
   },
 
   async updateFCM(id: string, token: string): Promise<void> {

@@ -501,7 +501,6 @@ export function AppointmentsScheduler() {
       <CreateCitaModal
         open={openCreateModal}
         onClose={() => setOpenCreateModal(false)}
-        initialBarberiaId={effectiveBarberiaId || undefined}
       />
 
       <Modal open={Boolean(detailCita)} onClose={() => setDetailCita(null)} title="Detalle de cita" size="md">
