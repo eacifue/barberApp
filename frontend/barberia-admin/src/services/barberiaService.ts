@@ -70,19 +70,9 @@ export const barberiaService = {
     return normalizeBarberia(unwrap(response.data))
   },
 
-  async create(data: BarberiaUpsertInput): Promise<Barberia> {
-    const payload = { ...data, diasDescanso: toApiDias(data.diasDescanso) }
-    const response = await http.post<RawBarberia | ApiLikeResponse<RawBarberia>>('/v1/admin/barberias', payload)
-    return normalizeBarberia(unwrap(response.data))
-  },
-
   async update(id: string, data: BarberiaUpsertInput): Promise<Barberia> {
     const payload = { ...data, diasDescanso: toApiDias(data.diasDescanso) }
     const response = await http.put<RawBarberia | ApiLikeResponse<RawBarberia>>(`/v1/admin/barberias/${id}`, payload)
     return normalizeBarberia(unwrap(response.data))
-  },
-
-  async remove(id: string): Promise<void> {
-    await http.delete(`/v1/admin/barberias/${id}`)
   },
 }

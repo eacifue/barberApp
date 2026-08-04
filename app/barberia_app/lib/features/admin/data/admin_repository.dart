@@ -37,26 +37,6 @@ class AdminRepository {
     return response.data ?? const [];
   }
 
-  Future<AdminBarberiaModel> createBarberia(
-    Map<String, dynamic> payload,
-  ) async {
-    final response = await _apiClient.post<Map<String, dynamic>>(
-      ApiEndpoints.adminBarberias,
-      data: payload,
-      fromJson: (json) => json,
-    );
-
-    if (!response.success || response.data == null) {
-      throw AppException(
-        response.message.isEmpty
-            ? 'No fue posible crear barbería.'
-            : response.message,
-      );
-    }
-
-    return AdminBarberiaModel.fromJson(response.data!);
-  }
-
   Future<AdminBarberiaModel> updateBarberia(
     String id,
     Map<String, dynamic> payload,
@@ -76,21 +56,6 @@ class AdminRepository {
     }
 
     return AdminBarberiaModel.fromJson(response.data!);
-  }
-
-  Future<void> deleteBarberia(String id) async {
-    final response = await _apiClient.delete<Map<String, dynamic>>(
-      ApiEndpoints.adminBarberiaById(id),
-      fromJson: (json) => json,
-    );
-
-    if (!response.success) {
-      throw AppException(
-        response.message.isEmpty
-            ? 'No fue posible eliminar barbería.'
-            : response.message,
-      );
-    }
   }
 
   Future<List<AdminClienteModel>> getClientes() async {

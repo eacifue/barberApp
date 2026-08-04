@@ -25,13 +25,6 @@ export function useBarberias() {
     },
   })
 
-  const createMutation = useMutation({
-    mutationFn: (payload: BarberiaUpsertInput) => barberiaService.create(payload),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['barberias'] })
-    },
-  })
-
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: BarberiaUpsertInput }) => barberiaService.update(id, data),
     onSuccess: async () => {
@@ -39,17 +32,8 @@ export function useBarberias() {
     },
   })
 
-  const removeMutation = useMutation({
-    mutationFn: (id: string) => barberiaService.remove(id),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['barberias'] })
-    },
-  })
-
   return {
     barberiasQuery,
-    createMutation,
     updateMutation,
-    removeMutation,
   }
 }

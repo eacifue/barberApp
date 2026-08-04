@@ -52,7 +52,7 @@ const principalItems: NavItemConfig[] = [{ to: '/dashboard', label: 'Dashboard',
 
 const adminItems: NavItemConfig[] = [
   { to: '/usuarios', label: 'Usuarios', icon: <Users className="h-4 w-4" /> },
-  { to: '/barberias', label: 'Barberias', icon: <Store className="h-4 w-4" /> },
+  { to: '/barberias', label: 'Mi negocio', icon: <Store className="h-4 w-4" /> },
   { to: '/barberos', label: 'Barberos', icon: <UserCircle2 className="h-4 w-4" /> },
   { to: '/servicios', label: 'Servicios', icon: <Scissors className="h-4 w-4" /> },
   { to: '/clientes', label: 'Clientes', icon: <Users className="h-4 w-4" /> },

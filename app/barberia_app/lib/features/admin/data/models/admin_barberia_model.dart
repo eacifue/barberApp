@@ -9,6 +9,11 @@ class AdminBarberiaModel {
     required this.departamento,
     required this.activa,
     required this.activo,
+    required this.horaApertura,
+    required this.horaCierre,
+    required this.diasDescanso,
+    required this.latitud,
+    required this.longitud,
   });
 
   final String id;
@@ -20,6 +25,11 @@ class AdminBarberiaModel {
   final String departamento;
   final bool activa;
   final bool activo;
+  final String horaApertura;
+  final String horaCierre;
+  final List<String> diasDescanso;
+  final double latitud;
+  final double longitud;
 
   factory AdminBarberiaModel.fromJson(Map<String, dynamic> json) {
     return AdminBarberiaModel(
@@ -32,6 +42,15 @@ class AdminBarberiaModel {
       departamento: json['departamento'] as String? ?? '',
       activa: json['activa'] as bool? ?? true,
       activo: json['activo'] as bool? ?? true,
+      horaApertura: json['horaApertura'] as String? ?? '09:00:00',
+      horaCierre: json['horaCierre'] as String? ?? '18:00:00',
+      diasDescanso:
+          (json['diasDescanso'] as List<dynamic>?)
+              ?.whereType<String>()
+              .toList() ??
+          const [],
+      latitud: (json['latitud'] as num?)?.toDouble() ?? 0,
+      longitud: (json['longitud'] as num?)?.toDouble() ?? 0,
     );
   }
 
@@ -43,11 +62,11 @@ class AdminBarberiaModel {
       'direccion': direccion,
       'ciudad': ciudad,
       'departamento': departamento,
-      'latitud': 0,
-      'longitud': 0,
-      'horaApertura': '09:00:00',
-      'horaCierre': '18:00:00',
-      'diasDescanso': <String>[],
+      'latitud': latitud,
+      'longitud': longitud,
+      'horaApertura': horaApertura,
+      'horaCierre': horaCierre,
+      'diasDescanso': diasDescanso,
       'activa': activa,
     };
   }

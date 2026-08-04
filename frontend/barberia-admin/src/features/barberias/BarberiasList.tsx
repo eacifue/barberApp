@@ -3,12 +3,8 @@ import { useMemo, useState } from 'react'
 import { useBarberias } from '../../hooks/useBarberias'
 import type { Barberia, BarberiaUpsertInput } from '../../types/barberia'
 import { PageHeader } from '../../components/shared/PageHeader'
-import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { DataTable } from '../../components/ui/DataTable'
 import { FormInput } from '../../components/ui/FormInput'
-import { Modal } from '../../components/ui/Modal'
 import { toast } from '../../stores/toastStore'
 
 const days = [
@@ -39,79 +35,53 @@ const DEPARTAMENTOS_POR_PAIS: Record<string, string[]> = {
   Otro: [],
 }
 
-const initialForm: BarberiaUpsertInput = {
-  nombre: '',
-  descripcion: '',
-  telefono: '',
-  correo: '',
-  direccion: '',
-  ciudad: '',
-  departamento: '',
-  pais: 'Colombia',
-  latitud: 0,
-  longitud: 0,
-  horaApertura: '09:00',
-  horaCierre: '18:00',
-  diasDescanso: [],
-  activa: true,
-}
+/**
+ * La app solo maneja una barbería, así que esta pantalla es un formulario de
+ * configuración de "Mi negocio" — ver/editar los datos de la única
+ * barbería, sin crear ni eliminar (ver roadmap de migración, sub-fase 3.4).
+ */
+export function BarberiasList() {
+  const { barberiasQuery } = useBarberias()
+  const barberia = barberiasQuery.data?.[0] ?? null
 
-function HomeIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
-      <path d="M3 10.5L12 3l9 7.5V21h-6.5v-6h-5V21H3v-10.5z" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
+    <section className="relative">
+      <PageHeader title="Mi negocio" subtitle="Datos de tu barbería visibles para tus clientes en la app" />
+
+      {barberiasQuery.isLoading ? (
+        <div className="surface-panel rounded-[28px] px-5 py-10 text-center text-sm text-[var(--text-muted)]">
+          Cargando…
+        </div>
+      ) : !barberia ? (
+        <div className="surface-panel rounded-[28px] px-5 py-10 text-center text-sm text-[var(--warning)]">
+          No hay una barbería configurada. Contacta a soporte.
+        </div>
+      ) : (
+        <BarberiaForm key={barberia.id} barberia={barberia} />
+      )}
+    </section>
   )
 }
 
-export function BarberiasList() {
-  const { barberiasQuery, createMutation, updateMutation, removeMutation } = useBarberias()
-  const [openModal, setOpenModal] = useState(false)
-  const [editing, setEditing] = useState<Barberia | null>(null)
-  const [form, setForm] = useState<BarberiaUpsertInput>(initialForm)
+function BarberiaForm({ barberia }: { barberia: Barberia }) {
+  const { updateMutation } = useBarberias()
+  const [form, setForm] = useState<BarberiaUpsertInput>(() => ({
+    nombre: barberia.nombre,
+    descripcion: barberia.descripcion ?? '',
+    telefono: barberia.telefono,
+    correo: barberia.correo,
+    direccion: barberia.direccion,
+    ciudad: barberia.ciudad,
+    departamento: barberia.departamento ?? '',
+    pais: barberia.pais ?? 'Colombia',
+    latitud: barberia.latitud,
+    longitud: barberia.longitud,
+    horaApertura: barberia.horaApertura,
+    horaCierre: barberia.horaCierre,
+    diasDescanso: barberia.diasDescanso ?? [],
+    activa: barberia.activa,
+  }))
   const [error, setError] = useState<string | null>(null)
-  const [confirmTarget, setConfirmTarget] = useState<Barberia | null>(null)
-
-  const isSaving = createMutation.isPending || updateMutation.isPending
-  const barberias = barberiasQuery.data ?? []
-
-  const modalTitle = editing ? 'Editar barberia' : 'Nueva barberia'
-
-  const resetForm = () => {
-    setForm(initialForm)
-    setEditing(null)
-    setError(null)
-    setOpenModal(false)
-  }
-
-  const openCreateModal = () => {
-    setForm(initialForm)
-    setEditing(null)
-    setError(null)
-    setOpenModal(true)
-  }
-
-  const openEditModal = (barberia: Barberia) => {
-    setForm({
-      nombre: barberia.nombre,
-      descripcion: barberia.descripcion ?? '',
-      telefono: barberia.telefono,
-      correo: barberia.correo,
-      direccion: barberia.direccion,
-      ciudad: barberia.ciudad,
-      departamento: barberia.departamento ?? '',
-      pais: barberia.pais ?? 'Colombia',
-      latitud: barberia.latitud,
-      longitud: barberia.longitud,
-      horaApertura: barberia.horaApertura,
-      horaCierre: barberia.horaCierre,
-      diasDescanso: barberia.diasDescanso ?? [],
-      activa: barberia.activa,
-    })
-    setEditing(barberia)
-    setError(null)
-    setOpenModal(true)
-  }
 
   const requiredFieldsFilled = useMemo(() => {
     return (
@@ -137,111 +107,15 @@ export function BarberiasList() {
     }
 
     try {
-      if (editing) {
-        await updateMutation.mutateAsync({ id: editing.id, data: form })
-        toast.success(`Barbería "${form.nombre}" actualizada correctamente.`)
-      } else {
-        await createMutation.mutateAsync(form)
-        toast.success(`Barbería "${form.nombre}" creada correctamente.`)
-      }
-      resetForm()
+      await updateMutation.mutateAsync({ id: barberia.id, data: form })
+      toast.success('Datos de la barbería actualizados correctamente.')
     } catch {
-      setError('No se pudo guardar la barberia. Revisa los datos e intenta de nuevo.')
-    }
-  }
-
-  const onDelete = (barberia: Barberia) => {
-    setConfirmTarget(barberia)
-  }
-
-  const handleConfirmDelete = async () => {
-    if (!confirmTarget) return
-    try {
-      await removeMutation.mutateAsync(confirmTarget.id)
-      toast.success(`Barbería "${confirmTarget.nombre}" eliminada.`)
-    } catch {
-      toast.error('No se pudo eliminar la barbería. Intenta de nuevo.')
-    } finally {
-      setConfirmTarget(null)
+      setError('No se pudo guardar la barbería. Revisa los datos e intenta de nuevo.')
     }
   }
 
   return (
-    <section className="relative">
-      <PageHeader
-        title="Barberias"
-        subtitle="Gestion de sucursales, datos principales y estado"
-        actions={<Button onClick={openCreateModal}>Nueva barberia</Button>}
-      />
-
-      <DataTable<Barberia>
-        loading={barberiasQuery.isLoading}
-        emptyMessage="No hay barberias registradas"
-        columns={[
-          {
-            key: 'nombre',
-            header: 'Nombre',
-            width: '1.3fr',
-            render: (row) => (
-              <div className="inline-flex items-center gap-2">
-                <span className="text-[var(--gold-l)]">
-                  <HomeIcon />
-                </span>
-                <span>{row.nombre}</span>
-              </div>
-            ),
-          },
-          { key: 'direccion', header: 'Ubicacion', width: '1.6fr',
-            render: (row) => (
-              <span className="text-color-base">
-                {row.ciudad}{row.departamento ? `, ${row.departamento}` : ''}
-                {row.pais ? <span className="ml-1 text-color-muted">· {row.pais}</span> : null}
-              </span>
-            ),
-          },
-          {
-            key: 'horario',
-            header: 'Horario',
-            width: '1fr',
-            render: (row) => `${row.horaApertura} - ${row.horaCierre}`,
-          },
-          {
-            key: 'totalBarberos',
-            header: '# Barberos',
-            width: '0.8fr',
-            render: (row) => row.totalBarberos ?? 0,
-          },
-          {
-            key: 'activa',
-            header: 'Estado',
-            width: '0.9fr',
-            render: (row) => (
-              <Badge variant={row.activa ? 'success' : 'danger'} dot>
-                {row.activa ? 'Activa' : 'Inactiva'}
-              </Badge>
-            ),
-          },
-          {
-            key: 'acciones',
-            header: 'Acciones',
-            width: '1fr',
-            render: (row) => (
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="ghost" onClick={() => openEditModal(row)}>
-                  Editar
-                </Button>
-                <Button size="sm" variant="danger" onClick={() => onDelete(row)} loading={removeMutation.isPending}>
-                  Eliminar
-                </Button>
-              </div>
-            ),
-          },
-        ]}
-        data={barberias}
-      />
-
-      <Modal open={openModal} onClose={resetForm} title={modalTitle} size="lg">
-        <form className="space-y-4" onSubmit={onSubmit}>
+    <form className="surface-panel max-w-3xl space-y-4 rounded-[28px] p-6" onSubmit={onSubmit}>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <FormInput
               label="Nombre"
@@ -406,25 +280,10 @@ export function BarberiasList() {
           {error ? <p className="form-message-error text-sm">{error}</p> : null}
 
           <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={resetForm}>
-              Cancelar
-            </Button>
-            <Button type="submit" loading={isSaving}>
-              {editing ? 'Guardar cambios' : 'Crear barberia'}
+            <Button type="submit" loading={updateMutation.isPending}>
+              Guardar cambios
             </Button>
           </div>
         </form>
-      </Modal>
-
-      <ConfirmDialog
-        open={confirmTarget !== null}
-        onClose={() => setConfirmTarget(null)}
-        onConfirm={handleConfirmDelete}
-        loading={removeMutation.isPending}
-        variant="danger"
-        title="Eliminar barbería"
-        message={`¿Estás seguro de que deseas eliminar "${confirmTarget?.nombre}"? Esta acción no se puede deshacer.`}
-      />
-    </section>
   )
 }
