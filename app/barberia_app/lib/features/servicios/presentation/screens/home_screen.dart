@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/auth/jwt_utils.dart';
 import '../../../../core/auth/auth_role_provider.dart';
 import '../../../../core/auth/logout_button.dart';
-import '../../../../features/barberias/presentation/providers/selected_barbershop_provider.dart';
+import '../../../../features/barberias/presentation/providers/barbershops_provider.dart';
 import '../../../../features/citas/presentation/providers/citas_provider.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/error_widget.dart';
@@ -17,140 +17,144 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final roleAsync = ref.watch(authRoleProvider);
-    final selectedState = ref.watch(selectedBarbershopProvider);
+    final barbershopAsync = ref.watch(myBarbershopProvider);
     final isAdmin = roleAsync.maybeWhen(
       data: JwtUtils.isAdminRole,
       orElse: () => false,
     );
 
-    final barberiaId = selectedState.barberiaId;
-
-    if ((barberiaId ?? '').isEmpty) {
-      return Scaffold(
+    return barbershopAsync.when(
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, stackTrace) => Scaffold(
         appBar: AppBar(title: const Text('Dashboard')),
-        body: Center(
-          child: ElevatedButton(
-            onPressed: () => context.go('/select-barbershop'),
-            child: const Text('Seleccionar barbería'),
-          ),
+        body: BarberiaErrorWidget(
+          message: 'No pudimos cargar la información de tu barbería.',
+          onRetry: () => ref.refresh(myBarbershopProvider),
         ),
-      );
-    }
-
-    final serviciosAsync = ref.watch(serviciosProvider(barberiaId!));
-    final citasAsync = ref.watch(misCitasProvider(barberiaId));
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        actions: [
-          IconButton(
-            tooltip: 'Cambiar barbería',
-            onPressed: () => context.go('/select-barbershop'),
-            icon: const Icon(Icons.storefront_rounded),
-          ),
-          if (isAdmin)
-            IconButton(
-              tooltip: 'Administración',
-              onPressed: () => context.go('/admin'),
-              icon: const Icon(Icons.admin_panel_settings_rounded),
-            ),
-          const LogoutButton(),
-        ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-            'Resumen de tu barbería',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Datos en tiempo real filtrados por la barbería seleccionada.',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => context.go('/select-barbershop'),
-              icon: const Icon(Icons.storefront_rounded),
-              label: const Text('Cambiar barbería'),
-            ),
-          ),
-          const SizedBox(height: 12),
-          serviciosAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stackTrace) => BarberiaErrorWidget(
-              message: 'No pudimos cargar servicios del dashboard.',
-              onRetry: () => ref.refresh(serviciosProvider(barberiaId)),
-            ),
-            data: (servicios) {
-              final serviciosActivos = servicios
-                  .where((x) => x.activo)
-                  .toList();
-              return AppCard(
-                child: _MetricRow(
-                  title: 'Servicios activos',
-                  subtitle:
-                      '${serviciosActivos.length} disponibles para reserva',
-                  icon: Icons.content_cut_rounded,
+      data: (barbershop) {
+        if (barbershop == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Dashboard')),
+            body: const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'No hay una barbería configurada. Contacta al administrador.',
+                  textAlign: TextAlign.center,
                 ),
-              );
-            },
-          ),
-          const SizedBox(height: 12),
-          citasAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stackTrace) => BarberiaErrorWidget(
-              message: 'No pudimos cargar próximas citas.',
-              onRetry: () => ref.refresh(misCitasProvider(barberiaId)),
+              ),
             ),
-            data: (citas) {
-              final proximas = citas.where((cita) {
-                final estado = cita.estado.toLowerCase();
-                return estado == 'pendiente' || estado == 'confirmada';
-              }).toList()..sort((a, b) => a.fechaCita.compareTo(b.fechaCita));
+          );
+        }
 
-              return AppCard(
-                child: _MetricRow(
-                  title: 'Próximas citas',
-                  subtitle: proximas.isEmpty
-                      ? 'No tienes citas próximas en esta barbería.'
-                      : '${proximas.length} por atender',
-                  icon: Icons.event_available_rounded,
+        final barberiaId = barbershop.id;
+        final serviciosAsync = ref.watch(serviciosProvider(barberiaId));
+        final citasAsync = ref.watch(misCitasProvider(barberiaId));
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Dashboard'),
+            actions: [
+              if (isAdmin)
+                IconButton(
+                  tooltip: 'Administración',
+                  onPressed: () => context.go('/admin'),
+                  icon: const Icon(Icons.admin_panel_settings_rounded),
                 ),
-              );
-            },
+              const LogoutButton(),
+            ],
           ),
-          if (isAdmin) ...[
-            const SizedBox(height: 16),
-            Text(
-              'Administración',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            _AdminOptionTile(
-              icon: Icons.store,
-              title: 'Gestionar barberías',
-              onTap: () => context.go('/admin'),
-            ),
-            const SizedBox(height: 12),
-            _AdminOptionTile(
-              icon: Icons.content_cut,
-              title: 'Gestionar barberos',
-              onTap: () => context.go('/admin'),
-            ),
-            const SizedBox(height: 12),
-            _AdminOptionTile(
-              icon: Icons.miscellaneous_services,
-              title: 'Gestionar servicios',
-              onTap: () => context.go('/admin'),
-            ),
-          ],
-        ],
-      ),
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text(
+                'Resumen de tu barbería',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Datos en tiempo real de tu barbería.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 14),
+              serviciosAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stackTrace) => BarberiaErrorWidget(
+                  message: 'No pudimos cargar servicios del dashboard.',
+                  onRetry: () => ref.refresh(serviciosProvider(barberiaId)),
+                ),
+                data: (servicios) {
+                  final serviciosActivos = servicios
+                      .where((x) => x.activo)
+                      .toList();
+                  return AppCard(
+                    child: _MetricRow(
+                      title: 'Servicios activos',
+                      subtitle:
+                          '${serviciosActivos.length} disponibles para reserva',
+                      icon: Icons.content_cut_rounded,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              citasAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stackTrace) => BarberiaErrorWidget(
+                  message: 'No pudimos cargar próximas citas.',
+                  onRetry: () => ref.refresh(misCitasProvider(barberiaId)),
+                ),
+                data: (citas) {
+                  final proximas =
+                      citas.where((cita) {
+                        final estado = cita.estado.toLowerCase();
+                        return estado == 'pendiente' || estado == 'confirmada';
+                      }).toList()..sort(
+                        (a, b) => a.fechaCita.compareTo(b.fechaCita),
+                      );
+
+                  return AppCard(
+                    child: _MetricRow(
+                      title: 'Próximas citas',
+                      subtitle: proximas.isEmpty
+                          ? 'No tienes citas próximas en esta barbería.'
+                          : '${proximas.length} por atender',
+                      icon: Icons.event_available_rounded,
+                    ),
+                  );
+                },
+              ),
+              if (isAdmin) ...[
+                const SizedBox(height: 16),
+                Text(
+                  'Administración',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                _AdminOptionTile(
+                  icon: Icons.store,
+                  title: 'Gestionar barberías',
+                  onTap: () => context.go('/admin'),
+                ),
+                const SizedBox(height: 12),
+                _AdminOptionTile(
+                  icon: Icons.content_cut,
+                  title: 'Gestionar barberos',
+                  onTap: () => context.go('/admin'),
+                ),
+                const SizedBox(height: 12),
+                _AdminOptionTile(
+                  icon: Icons.miscellaneous_services,
+                  title: 'Gestionar servicios',
+                  onTap: () => context.go('/admin'),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 }

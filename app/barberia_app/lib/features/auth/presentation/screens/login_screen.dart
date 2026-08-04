@@ -155,7 +155,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         }
 
                         ref.invalidate(authRoleProvider);
-                        context.go('/select-barbershop');
+                        context.go('/dashboard');
                       } finally {
                         if (mounted) {
                           setState(() => _loading = false);

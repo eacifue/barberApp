@@ -5,7 +5,6 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../barberias/presentation/providers/barbershops_provider.dart';
-import '../../../barberias/presentation/providers/selected_barbershop_provider.dart';
 import '../../../../features/citas/presentation/providers/reserva_notifier.dart';
 import '../../../../shared/extensions/date_extensions.dart';
 import '../../../../shared/widgets/error_widget.dart';
@@ -77,18 +76,12 @@ class _SeleccionHorarioScreenState
     final servicio = reserva.servicioSeleccionado;
     final slotSeleccionado = disponibilidadState.slotSeleccionado;
 
-    final barberiaId = ref.watch(selectedBarbershopProvider).barberiaId;
-    final barbershops = ref.watch(barbershopsProvider).valueOrNull;
+    final barbershop = ref.watch(myBarbershopProvider).valueOrNull;
     bool esDiaLaborable(DateTime date) {
-      if (barberiaId == null || barbershops == null) {
+      if (barbershop == null) {
         return true;
       }
-      for (final b in barbershops) {
-        if (b.id == barberiaId) {
-          return b.esDiaLaborable(date);
-        }
-      }
-      return true;
+      return barbershop.esDiaLaborable(date);
     }
 
     if (barbero == null || servicio == null) {
@@ -283,7 +276,9 @@ class _ReservaProgressStep3 extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: i <= 2
                         ? AppColors.primary
-                        : AppColors.textMutedOf(context).withValues(alpha: 0.25),
+                        : AppColors.textMutedOf(
+                            context,
+                          ).withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),

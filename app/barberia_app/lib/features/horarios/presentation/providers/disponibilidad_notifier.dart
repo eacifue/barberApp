@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../barberias/presentation/providers/barbershops_provider.dart';
-import '../../../barberias/presentation/providers/selected_barbershop_provider.dart';
 import '../../../citas/presentation/providers/reserva_notifier.dart';
 import '../../data/bloqueo_repository.dart';
 import '../../domain/slot_model.dart';
@@ -13,7 +12,9 @@ import 'disponibilidad_state.dart';
 class DisponibilidadNotifier extends StateNotifier<DisponibilidadState> {
   DisponibilidadNotifier(this._ref)
     : _bloqueoRepository = _ref.read(bloqueoRepositoryProvider),
-      super(DisponibilidadState(fechaSeleccionada: _soloFecha(DateTime.now()))) {
+      super(
+        DisponibilidadState(fechaSeleccionada: _soloFecha(DateTime.now())),
+      ) {
     state = state.copyWith(
       fechaSeleccionada: _siguienteFechaHabil(state.fechaSeleccionada),
     );
@@ -22,27 +23,16 @@ class DisponibilidadNotifier extends StateNotifier<DisponibilidadState> {
   final Ref _ref;
   final BloqueoRepository _bloqueoRepository;
 
-  /// Whether the currently selected barbershop is open on [date]'s weekday.
-  /// Falls back to "open" when the barbershop isn't resolved yet, so the
-  /// calendar never blocks booking on a data-loading hiccup.
+  /// Whether the barbershop is open on [date]'s weekday. Falls back to
+  /// "open" when the barbershop isn't resolved yet, so the calendar never
+  /// blocks booking on a data-loading hiccup.
   bool _esDiaLaborable(DateTime date) {
-    final barberiaId = _ref.read(selectedBarbershopProvider).barberiaId;
-    if (barberiaId == null) {
+    final barbershop = _ref.read(myBarbershopProvider).valueOrNull;
+    if (barbershop == null) {
       return true;
     }
 
-    final barbershops = _ref.read(barbershopsProvider).valueOrNull;
-    if (barbershops == null) {
-      return true;
-    }
-
-    for (final barbershop in barbershops) {
-      if (barbershop.id == barberiaId) {
-        return barbershop.esDiaLaborable(date);
-      }
-    }
-
-    return true;
+    return barbershop.esDiaLaborable(date);
   }
 
   Future<void> reiniciarParaNuevaSeleccion({

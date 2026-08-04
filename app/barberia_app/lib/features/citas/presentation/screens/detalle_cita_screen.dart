@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,7 +9,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../barberias/domain/barbershop_model.dart';
 import '../../../barberias/presentation/providers/barbershops_provider.dart';
-import '../../../barberias/presentation/providers/selected_barbershop_provider.dart';
 import '../../../barberos/presentation/providers/barberos_provider.dart';
 import '../../../horarios/presentation/providers/disponibilidad_provider.dart';
 import '../../../servicios/presentation/providers/servicios_provider.dart';
@@ -32,16 +32,14 @@ class _DetalleCitaScreenState extends ConsumerState<DetalleCitaScreen> {
   bool _reprogramando = false;
 
   Future<void> _reprogramar(CitaModel cita) async {
-    final barberiaId = ref.read(selectedBarbershopProvider).barberiaId;
-    if ((barberiaId ?? '').isEmpty) {
+    final barbershop = await ref.read(myBarbershopProvider.future);
+    if (barbershop == null) {
       return;
     }
 
     setState(() => _reprogramando = true);
     try {
-      final servicios = await ref.read(
-        serviciosProvider(barberiaId!).future,
-      );
+      final servicios = await ref.read(serviciosProvider(barbershop.id).future);
       var servicio = servicios.where((s) => s.id == cita.servicio.id).toList();
 
       if (servicio.isEmpty) {
@@ -154,8 +152,7 @@ class _DetalleCitaScreenState extends ConsumerState<DetalleCitaScreen> {
   Widget build(BuildContext context) {
     final citaAsync = ref.watch(citaByIdProvider(widget.citaId));
     final repo = ref.watch(citaRepositoryProvider);
-    final barberiaId = ref.watch(selectedBarbershopProvider).barberiaId;
-    final barbershopsAsync = ref.watch(barbershopsProvider);
+    final barbershopAsync = ref.watch(myBarbershopProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Detalle de cita')),
@@ -221,7 +218,7 @@ class _DetalleCitaScreenState extends ConsumerState<DetalleCitaScreen> {
               ),
               _Box(
                 title: 'Ubicación',
-                child: barbershopsAsync.when(
+                child: barbershopAsync.when(
                   loading: () => const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8),
                     child: SizedBox(
@@ -232,18 +229,7 @@ class _DetalleCitaScreenState extends ConsumerState<DetalleCitaScreen> {
                   ),
                   error: (error, stackTrace) =>
                       const Text('No pudimos cargar la ubicación.'),
-                  data: (barbershops) {
-                    // CitaModel doesn't carry its own barberiaId, but the
-                    // detail screen is only reachable from the appointments
-                    // list scoped to the currently selected barbershop.
-                    BarbershopModel? barbershop;
-                    for (final b in barbershops) {
-                      if (b.id == barberiaId) {
-                        barbershop = b;
-                        break;
-                      }
-                    }
-
+                  data: (barbershop) {
                     if (barbershop == null) {
                       return const Text('Ubicación no disponible.');
                     }
@@ -258,7 +244,7 @@ class _DetalleCitaScreenState extends ConsumerState<DetalleCitaScreen> {
                         ),
                         const SizedBox(height: 10),
                         OutlinedButton.icon(
-                          onPressed: () => _abrirEnMapas(barbershop!),
+                          onPressed: () => _abrirEnMapas(barbershop),
                           icon: const Icon(Icons.directions_rounded),
                           label: const Text('Cómo llegar'),
                         ),
@@ -304,8 +290,11 @@ class _DetalleCitaScreenState extends ConsumerState<DetalleCitaScreen> {
                               motivo: 'Cancelada desde detalle de cita',
                             );
                             ref.invalidate(citaByIdProvider(widget.citaId));
-                            if ((barberiaId ?? '').isNotEmpty) {
-                              ref.invalidate(misCitasProvider(barberiaId!));
+                            final barbershop = ref
+                                .read(myBarbershopProvider)
+                                .valueOrNull;
+                            if (barbershop != null) {
+                              ref.invalidate(misCitasProvider(barbershop.id));
                             }
                           } catch (_) {
                             if (context.mounted) {

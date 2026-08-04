@@ -8,8 +8,6 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/registro_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/barberos/presentation/screens/seleccion_barbero_screen.dart';
-import '../../features/barberias/presentation/providers/selected_barbershop_provider.dart';
-import '../../features/barberias/presentation/screens/select_barbershop_screen.dart';
 import '../../features/citas/presentation/screens/confirmacion_screen.dart';
 import '../../features/citas/presentation/screens/cita_exitosa_screen.dart';
 import '../../features/citas/presentation/screens/detalle_cita_screen.dart';
@@ -26,7 +24,6 @@ const _sessionExpiryWarningThreshold = Duration(minutes: 30);
 
 final routerProvider = Provider<GoRouter>((ref) {
   final storage = ref.watch(secureStorageProvider);
-  final selectedBarbershopState = ref.watch(selectedBarbershopProvider);
 
   return GoRouter(
     initialLocation: '/',
@@ -36,54 +33,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isAuthRoute =
           state.matchedLocation == '/login' ||
           state.matchedLocation == '/registro';
-      final isSelectBarbershopRoute =
-          state.matchedLocation == '/select-barbershop';
-      final isDashboardRoute = state.matchedLocation == '/dashboard';
-      final isAppointmentsRoute = state.matchedLocation.startsWith(
-        '/appointments',
-      );
-      final isServiciosRoute =
-          state.matchedLocation.startsWith('/reservar') ||
-          state.matchedLocation == '/home' ||
-          state.matchedLocation.startsWith('/mis-citas');
       final isAdminRoute = state.matchedLocation.startsWith('/admin');
-      final needsBarbershopContext =
-          isDashboardRoute || isAppointmentsRoute || isServiciosRoute;
-
-      if (!selectedBarbershopState.ready && !isAuthRoute) {
-        return '/';
-      }
 
       if (state.matchedLocation == '/') {
-        if (!isLoggedIn) {
-          return '/login';
-        }
-        if (!selectedBarbershopState.hasSelection) {
-          return '/select-barbershop';
-        }
-        return '/dashboard';
+        return isLoggedIn ? '/dashboard' : '/login';
       }
 
       if (!isLoggedIn && !isAuthRoute) {
         return '/login';
       }
 
-      if (isLoggedIn &&
-          !selectedBarbershopState.hasSelection &&
-          !isSelectBarbershopRoute) {
-        return '/select-barbershop';
-      }
-
-      if (isLoggedIn &&
-          selectedBarbershopState.hasSelection &&
-          isSelectBarbershopRoute) {
+      if (isLoggedIn && isAuthRoute) {
         return '/dashboard';
-      }
-
-      if (isLoggedIn &&
-          selectedBarbershopState.hasSelection &&
-          needsBarbershopContext) {
-        return null;
       }
 
       if (isLoggedIn && isAdminRoute) {
@@ -91,14 +52,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (!JwtUtils.isAdminRole(role)) {
           return '/dashboard';
         }
-      }
-
-      if (isLoggedIn &&
-          (state.matchedLocation == '/login' ||
-              state.matchedLocation == '/registro')) {
-        return selectedBarbershopState.hasSelection
-            ? '/dashboard'
-            : '/select-barbershop';
       }
 
       if (state.matchedLocation == '/home') {
@@ -117,10 +70,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/registro',
         builder: (context, state) => const RegistroScreen(),
-      ),
-      GoRoute(
-        path: '/select-barbershop',
-        builder: (context, state) => const SelectBarbershopScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => _AppShell(child: child),
@@ -226,7 +175,8 @@ class _AppShellState extends ConsumerState<_AppShell> {
     }
 
     final remaining = expiry.difference(DateTime.now());
-    if (remaining <= Duration.zero || remaining > _sessionExpiryWarningThreshold) {
+    if (remaining <= Duration.zero ||
+        remaining > _sessionExpiryWarningThreshold) {
       return;
     }
 

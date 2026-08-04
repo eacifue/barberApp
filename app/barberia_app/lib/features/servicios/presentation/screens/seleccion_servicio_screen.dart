@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import '../../../barberias/presentation/providers/selected_barbershop_provider.dart';
+import '../../../barberias/presentation/providers/barbershops_provider.dart';
 import '../../../../features/citas/presentation/providers/reserva_notifier.dart';
 import '../../../../shared/widgets/error_widget.dart';
 import '../providers/servicios_provider.dart';
@@ -25,127 +25,149 @@ class _SeleccionServicioScreenState
 
   @override
   Widget build(BuildContext context) {
-    final selectedState = ref.watch(selectedBarbershopProvider);
-    final barberiaId = selectedState.barberiaId;
+    final barbershopAsync = ref.watch(myBarbershopProvider);
 
-    if ((barberiaId ?? '').isEmpty) {
-      return Scaffold(
+    return barbershopAsync.when(
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, stackTrace) => Scaffold(
         appBar: AppBar(title: const Text('¿Qué servicio deseas?')),
-        body: Center(
-          child: ElevatedButton(
-            onPressed: () => context.go('/select-barbershop'),
-            child: const Text('Seleccionar barbería'),
-          ),
-        ),
-      );
-    }
-
-    final serviciosAsync = ref.watch(serviciosProvider(barberiaId!));
-    final reservaState = ref.watch(reservaNotifierProvider);
-    final screenWidth = MediaQuery.sizeOf(context).width;
-
-    final columns = screenWidth < 600
-        ? 1
-        : screenWidth < 1024
-        ? 2
-        : 3;
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('¿Qué servicio deseas?')),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const _ReservaProgress(),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: serviciosAsync.when(
-                    loading: () => const _LoadingServicios(),
-                    error: (error, stackTrace) {
-                      return BarberiaErrorWidget(
-                        message:
-                            'No pudimos cargar los servicios. Intenta nuevamente.',
-                        onRetry: () =>
-                            ref.refresh(serviciosProvider(barberiaId)),
-                      );
-                    },
-                    data: (servicios) {
-                      final activos = servicios.where((s) => s.activo).toList();
-                      final tipos = <String>{for (final s in activos) s.tipo}
-                          .toList()
-                        ..sort();
-                      final filtros = [_todos, ...tipos];
-                      final filtroActivo = filtros.contains(_filtroSeleccionado)
-                          ? _filtroSeleccionado
-                          : _todos;
-                      final filtrados = filtroActivo == _todos
-                          ? activos
-                          : activos
-                                .where((s) => s.tipo == filtroActivo)
-                                .toList();
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _FiltroServicios(
-                            filtros: filtros,
-                            seleccionado: filtroActivo,
-                            onChanged: (filtro) =>
-                                setState(() => _filtroSeleccionado = filtro),
-                          ),
-                          const SizedBox(height: 14),
-                          Expanded(
-                            child: filtrados.isEmpty
-                                ? const _EmptyServicios()
-                                : GridView.builder(
-                                    itemCount: filtrados.length,
-                                    gridDelegate:
-                                        SliverGridDelegateWithFixedCrossAxisCount(
-                                          crossAxisCount: columns,
-                                          crossAxisSpacing: 12,
-                                          mainAxisSpacing: 12,
-                                          childAspectRatio: columns == 1
-                                              ? 2.5
-                                              : 1.55,
-                                        ),
-                                    itemBuilder: (context, index) {
-                                      final servicio = filtrados[index];
-                                      final seleccionado =
-                                          reservaState
-                                              .servicioSeleccionado
-                                              ?.id ==
-                                          servicio.id;
-
-                                      return ServicioCard(
-                                        servicio: servicio,
-                                        seleccionado: seleccionado,
-                                        onTap: () {
-                                          ref
-                                              .read(
-                                                reservaNotifierProvider
-                                                    .notifier,
-                                              )
-                                              .seleccionarServicio(servicio);
-                                          context.go('/reservar/barbero');
-                                        },
-                                      );
-                                    },
-                                  ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
+        body: BarberiaErrorWidget(
+          message: 'No pudimos cargar la información de tu barbería.',
+          onRetry: () => ref.refresh(myBarbershopProvider),
         ),
       ),
+      data: (barbershop) {
+        if (barbershop == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('¿Qué servicio deseas?')),
+            body: const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'No hay una barbería configurada. Contacta al administrador.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          );
+        }
+
+        final barberiaId = barbershop.id;
+        final serviciosAsync = ref.watch(serviciosProvider(barberiaId));
+        final reservaState = ref.watch(reservaNotifierProvider);
+        final screenWidth = MediaQuery.sizeOf(context).width;
+
+        final columns = screenWidth < 600
+            ? 1
+            : screenWidth < 1024
+            ? 2
+            : 3;
+
+        return Scaffold(
+          appBar: AppBar(title: const Text('¿Qué servicio deseas?')),
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _ReservaProgress(),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: serviciosAsync.when(
+                        loading: () => const _LoadingServicios(),
+                        error: (error, stackTrace) {
+                          return BarberiaErrorWidget(
+                            message:
+                                'No pudimos cargar los servicios. Intenta nuevamente.',
+                            onRetry: () =>
+                                ref.refresh(serviciosProvider(barberiaId)),
+                          );
+                        },
+                        data: (servicios) {
+                          final activos = servicios
+                              .where((s) => s.activo)
+                              .toList();
+                          final tipos = <String>{
+                            for (final s in activos) s.tipo,
+                          }.toList()..sort();
+                          final filtros = [_todos, ...tipos];
+                          final filtroActivo =
+                              filtros.contains(_filtroSeleccionado)
+                              ? _filtroSeleccionado
+                              : _todos;
+                          final filtrados = filtroActivo == _todos
+                              ? activos
+                              : activos
+                                    .where((s) => s.tipo == filtroActivo)
+                                    .toList();
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _FiltroServicios(
+                                filtros: filtros,
+                                seleccionado: filtroActivo,
+                                onChanged: (filtro) => setState(
+                                  () => _filtroSeleccionado = filtro,
+                                ),
+                              ),
+                              const SizedBox(height: 14),
+                              Expanded(
+                                child: filtrados.isEmpty
+                                    ? const _EmptyServicios()
+                                    : GridView.builder(
+                                        itemCount: filtrados.length,
+                                        gridDelegate:
+                                            SliverGridDelegateWithFixedCrossAxisCount(
+                                              crossAxisCount: columns,
+                                              crossAxisSpacing: 12,
+                                              mainAxisSpacing: 12,
+                                              childAspectRatio: columns == 1
+                                                  ? 2.5
+                                                  : 1.55,
+                                            ),
+                                        itemBuilder: (context, index) {
+                                          final servicio = filtrados[index];
+                                          final seleccionado =
+                                              reservaState
+                                                  .servicioSeleccionado
+                                                  ?.id ==
+                                              servicio.id;
+
+                                          return ServicioCard(
+                                            servicio: servicio,
+                                            seleccionado: seleccionado,
+                                            onTap: () {
+                                              ref
+                                                  .read(
+                                                    reservaNotifierProvider
+                                                        .notifier,
+                                                  )
+                                                  .seleccionarServicio(
+                                                    servicio,
+                                                  );
+                                              context.go('/reservar/barbero');
+                                            },
+                                          );
+                                        },
+                                      ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -171,7 +193,9 @@ class _ReservaProgress extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: i == 0
                         ? AppColors.primary
-                        : AppColors.textMutedOf(context).withValues(alpha: 0.25),
+                        : AppColors.textMutedOf(
+                            context,
+                          ).withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),

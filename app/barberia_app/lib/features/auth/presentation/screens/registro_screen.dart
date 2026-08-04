@@ -117,7 +117,9 @@ class _RegistroScreenState extends ConsumerState<RegistroScreen> {
 
                   if (!correo.contains('@')) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Ingresa un correo válido.')),
+                      const SnackBar(
+                        content: Text('Ingresa un correo válido.'),
+                      ),
                     );
                     return;
                   }
@@ -172,8 +174,7 @@ class _RegistroScreenState extends ConsumerState<RegistroScreen> {
                         sound: true,
                       );
 
-                      final token = await FirebaseMessaging.instance
-                          .getToken();
+                      final token = await FirebaseMessaging.instance.getToken();
                       if (token != null && token.isNotEmpty) {
                         await authRepository.actualizarTokenFCM(token);
                       }
@@ -186,7 +187,7 @@ class _RegistroScreenState extends ConsumerState<RegistroScreen> {
                     }
 
                     ref.invalidate(authRoleProvider);
-                    context.go('/select-barbershop');
+                    context.go('/dashboard');
                   } finally {
                     if (mounted) {
                       setState(() => _loading = false);

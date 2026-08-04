@@ -3,12 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/data/auth_repository.dart';
-import '../../features/barberias/presentation/providers/selected_barbershop_provider.dart';
 import 'auth_role_provider.dart';
 
 /// Shared "cerrar sesión" AppBar action: confirms before signing out, then
-/// clears the session and the selected barbershop consistently everywhere
-/// it's used, instead of each screen re-implementing its own copy.
+/// clears the session consistently everywhere it's used, instead of each
+/// screen re-implementing its own copy.
 class LogoutButton extends ConsumerStatefulWidget {
   const LogoutButton({super.key, this.disabled = false});
 
@@ -57,9 +56,6 @@ class _LogoutButtonState extends ConsumerState<LogoutButton> {
               setState(() => _loggingOut = true);
               try {
                 await ref.read(authRepositoryProvider).logout();
-                await ref
-                    .read(selectedBarbershopProvider.notifier)
-                    .clearSelection();
                 ref.invalidate(authRoleProvider);
                 if (!context.mounted) {
                   return;

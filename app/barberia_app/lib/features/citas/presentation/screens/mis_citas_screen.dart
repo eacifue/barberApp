@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/auth/logout_button.dart';
-import '../../../barberias/presentation/providers/selected_barbershop_provider.dart';
+import '../../../barberias/presentation/providers/barbershops_provider.dart';
 import '../../../../shared/widgets/error_widget.dart';
 import '../../domain/models/cita_model.dart';
 import '../providers/citas_provider.dart';
@@ -21,96 +21,106 @@ class _MisCitasScreenState extends ConsumerState<MisCitasScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedState = ref.watch(selectedBarbershopProvider);
-    final barberiaId = selectedState.barberiaId;
-    final citasAsync = (barberiaId ?? '').isEmpty
-        ? const AsyncValue<List<CitaModel>>.data([])
-        : ref.watch(misCitasProvider(barberiaId!));
+    final barbershopAsync = ref.watch(myBarbershopProvider);
     final repo = ref.watch(citaRepositoryProvider);
 
-    if ((barberiaId ?? '').isEmpty) {
-      return Scaffold(
+    return barbershopAsync.when(
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (error, stackTrace) => Scaffold(
         appBar: AppBar(title: const Text('Mis citas')),
-        body: Center(
-          child: ElevatedButton(
-            onPressed: () => context.go('/select-barbershop'),
-            child: const Text('Seleccionar barbería'),
-          ),
+        body: BarberiaErrorWidget(
+          message: 'No pudimos cargar la información de tu barbería.',
+          onRetry: () => ref.refresh(myBarbershopProvider),
         ),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mis citas'),
-        actions: [
-          IconButton(
-            tooltip: 'Cambiar barbería',
-            onPressed: () => context.go('/select-barbershop'),
-            icon: const Icon(Icons.storefront_rounded),
-          ),
-          const LogoutButton(),
-        ],
       ),
-      body: citasAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => BarberiaErrorWidget(
-          message: 'No pudimos cargar tus citas.',
-          onRetry: () => ref.invalidate(misCitasProvider(barberiaId!)),
-        ),
-        data: (citas) {
-          final proximas = _proximas(citas);
-          final historial = _historial(citas);
-
-          return DefaultTabController(
-            length: 2,
-            child: Column(
-              children: [
-                const TabBar(
-                  tabs: [
-                    Tab(text: 'PRÓXIMAS'),
-                    Tab(text: 'HISTORIAL'),
-                  ],
+      data: (barbershop) {
+        if (barbershop == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Mis citas')),
+            body: const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text(
+                  'No hay una barbería configurada. Contacta al administrador.',
+                  textAlign: TextAlign.center,
                 ),
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      _CitasList(
-                        items: proximas,
-                        citaCancelandoId: _citaCancelandoId,
-                        onTap: (cita) => context.go('/appointments/${cita.id}'),
-                        onCancelar: (cita) async {
-                          final ok = await _confirmCancel(context);
-                          if (!ok || !mounted) {
-                            return;
-                          }
-                          setState(() => _citaCancelandoId = cita.id);
-                          try {
-                            await repo.cancelarCita(
-                              cita.id,
-                              motivo: 'Cancelada por cliente en app',
-                            );
-                            ref.invalidate(misCitasProvider(barberiaId!));
-                          } finally {
-                            if (mounted) {
-                              setState(() => _citaCancelandoId = null);
-                            }
-                          }
-                        },
-                      ),
-                      _CitasList(
-                        items: historial,
-                        citaCancelandoId: _citaCancelandoId,
-                        onTap: (cita) => context.go('/appointments/${cita.id}'),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
           );
-        },
-      ),
+        }
+
+        final barberiaId = barbershop.id;
+        final citasAsync = ref.watch(misCitasProvider(barberiaId));
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Mis citas'),
+            actions: [const LogoutButton()],
+          ),
+          body: citasAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, stackTrace) => BarberiaErrorWidget(
+              message: 'No pudimos cargar tus citas.',
+              onRetry: () => ref.invalidate(misCitasProvider(barberiaId)),
+            ),
+            data: (citas) {
+              final proximas = _proximas(citas);
+              final historial = _historial(citas);
+
+              return DefaultTabController(
+                length: 2,
+                child: Column(
+                  children: [
+                    const TabBar(
+                      tabs: [
+                        Tab(text: 'PRÓXIMAS'),
+                        Tab(text: 'HISTORIAL'),
+                      ],
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _CitasList(
+                            items: proximas,
+                            citaCancelandoId: _citaCancelandoId,
+                            onTap: (cita) =>
+                                context.go('/appointments/${cita.id}'),
+                            onCancelar: (cita) async {
+                              final ok = await _confirmCancel(context);
+                              if (!ok || !mounted) {
+                                return;
+                              }
+                              setState(() => _citaCancelandoId = cita.id);
+                              try {
+                                await repo.cancelarCita(
+                                  cita.id,
+                                  motivo: 'Cancelada por cliente en app',
+                                );
+                                ref.invalidate(misCitasProvider(barberiaId));
+                              } finally {
+                                if (mounted) {
+                                  setState(() => _citaCancelandoId = null);
+                                }
+                              }
+                            },
+                          ),
+                          _CitasList(
+                            items: historial,
+                            citaCancelandoId: _citaCancelandoId,
+                            onTap: (cita) =>
+                                context.go('/appointments/${cita.id}'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
