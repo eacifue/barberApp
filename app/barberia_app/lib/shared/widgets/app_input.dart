@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class AppInput extends StatelessWidget {
+class AppInput extends StatefulWidget {
   const AppInput({
     super.key,
     required this.controller,
@@ -25,16 +25,43 @@ class AppInput extends StatelessWidget {
   final TextInputAction? textInputAction;
 
   @override
+  State<AppInput> createState() => _AppInputState();
+}
+
+class _AppInputState extends State<AppInput> {
+  late bool _obscured;
+
+  @override
+  void initState() {
+    super.initState();
+    _obscured = widget.obscureText;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      autocorrect: autocorrect,
-      minLines: minLines,
-      maxLines: maxLines,
-      textInputAction: textInputAction,
-      decoration: InputDecoration(labelText: label, hintText: hint),
+      controller: widget.controller,
+      keyboardType: widget.keyboardType,
+      obscureText: widget.obscureText && _obscured,
+      autocorrect: widget.autocorrect,
+      minLines: widget.minLines,
+      maxLines: widget.obscureText ? 1 : widget.maxLines,
+      textInputAction: widget.textInputAction,
+      decoration: InputDecoration(
+        labelText: widget.label,
+        hintText: widget.hint,
+        suffixIcon: widget.obscureText
+            ? IconButton(
+                tooltip: _obscured ? 'Mostrar contraseña' : 'Ocultar contraseña',
+                icon: Icon(
+                  _obscured
+                      ? Icons.visibility_rounded
+                      : Icons.visibility_off_rounded,
+                ),
+                onPressed: () => setState(() => _obscured = !_obscured),
+              )
+            : null,
+      ),
     );
   }
 }

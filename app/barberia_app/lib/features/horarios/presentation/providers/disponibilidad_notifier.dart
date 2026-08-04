@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../barberias/presentation/providers/barbershops_provider.dart';
+import '../../../barberias/presentation/providers/selected_barbershop_provider.dart';
 import '../../../citas/presentation/providers/reserva_notifier.dart';
 import '../../data/bloqueo_repository.dart';
 import '../../domain/slot_model.dart';
@@ -11,14 +13,37 @@ import 'disponibilidad_state.dart';
 class DisponibilidadNotifier extends StateNotifier<DisponibilidadState> {
   DisponibilidadNotifier(this._ref)
     : _bloqueoRepository = _ref.read(bloqueoRepositoryProvider),
-      super(
-        DisponibilidadState(
-          fechaSeleccionada: _siguienteFechaHabil(_soloFecha(DateTime.now())),
-        ),
-      );
+      super(DisponibilidadState(fechaSeleccionada: _soloFecha(DateTime.now()))) {
+    state = state.copyWith(
+      fechaSeleccionada: _siguienteFechaHabil(state.fechaSeleccionada),
+    );
+  }
 
   final Ref _ref;
   final BloqueoRepository _bloqueoRepository;
+
+  /// Whether the currently selected barbershop is open on [date]'s weekday.
+  /// Falls back to "open" when the barbershop isn't resolved yet, so the
+  /// calendar never blocks booking on a data-loading hiccup.
+  bool _esDiaLaborable(DateTime date) {
+    final barberiaId = _ref.read(selectedBarbershopProvider).barberiaId;
+    if (barberiaId == null) {
+      return true;
+    }
+
+    final barbershops = _ref.read(barbershopsProvider).valueOrNull;
+    if (barbershops == null) {
+      return true;
+    }
+
+    for (final barbershop in barbershops) {
+      if (barbershop.id == barberiaId) {
+        return barbershop.esDiaLaborable(date);
+      }
+    }
+
+    return true;
+  }
 
   Future<void> reiniciarParaNuevaSeleccion({
     required String barberoId,
@@ -181,6 +206,16 @@ class DisponibilidadNotifier extends StateNotifier<DisponibilidadState> {
     _ref.read(reservaNotifierProvider.notifier).limpiarSlotYToken();
   }
 
+  DateTime _siguienteFechaHabil(DateTime date) {
+    var candidate = _soloFecha(date);
+    var intentos = 0;
+    while (!_esDiaLaborable(candidate) && intentos < 7) {
+      candidate = candidate.add(const Duration(days: 1));
+      intentos++;
+    }
+    return candidate;
+  }
+
   @override
   void dispose() {
     state.timerBloqueo?.cancel();
@@ -189,11 +224,3 @@ class DisponibilidadNotifier extends StateNotifier<DisponibilidadState> {
 }
 
 DateTime _soloFecha(DateTime date) => DateTime(date.year, date.month, date.day);
-
-DateTime _siguienteFechaHabil(DateTime date) {
-  var candidate = _soloFecha(date);
-  while (candidate.weekday == DateTime.sunday) {
-    candidate = candidate.add(const Duration(days: 1));
-  }
-  return candidate;
-}
