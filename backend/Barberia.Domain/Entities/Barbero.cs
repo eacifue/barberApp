@@ -4,8 +4,6 @@ namespace Barberia.Domain.Entities;
 
 public class Barbero : BaseEntity
 {
-    public Guid BarberiaId { get; set; }
-
     public string Nombre { get; set; } = string.Empty;
 
     public string Apellido { get; set; } = string.Empty;
@@ -27,8 +25,6 @@ public class Barbero : BaseEntity
     public bool Disponible { get; set; } = true;
 
     public decimal RatingPromedio { get; set; }
-
-    public Barberia Barberia { get; set; } = null!;
 
     public ICollection<HorarioSemana> HorariosSemana { get; set; } = new List<HorarioSemana>();
 

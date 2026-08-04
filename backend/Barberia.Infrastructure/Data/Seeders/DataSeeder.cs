@@ -56,7 +56,6 @@ public static class DataSeeder
         {
             new()
             {
-                Barberia = barberia,
                 Nombre = "Corte",
                 Descripcion = "Corte clasico o moderno personalizado.",
                 Tipo = TipoServicio.Corte,
@@ -65,7 +64,6 @@ public static class DataSeeder
             },
             new()
             {
-                Barberia = barberia,
                 Nombre = "Barba",
                 Descripcion = "Perfilado y cuidado profesional de barba.",
                 Tipo = TipoServicio.Barba,
@@ -74,7 +72,6 @@ public static class DataSeeder
             },
             new()
             {
-                Barberia = barberia,
                 Nombre = "Combo",
                 Descripcion = "Corte + barba con atencion integral.",
                 Tipo = TipoServicio.Combo,
@@ -83,7 +80,6 @@ public static class DataSeeder
             },
             new()
             {
-                Barberia = barberia,
                 Nombre = "Tinte",
                 Descripcion = "Coloracion profesional para cabello.",
                 Tipo = TipoServicio.Tinte,
@@ -92,7 +88,6 @@ public static class DataSeeder
             },
             new()
             {
-                Barberia = barberia,
                 Nombre = "Afeitado",
                 Descripcion = "Afeitado al ras con toalla caliente.",
                 Tipo = TipoServicio.Afeitado,
@@ -105,7 +100,6 @@ public static class DataSeeder
         {
             new()
             {
-                Barberia = barberia,
                 Nombre = "Santiago",
                 Apellido = "Restrepo",
                 Telefono = "+57 3011111111",
@@ -118,7 +112,6 @@ public static class DataSeeder
             },
             new()
             {
-                Barberia = barberia,
                 Nombre = "Andres",
                 Apellido = "Gomez",
                 Telefono = "+57 3022222222",
@@ -131,7 +124,6 @@ public static class DataSeeder
             },
             new()
             {
-                Barberia = barberia,
                 Nombre = "Mateo",
                 Apellido = "Lopez",
                 Telefono = "+57 3033333333",

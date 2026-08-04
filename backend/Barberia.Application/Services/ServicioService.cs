@@ -2,7 +2,6 @@ using AutoMapper;
 using Barberia.Application.DTOs.Servicios;
 using Barberia.Application.Exceptions;
 using Barberia.Application.Interfaces.Persistence.Context;
-using Barberia.Application.Interfaces.Services.Barberias;
 using Barberia.Application.Interfaces.Services.Servicios;
 using Barberia.Domain.Entities;
 using FluentValidation;
@@ -15,18 +14,15 @@ public class ServicioService : IServicioService
 {
     private readonly IBarberiaDbContext dbContext;
     private readonly IMapper mapper;
-    private readonly IBarberiaService barberiaService;
     private readonly IValidator<CreateServicioRequest> createValidator;
 
     public ServicioService(
         IBarberiaDbContext dbContext,
         IMapper mapper,
-        IBarberiaService barberiaService,
         IValidator<CreateServicioRequest> createValidator)
     {
         this.dbContext = dbContext;
         this.mapper = mapper;
-        this.barberiaService = barberiaService;
         this.createValidator = createValidator;
     }
 
@@ -34,7 +30,7 @@ public class ServicioService : IServicioService
     {
         var servicios = await dbContext.Servicios
             .AsNoTracking()
-            .Where(x => x.BarberiaId == barberiaId && x.Activo)
+            .Where(x => x.Activo)
             .OrderBy(x => x.Nombre)
             .ToListAsync(cancellationToken);
 
@@ -59,11 +55,8 @@ public class ServicioService : IServicioService
     {
         await ValidateCreateOrUpdateAsync(request, cancellationToken);
 
-        var barberiaId = await barberiaService.GetCurrentBarberiaIdAsync(cancellationToken);
-
         var servicio = new Servicio
         {
-            BarberiaId = barberiaId,
             Nombre = request.Nombre.Trim(),
             Descripcion = request.Descripcion.Trim(),
             Tipo = request.Tipo,
@@ -91,9 +84,6 @@ public class ServicioService : IServicioService
             throw new NotFoundException("El servicio no existe.");
         }
 
-        var barberiaId = await barberiaService.GetCurrentBarberiaIdAsync(cancellationToken);
-
-        servicio.BarberiaId = barberiaId;
         servicio.Nombre = request.Nombre.Trim();
         servicio.Descripcion = request.Descripcion.Trim();
         servicio.Tipo = request.Tipo;

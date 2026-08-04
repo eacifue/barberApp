@@ -38,8 +38,4 @@ public class Barberia : BaseEntity
     public List<DiaSemana> DiasDescanso { get; set; } = new();
 
     public bool Activa { get; set; } = true;
-
-    public ICollection<Barbero> Barberos { get; set; } = new List<Barbero>();
-
-    public ICollection<Servicio> Servicios { get; set; } = new List<Servicio>();
 }

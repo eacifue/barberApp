@@ -136,11 +136,6 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
             entity.Property(x => x.Precio).HasPrecision(12, 2).IsRequired();
             entity.Property(x => x.FotoUrl).HasMaxLength(500);
 
-            entity.HasOne(x => x.Barberia)
-                .WithMany(x => x.Servicios)
-                .HasForeignKey(x => x.BarberiaId)
-                .OnDelete(DeleteBehavior.Restrict);
-
             entity.HasQueryFilter(x =>
                 BypassTenantFilter ||
                 CurrentRole == Roles.Cliente ||
@@ -176,11 +171,6 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
                 .HasConversion(especialidadesConverter)
                 .Metadata.SetValueComparer(especialidadesComparer);
             entity.Property(x => x.Especialidades).HasColumnType("jsonb");
-
-            entity.HasOne(x => x.Barberia)
-                .WithMany(x => x.Barberos)
-                .HasForeignKey(x => x.BarberiaId)
-                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasQueryFilter(x =>
                 BypassTenantFilter ||
@@ -325,7 +315,6 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
                 .HasDefaultValue(Roles.Cliente)
                 .IsRequired();
 
-            entity.Property(x => x.BarberiaId);
             entity.Property(x => x.BarberoId);
 
             entity.Property(x => x.Nombre).HasMaxLength(120).IsRequired();
@@ -343,13 +332,6 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
                 .IsUnique()
                 .HasDatabaseName("UX_clientes_admin_rol")
                 .HasFilter("\"Rol\" = 'Admin'");
-
-            entity.ToTable(table =>
-            {
-                table.HasCheckConstraint(
-                    "CK_clientes_role_barberia",
-                    "(\"Rol\" = 'Admin' AND \"BarberiaId\" IS NULL) OR (\"Rol\" = 'AdministradorBarberia' AND \"BarberiaId\" IS NOT NULL) OR (\"Rol\" = 'Barbero' AND \"BarberiaId\" IS NOT NULL) OR (\"Rol\" = 'Cliente')");
-            });
 
             entity.HasQueryFilter(x =>
                 BypassTenantFilter ||

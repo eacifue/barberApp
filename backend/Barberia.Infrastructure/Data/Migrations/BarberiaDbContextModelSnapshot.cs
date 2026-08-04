@@ -209,9 +209,6 @@ namespace Barberia.Infrastructure.Data.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
 
-                    b.Property<Guid>("BarberiaId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Biografia")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -258,8 +255,6 @@ namespace Barberia.Infrastructure.Data.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("BarberiaId");
 
                     b.ToTable("barberos", (string)null);
                 });
@@ -397,9 +392,6 @@ namespace Barberia.Infrastructure.Data.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
 
-                    b.Property<Guid?>("BarberiaId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid?>("BarberoId")
                         .HasColumnType("uuid");
 
@@ -460,10 +452,7 @@ namespace Barberia.Infrastructure.Data.Migrations
                         .HasDatabaseName("UX_clientes_admin_rol")
                         .HasFilter("\"Rol\" = 'Admin'");
 
-                    b.ToTable("clientes", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_clientes_role_barberia", "(\"Rol\" = 'Admin' AND \"BarberiaId\" IS NULL) OR (\"Rol\" = 'AdministradorBarberia' AND \"BarberiaId\" IS NOT NULL) OR (\"Rol\" = 'Barbero' AND \"BarberiaId\" IS NOT NULL) OR (\"Rol\" = 'Cliente')");
-                        });
+                    b.ToTable("clientes", (string)null);
                 });
 
             modelBuilder.Entity("Barberia.Domain.Entities.HorarioSemana", b =>
@@ -560,9 +549,6 @@ namespace Barberia.Infrastructure.Data.Migrations
                     b.Property<bool>("Activo")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("BarberiaId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -597,8 +583,6 @@ namespace Barberia.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BarberiaId");
-
                     b.ToTable("servicios", (string)null);
                 });
 
@@ -622,17 +606,6 @@ namespace Barberia.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Barber");
-                });
-
-            modelBuilder.Entity("Barberia.Domain.Entities.Barbero", b =>
-                {
-                    b.HasOne("Barberia.Domain.Entities.Barberia", "Barberia")
-                        .WithMany("Barberos")
-                        .HasForeignKey("BarberiaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Barberia");
                 });
 
             modelBuilder.Entity("Barberia.Domain.Entities.BarberoServicio", b =>
@@ -728,24 +701,6 @@ namespace Barberia.Infrastructure.Data.Migrations
                     b.Navigation("Cita");
 
                     b.Navigation("Cliente");
-                });
-
-            modelBuilder.Entity("Barberia.Domain.Entities.Servicio", b =>
-                {
-                    b.HasOne("Barberia.Domain.Entities.Barberia", "Barberia")
-                        .WithMany("Servicios")
-                        .HasForeignKey("BarberiaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Barberia");
-                });
-
-            modelBuilder.Entity("Barberia.Domain.Entities.Barberia", b =>
-                {
-                    b.Navigation("Barberos");
-
-                    b.Navigation("Servicios");
                 });
 
             modelBuilder.Entity("Barberia.Domain.Entities.Barbero", b =>

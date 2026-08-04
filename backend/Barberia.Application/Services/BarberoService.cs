@@ -3,7 +3,6 @@ using Barberia.Application.DTOs.Barberos;
 using Barberia.Application.DTOs.Servicios;
 using Barberia.Application.Exceptions;
 using Barberia.Application.Interfaces.Persistence.Context;
-using Barberia.Application.Interfaces.Services.Barberias;
 using Barberia.Application.Interfaces.Services.Barberos;
 using Barberia.Domain.Entities;
 using FluentValidation;
@@ -16,20 +15,17 @@ public class BarberoService : IBarberoService
 {
     private readonly IBarberiaDbContext dbContext;
     private readonly IMapper mapper;
-    private readonly IBarberiaService barberiaService;
     private readonly IValidator<CreateBarberoRequest> createBarberoValidator;
     private readonly IValidator<SetHorarioRequest> setHorarioValidator;
 
     public BarberoService(
         IBarberiaDbContext dbContext,
         IMapper mapper,
-        IBarberiaService barberiaService,
         IValidator<CreateBarberoRequest> createBarberoValidator,
         IValidator<SetHorarioRequest> setHorarioValidator)
     {
         this.dbContext = dbContext;
         this.mapper = mapper;
-        this.barberiaService = barberiaService;
         this.createBarberoValidator = createBarberoValidator;
         this.setHorarioValidator = setHorarioValidator;
     }
@@ -38,7 +34,7 @@ public class BarberoService : IBarberoService
     {
         var barberos = await dbContext.Barberos
             .AsNoTracking()
-            .Where(x => x.BarberiaId == barberiaId && x.Activo)
+            .Where(x => x.Activo)
             .OrderBy(x => x.Nombre)
             .ThenBy(x => x.Apellido)
             .ToListAsync(cancellationToken);
@@ -79,11 +75,9 @@ public class BarberoService : IBarberoService
     {
         await ValidateCreateOrUpdateAsync(request, cancellationToken);
 
-        var barberiaId = await barberiaService.GetCurrentBarberiaIdAsync(cancellationToken);
-
         var servicioIds = request.ServicioIds.Distinct().ToList();
         var serviciosValidos = await dbContext.Servicios
-            .Where(x => servicioIds.Contains(x.Id) && x.BarberiaId == barberiaId && x.Activo)
+            .Where(x => servicioIds.Contains(x.Id) && x.Activo)
             .Select(x => x.Id)
             .ToListAsync(cancellationToken);
 
@@ -94,7 +88,6 @@ public class BarberoService : IBarberoService
 
         var barbero = new Barbero
         {
-            BarberiaId = barberiaId,
             Nombre = request.Nombre.Trim(),
             Apellido = request.Apellido.Trim(),
             Telefono = request.Telefono.Trim(),
@@ -136,11 +129,9 @@ public class BarberoService : IBarberoService
             throw new NotFoundException("El barbero no existe.");
         }
 
-        var barberiaId = await barberiaService.GetCurrentBarberiaIdAsync(cancellationToken);
-
         var servicioIds = request.ServicioIds.Distinct().ToList();
         var serviciosValidos = await dbContext.Servicios
-            .Where(x => servicioIds.Contains(x.Id) && x.BarberiaId == barberiaId && x.Activo)
+            .Where(x => servicioIds.Contains(x.Id) && x.Activo)
             .Select(x => x.Id)
             .ToListAsync(cancellationToken);
 
@@ -149,7 +140,6 @@ public class BarberoService : IBarberoService
             throw new AppValidationException("Uno o más servicios no son válidos para la barbería indicada.");
         }
 
-        barbero.BarberiaId = barberiaId;
         barbero.Nombre = request.Nombre.Trim();
         barbero.Apellido = request.Apellido.Trim();
         barbero.Telefono = request.Telefono.Trim();
@@ -228,11 +218,6 @@ public class BarberoService : IBarberoService
         if (servicio is null)
         {
             throw new NotFoundException("El servicio no existe.");
-        }
-
-        if (servicio.BarberiaId != barbero.BarberiaId)
-        {
-            throw new AppValidationException("No es posible asignar un servicio de otra barbería.");
         }
 
         var relacion = await dbContext.BarberoServicios

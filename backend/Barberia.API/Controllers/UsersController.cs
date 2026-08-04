@@ -2,7 +2,6 @@ using Barberia.Application.DTOs.Users;
 using Barberia.Application.Exceptions;
 using Barberia.Application.Interfaces.Persistence.Context;
 using Barberia.Application.Interfaces.Services;
-using Barberia.Application.Interfaces.Services.Barberias;
 using Barberia.Domain.Entities;
 using Barberia.Shared;
 using Barberia.Shared.Constants;
@@ -18,13 +17,11 @@ public class UsersController : ControllerBase
 {
     private readonly IBarberiaDbContext dbContext;
     private readonly ICurrentUserService currentUserService;
-    private readonly IBarberiaService barberiaService;
 
-    public UsersController(IBarberiaDbContext dbContext, ICurrentUserService currentUserService, IBarberiaService barberiaService)
+    public UsersController(IBarberiaDbContext dbContext, ICurrentUserService currentUserService)
     {
         this.dbContext = dbContext;
         this.currentUserService = currentUserService;
-        this.barberiaService = barberiaService;
     }
 
     [HttpGet("api/v1/users")]
@@ -82,8 +79,7 @@ public class UsersController : ControllerBase
         if (currentUserService.IsAdminBarberia && role is not (Roles.Barbero or Roles.Cliente))
             return Forbid();
 
-        var assignedBarberiaId = await ResolveTargetBarberiaIdAsync(role, cancellationToken);
-        var assignedBarberoId = await ResolveTargetBarberoIdAsync(role, assignedBarberiaId, request.BarberoId, cancellationToken);
+        var assignedBarberoId = await ResolveTargetBarberoIdAsync(role, request.BarberoId, cancellationToken);
 
         var validationError = ValidateRoleAssignment(role, assignedBarberoId);
         if (validationError is not null)
@@ -115,7 +111,6 @@ public class UsersController : ControllerBase
             Telefono = request.Telefono.Trim(),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             Rol = role,
-            BarberiaId = assignedBarberiaId,
             BarberoId = assignedBarberoId,
             Activo = true
         };
@@ -160,8 +155,7 @@ public class UsersController : ControllerBase
             cliente.Rol = newRole;
         }
 
-        var assignedBarberiaId = await ResolveTargetBarberiaIdAsync(newRole, cancellationToken);
-        var assignedBarberoId = await ResolveTargetBarberoIdAsync(newRole, assignedBarberiaId, request.BarberoId ?? cliente.BarberoId, cancellationToken);
+        var assignedBarberoId = await ResolveTargetBarberoIdAsync(newRole, request.BarberoId ?? cliente.BarberoId, cancellationToken);
 
         var validationError = ValidateRoleAssignment(newRole, assignedBarberoId);
         if (validationError is not null)
@@ -172,7 +166,6 @@ public class UsersController : ControllerBase
         if (!string.IsNullOrWhiteSpace(request.Telefono)) cliente.Telefono = request.Telefono.Trim();
         if (request.Activo.HasValue) cliente.Activo = request.Activo.Value;
 
-        cliente.BarberiaId = assignedBarberiaId;
         cliente.BarberoId = assignedBarberoId;
         cliente.Rol = newRole;
 
@@ -211,15 +204,7 @@ public class UsersController : ControllerBase
     private static UserDto ToDto(Cliente c) =>
         new(c.Id, c.Nombre, c.Apellido, c.Correo, c.Telefono, c.Rol, c.BarberoId, c.Activo, c.CreatedAt);
 
-    private async Task<Guid?> ResolveTargetBarberiaIdAsync(string role, CancellationToken cancellationToken)
-    {
-        if (role is not (Roles.AdminBarberia or Roles.Barbero))
-            return null;
-
-        return await barberiaService.GetCurrentBarberiaIdAsync(cancellationToken);
-    }
-
-    private async Task<Guid?> ResolveTargetBarberoIdAsync(string role, Guid? barberiaId, Guid? requestedBarberoId, CancellationToken cancellationToken)
+    private async Task<Guid?> ResolveTargetBarberoIdAsync(string role, Guid? requestedBarberoId, CancellationToken cancellationToken)
     {
         if (role != Roles.Barbero)
             return null;
@@ -229,10 +214,10 @@ public class UsersController : ControllerBase
 
         var exists = await dbContext.Barberos
             .IgnoreQueryFilters()
-            .AnyAsync(x => x.Id == requestedBarberoId.Value && x.Activo && (!barberiaId.HasValue || x.BarberiaId == barberiaId.Value), cancellationToken);
+            .AnyAsync(x => x.Id == requestedBarberoId.Value && x.Activo, cancellationToken);
 
         if (!exists)
-            throw new ValidationException("El barbero indicado no existe o no pertenece a la barbería seleccionada.");
+            throw new ValidationException("El barbero indicado no existe.");
 
         return requestedBarberoId;
     }

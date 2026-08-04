@@ -10,11 +10,6 @@ public class Cliente : BaseEntity
     public string Rol { get; set; } = "Cliente";
 
     /// <summary>
-    /// Barbería asociada (requerido para AdministradorBarberia, opcional para Barbero).
-    /// </summary>
-    public Guid? BarberiaId { get; set; }
-
-    /// <summary>
     /// Perfil de barbero asociado (solo cuando Rol = "Barbero").
     /// </summary>
     public Guid? BarberoId { get; set; }

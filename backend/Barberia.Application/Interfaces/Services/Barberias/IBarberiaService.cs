@@ -9,6 +9,4 @@ public interface IBarberiaService
     Task<BarberiaDto> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 
     Task<BarberiaDto> UpdateAsync(Guid id, UpsertBarberiaRequest request, CancellationToken cancellationToken);
-
-    Task<Guid> GetCurrentBarberiaIdAsync(CancellationToken cancellationToken);
 }

@@ -98,22 +98,6 @@ public sealed class BarberiaService : IBarberiaService
         }
     }
 
-    public async Task<Guid> GetCurrentBarberiaIdAsync(CancellationToken cancellationToken)
-    {
-        var id = await dbContext.Barberias
-            .AsNoTracking()
-            .Where(x => x.Activo && x.Activa)
-            .Select(x => x.Id)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (id == Guid.Empty)
-        {
-            throw new NotFoundException("No hay una barbería activa configurada.");
-        }
-
-        return id;
-    }
-
     private static List<DiaSemana> ParseDiasDescanso(List<string> diasDescanso)
     {
         var result = new List<DiaSemana>();
