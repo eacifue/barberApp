@@ -38,29 +38,7 @@ public sealed class ClienteAdminService : IClienteAdminService
             .OrderByDescending(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        var barberiaIds = clientes
-            .Where(x => x.BarberiaId.HasValue)
-            .Select(x => x.BarberiaId!.Value)
-            .Distinct()
-            .ToList();
-
-        var barberiasById = barberiaIds.Count == 0
-            ? new Dictionary<Guid, string>()
-            : await dbContext.Barberias
-                .AsNoTracking()
-                .Where(x => barberiaIds.Contains(x.Id))
-                .Select(x => new { x.Id, x.Nombre })
-                .ToDictionaryAsync(x => x.Id, x => x.Nombre, cancellationToken);
-
-        var dtos = mapper.Map<List<ClienteDto>>(clientes);
-        foreach (var dto in dtos)
-        {
-            dto.BarberiaNombre = dto.BarberiaId.HasValue && barberiasById.TryGetValue(dto.BarberiaId.Value, out var nombre)
-                ? nombre
-                : null;
-        }
-
-        return dtos;
+        return mapper.Map<List<ClienteDto>>(clientes);
     }
 
     public async Task<ClienteDto> GetByIdAsync(Guid id, CancellationToken cancellationToken)
@@ -74,29 +52,12 @@ public sealed class ClienteAdminService : IClienteAdminService
             throw new NotFoundException("El cliente no existe.");
         }
 
-        var dto = mapper.Map<ClienteDto>(cliente);
-        if (cliente.BarberiaId.HasValue)
-        {
-            dto.BarberiaNombre = await dbContext.Barberias
-                .AsNoTracking()
-                .Where(x => x.Id == cliente.BarberiaId.Value)
-                .Select(x => x.Nombre)
-                .FirstOrDefaultAsync(cancellationToken);
-        }
-
-        return dto;
+        return mapper.Map<ClienteDto>(cliente);
     }
 
     public async Task<ClienteDto> CreateAsync(CreateClienteAdminRequest request, CancellationToken cancellationToken)
     {
         await ValidateAsync(request, cancellationToken);
-
-        var barberiaId = request.BarberiaId;
-
-        if (barberiaId.HasValue)
-        {
-            await EnsureBarberiaExistsAsync(barberiaId.Value, cancellationToken);
-        }
 
         var correo = request.Correo.Trim().ToLowerInvariant();
         var existe = await dbContext.Clientes.AnyAsync(x => x.Correo == correo, cancellationToken);
@@ -108,7 +69,6 @@ public sealed class ClienteAdminService : IClienteAdminService
         var cliente = new Cliente
         {
             Rol = Roles.Cliente,
-            BarberiaId = barberiaId,
             Nombre = request.Nombre.Trim(),
             Apellido = request.Apellido.Trim(),
             Telefono = request.Telefono.Trim(),
@@ -126,13 +86,6 @@ public sealed class ClienteAdminService : IClienteAdminService
     public async Task<ClienteDto> UpdateAsync(Guid id, UpdateClienteAdminRequest request, CancellationToken cancellationToken)
     {
         await ValidateAsync(request, cancellationToken);
-
-        var barberiaId = request.BarberiaId;
-
-        if (barberiaId.HasValue)
-        {
-            await EnsureBarberiaExistsAsync(barberiaId.Value, cancellationToken);
-        }
 
         var cliente = await dbContext.Clientes
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -155,7 +108,6 @@ public sealed class ClienteAdminService : IClienteAdminService
         cliente.Apellido = request.Apellido.Trim();
         cliente.Telefono = request.Telefono.Trim();
         cliente.Correo = correo;
-        cliente.BarberiaId = barberiaId;
 
         if (!string.IsNullOrWhiteSpace(request.Password))
         {
@@ -216,18 +168,6 @@ public sealed class ClienteAdminService : IClienteAdminService
             throw new AppValidationException(
                 "La solicitud contiene errores de validación.",
                 validationResult.Errors.Select(x => x.ErrorMessage).ToArray());
-        }
-    }
-
-    private async Task EnsureBarberiaExistsAsync(Guid barberiaId, CancellationToken cancellationToken)
-    {
-        var exists = await dbContext.Barberias
-            .AsNoTracking()
-            .AnyAsync(x => x.Id == barberiaId && x.Activa && x.Activo, cancellationToken);
-
-        if (!exists)
-        {
-            throw new AppValidationException("La barbería seleccionada no existe o está inactiva.");
         }
     }
 }

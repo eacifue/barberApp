@@ -27,9 +27,5 @@ public sealed class CreateClienteAdminRequestValidator : AbstractValidator<Creat
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("La contraseña es requerida.")
             .MinimumLength(6).WithMessage("La contraseña debe tener al menos 6 caracteres.");
-
-        RuleFor(x => x.BarberiaId)
-            .NotEqual(Guid.Empty).WithMessage("La barbería seleccionada no es válida.")
-            .When(x => x.BarberiaId.HasValue);
     }
 }

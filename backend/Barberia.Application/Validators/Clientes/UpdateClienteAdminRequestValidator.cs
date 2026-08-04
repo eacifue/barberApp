@@ -27,9 +27,5 @@ public sealed class UpdateClienteAdminRequestValidator : AbstractValidator<Updat
         RuleFor(x => x.Password)
             .MinimumLength(6).WithMessage("La contraseña debe tener al menos 6 caracteres.")
             .When(x => !string.IsNullOrWhiteSpace(x.Password));
-
-        RuleFor(x => x.BarberiaId)
-            .NotEqual(Guid.Empty).WithMessage("La barbería seleccionada no es válida.")
-            .When(x => x.BarberiaId.HasValue);
     }
 }

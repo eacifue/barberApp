@@ -4,10 +4,6 @@ public sealed class ClienteDto
 {
     public Guid Id { get; set; }
 
-    public Guid? BarberiaId { get; set; }
-
-    public string? BarberiaNombre { get; set; }
-
     public string Nombre { get; set; } = string.Empty;
 
     public string Apellido { get; set; } = string.Empty;

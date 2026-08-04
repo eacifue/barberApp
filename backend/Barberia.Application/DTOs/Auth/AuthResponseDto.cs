@@ -12,7 +12,5 @@ public class AuthResponseDto
 
     public string NombreCompleto { get; set; } = string.Empty;
 
-    public Guid? BarberiaId { get; set; }
-
     public Guid? BarberoId { get; set; }
 }

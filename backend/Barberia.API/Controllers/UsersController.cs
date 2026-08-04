@@ -2,6 +2,7 @@ using Barberia.Application.DTOs.Users;
 using Barberia.Application.Exceptions;
 using Barberia.Application.Interfaces.Persistence.Context;
 using Barberia.Application.Interfaces.Services;
+using Barberia.Application.Interfaces.Services.Barberias;
 using Barberia.Domain.Entities;
 using Barberia.Shared;
 using Barberia.Shared.Constants;
@@ -17,11 +18,13 @@ public class UsersController : ControllerBase
 {
     private readonly IBarberiaDbContext dbContext;
     private readonly ICurrentUserService currentUserService;
+    private readonly IBarberiaService barberiaService;
 
-    public UsersController(IBarberiaDbContext dbContext, ICurrentUserService currentUserService)
+    public UsersController(IBarberiaDbContext dbContext, ICurrentUserService currentUserService, IBarberiaService barberiaService)
     {
         this.dbContext = dbContext;
         this.currentUserService = currentUserService;
+        this.barberiaService = barberiaService;
     }
 
     [HttpGet("api/v1/users")]
@@ -37,7 +40,6 @@ public class UsersController : ControllerBase
                 x.Correo,
                 x.Telefono,
                 x.Rol,
-                x.BarberiaId,
                 x.BarberoId,
                 x.Activo,
                 x.CreatedAt))
@@ -59,7 +61,6 @@ public class UsersController : ControllerBase
                 x.Correo,
                 x.Telefono,
                 x.Rol,
-                x.BarberiaId,
                 x.BarberoId,
                 x.Activo,
                 x.CreatedAt))
@@ -81,10 +82,10 @@ public class UsersController : ControllerBase
         if (currentUserService.IsAdminBarberia && role is not (Roles.Barbero or Roles.Cliente))
             return Forbid();
 
-        var assignedBarberiaId = ResolveTargetBarberiaId(role, request.BarberiaId);
+        var assignedBarberiaId = await ResolveTargetBarberiaIdAsync(role, cancellationToken);
         var assignedBarberoId = await ResolveTargetBarberoIdAsync(role, assignedBarberiaId, request.BarberoId, cancellationToken);
 
-        var validationError = await ValidateRoleAssignmentAsync(role, assignedBarberiaId, assignedBarberoId, cancellationToken);
+        var validationError = ValidateRoleAssignment(role, assignedBarberoId);
         if (validationError is not null)
             return validationError;
 
@@ -159,10 +160,10 @@ public class UsersController : ControllerBase
             cliente.Rol = newRole;
         }
 
-        var assignedBarberiaId = ResolveTargetBarberiaId(newRole, request.BarberiaId ?? cliente.BarberiaId);
+        var assignedBarberiaId = await ResolveTargetBarberiaIdAsync(newRole, cancellationToken);
         var assignedBarberoId = await ResolveTargetBarberoIdAsync(newRole, assignedBarberiaId, request.BarberoId ?? cliente.BarberoId, cancellationToken);
 
-        var validationError = await ValidateRoleAssignmentAsync(newRole, assignedBarberiaId, assignedBarberoId, cancellationToken);
+        var validationError = ValidateRoleAssignment(newRole, assignedBarberoId);
         if (validationError is not null)
             return validationError;
 
@@ -208,14 +209,14 @@ public class UsersController : ControllerBase
     }
 
     private static UserDto ToDto(Cliente c) =>
-        new(c.Id, c.Nombre, c.Apellido, c.Correo, c.Telefono, c.Rol, c.BarberiaId, c.BarberoId, c.Activo, c.CreatedAt);
+        new(c.Id, c.Nombre, c.Apellido, c.Correo, c.Telefono, c.Rol, c.BarberoId, c.Activo, c.CreatedAt);
 
-    private static Guid? ResolveTargetBarberiaId(string role, Guid? requestedBarberiaId)
+    private async Task<Guid?> ResolveTargetBarberiaIdAsync(string role, CancellationToken cancellationToken)
     {
-        if (role == Roles.Admin)
+        if (role is not (Roles.AdminBarberia or Roles.Barbero))
             return null;
 
-        return requestedBarberiaId;
+        return await barberiaService.GetCurrentBarberiaIdAsync(cancellationToken);
     }
 
     private async Task<Guid?> ResolveTargetBarberoIdAsync(string role, Guid? barberiaId, Guid? requestedBarberoId, CancellationToken cancellationToken)
@@ -236,36 +237,8 @@ public class UsersController : ControllerBase
         return requestedBarberoId;
     }
 
-    private async Task<ActionResult<ApiResponse<UserDto>>?> ValidateRoleAssignmentAsync(
-        string role,
-        Guid? barberiaId,
-        Guid? barberoId,
-        CancellationToken cancellationToken)
+    private ActionResult<ApiResponse<UserDto>>? ValidateRoleAssignment(string role, Guid? barberoId)
     {
-        if (role == Roles.Admin)
-        {
-            if (barberiaId.HasValue)
-                return BadRequest(ApiResponse<UserDto>.Fail("El usuario Admin no puede estar asociado a una barbería."));
-
-            return null;
-        }
-
-        if (role is Roles.AdminBarberia or Roles.Barbero)
-        {
-            if (!barberiaId.HasValue)
-                return BadRequest(ApiResponse<UserDto>.Fail($"La barbería es obligatoria para el rol {role}."));
-        }
-
-        if (barberiaId.HasValue)
-        {
-            var barberiaExists = await dbContext.Barberias
-                .IgnoreQueryFilters()
-                .AnyAsync(x => x.Id == barberiaId.Value && x.Activa && x.Activo, cancellationToken);
-
-            if (!barberiaExists)
-                return BadRequest(ApiResponse<UserDto>.Fail("La barbería indicada no existe o está inactiva."));
-        }
-
         if (role == Roles.Barbero && !barberoId.HasValue)
             return BadRequest(ApiResponse<UserDto>.Fail("El rol Barbero requiere un BarberoId asociado."));
 

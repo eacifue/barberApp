@@ -142,7 +142,6 @@ public class AuthService : IAuthService
             Correo = cliente.Correo,
             Rol = string.IsNullOrWhiteSpace(cliente.Rol) ? Roles.Cliente : cliente.Rol,
             NombreCompleto = $"{cliente.Nombre} {cliente.Apellido}".Trim(),
-            BarberiaId = cliente.BarberiaId,
             BarberoId = cliente.BarberoId
         };
     }

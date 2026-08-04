@@ -7,10 +7,6 @@ public class CreateServicioValidator : AbstractValidator<CreateServicioRequest>
 {
     public CreateServicioValidator()
     {
-        RuleFor(x => x.BarberiaId)
-            .NotEmpty()
-            .WithMessage("La barbería es obligatoria.");
-
         RuleFor(x => x.Nombre)
             .NotEmpty()
             .WithMessage("El nombre es obligatorio.")

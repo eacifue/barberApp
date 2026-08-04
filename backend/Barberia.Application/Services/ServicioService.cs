@@ -2,6 +2,7 @@ using AutoMapper;
 using Barberia.Application.DTOs.Servicios;
 using Barberia.Application.Exceptions;
 using Barberia.Application.Interfaces.Persistence.Context;
+using Barberia.Application.Interfaces.Services.Barberias;
 using Barberia.Application.Interfaces.Services.Servicios;
 using Barberia.Domain.Entities;
 using FluentValidation;
@@ -14,15 +15,18 @@ public class ServicioService : IServicioService
 {
     private readonly IBarberiaDbContext dbContext;
     private readonly IMapper mapper;
+    private readonly IBarberiaService barberiaService;
     private readonly IValidator<CreateServicioRequest> createValidator;
 
     public ServicioService(
         IBarberiaDbContext dbContext,
         IMapper mapper,
+        IBarberiaService barberiaService,
         IValidator<CreateServicioRequest> createValidator)
     {
         this.dbContext = dbContext;
         this.mapper = mapper;
+        this.barberiaService = barberiaService;
         this.createValidator = createValidator;
     }
 
@@ -55,17 +59,11 @@ public class ServicioService : IServicioService
     {
         await ValidateCreateOrUpdateAsync(request, cancellationToken);
 
-        var existeBarberia = await dbContext.Barberias
-            .AnyAsync(x => x.Id == request.BarberiaId && x.Activa && x.Activo, cancellationToken);
-
-        if (!existeBarberia)
-        {
-            throw new NotFoundException("La barbería indicada no existe o está inactiva.");
-        }
+        var barberiaId = await barberiaService.GetCurrentBarberiaIdAsync(cancellationToken);
 
         var servicio = new Servicio
         {
-            BarberiaId = request.BarberiaId,
+            BarberiaId = barberiaId,
             Nombre = request.Nombre.Trim(),
             Descripcion = request.Descripcion.Trim(),
             Tipo = request.Tipo,
@@ -93,15 +91,9 @@ public class ServicioService : IServicioService
             throw new NotFoundException("El servicio no existe.");
         }
 
-        var existeBarberia = await dbContext.Barberias
-            .AnyAsync(x => x.Id == request.BarberiaId && x.Activa && x.Activo, cancellationToken);
+        var barberiaId = await barberiaService.GetCurrentBarberiaIdAsync(cancellationToken);
 
-        if (!existeBarberia)
-        {
-            throw new NotFoundException("La barbería indicada no existe o está inactiva.");
-        }
-
-        servicio.BarberiaId = request.BarberiaId;
+        servicio.BarberiaId = barberiaId;
         servicio.Nombre = request.Nombre.Trim();
         servicio.Descripcion = request.Descripcion.Trim();
         servicio.Tipo = request.Tipo;
