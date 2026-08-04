@@ -16,7 +16,6 @@ import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { DataTable } from '../../components/ui/DataTable'
 import { FormInput } from '../../components/ui/FormInput'
-import { FormSelect } from '../../components/ui/FormSelect'
 import { Modal } from '../../components/ui/Modal'
 import { toast } from '../../stores/toastStore'
 
@@ -46,7 +45,7 @@ const dayConfig: Array<{ key: AvailabilityDay; label: string }> = [
 ]
 
 export function BarberosList() {
-  const { canSelectBarberia, effectiveBarberiaId, setSelectedBarberiaId, tenantError } = useTenantBarberia()
+  const { effectiveBarberiaId, tenantError } = useTenantBarberia()
   const { barberiasQuery } = useBarberias()
   const barberias = barberiasQuery.data ?? []
 
@@ -83,18 +82,9 @@ export function BarberosList() {
     return map
   }, [citasHoyQuery.data])
 
-  useEffect(() => {
-    if (!canSelectBarberia) return
-    if (!effectiveBarberiaId && barberias.length > 0) {
-      setSelectedBarberiaId(barberias[0].id)
-    }
-  }, [barberias, canSelectBarberia, effectiveBarberiaId, setSelectedBarberiaId])
-
   const barberos = barberosQuery.data ?? []
   const servicios = serviciosQuery.data ?? []
   const isSaving = createMutation.isPending || updateMutation.isPending
-
-  const barberiaOptions = barberias.map((b) => ({ label: b.nombre, value: b.id }))
 
   const selectedBarberiaName = useMemo(() => {
     return barberias.find((b) => b.id === effectiveBarberiaId)?.nombre ?? '-'
@@ -267,21 +257,6 @@ export function BarberosList() {
         actions={<Button onClick={openCreateModal}>Agregar barbero</Button>}
       />
 
-      {canSelectBarberia ? (
-        <div className="mb-4 max-w-sm">
-          <FormSelect
-            label="Filtrar por barberia"
-            value={effectiveBarberiaId ?? ''}
-            onChange={(e) => setSelectedBarberiaId(e.target.value || null)}
-            options={
-              barberiaOptions.length > 0
-                ? barberiaOptions
-                : [{ label: 'Sin barberias disponibles', value: '' }]
-            }
-          />
-        </div>
-      ) : null}
-
       <DataTable<Barbero>
         loading={barberosQuery.isLoading || barberiasQuery.isLoading}
         emptyMessage="No hay barberos para la barberia seleccionada"
@@ -420,17 +395,6 @@ export function BarberosList() {
                 setForm((prev) => ({ ...prev, telefono: e.target.value.replace(/\D/g, '') }))
               }
             />
-            {canSelectBarberia ? (
-              <FormSelect
-                label="Barberia"
-                required
-                value={form.barberiaId}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, barberiaId: e.target.value, servicioIds: [] }))
-                }
-                options={barberiaOptions}
-              />
-            ) : null}
             <FormInput
               label="Anios experiencia"
               type="number"

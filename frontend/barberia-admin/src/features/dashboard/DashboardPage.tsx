@@ -69,14 +69,11 @@ export function DashboardPage() {
   const { barberiasQuery } = useBarberias()
   const barberias = barberiasQuery.data ?? []
 
-  // ── Barberos: un solo query por lista de IDs de barberias estabilizada ─────
-  const barberiaIds = useMemo(() => barberias.map((b) => b.id), [barberias])
-
+  // ── Barberos de la única barbería ───────────────────────────────────────────
   const allBarberosQuery = useQuery({
-    queryKey: ['dashboard-barberos', barberiaIds],
-    enabled: barberiaIds.length > 0,
-    queryFn: () =>
-      Promise.all(barberiaIds.map((id) => barberoService.getByBarberia(id))).then((g) => g.flat()),
+    queryKey: ['dashboard-barberos', effectiveBarberiaId],
+    enabled: Boolean(effectiveBarberiaId),
+    queryFn: () => barberoService.getByBarberia(effectiveBarberiaId as string),
   })
 
   const allBarberos = useMemo(() => allBarberosQuery.data ?? [], [allBarberosQuery.data])
@@ -394,7 +391,7 @@ export function DashboardPage() {
               <div>
                 <p className="text-sm font-semibold text-[var(--text-strong)]">Operación del mes</p>
                 <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
-                  {citasMes.length} citas registradas en el mes actual y {barberias.length} barberías conectadas al panel.
+                  {citasMes.length} citas registradas en el mes actual.
                 </p>
               </div>
             </div>

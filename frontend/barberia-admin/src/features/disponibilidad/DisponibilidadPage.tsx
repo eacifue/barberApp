@@ -70,7 +70,7 @@ function formatCountdown(slot: SlotDisponible, fetchedAt: number, nowMs: number)
 }
 
 export function DisponibilidadPage() {
-  const { canSelectBarberia, effectiveBarberiaId, tenantError } = useTenantBarberia()
+  const { effectiveBarberiaId, tenantError } = useTenantBarberia()
   const todayIso = new Date().toISOString().slice(0, 10)
   const [selectedDate, setSelectedDate] = useState(todayIso)
   const [selectedDayInWeek, setSelectedDayInWeek] = useState(todayIso)
@@ -91,12 +91,11 @@ export function DisponibilidadPage() {
   }, [])
 
   const allBarberosQuery = useQuery({
-    queryKey: ['barberos-all', barberias.map((b) => b.id).join(',')],
-    enabled: barberias.length > 0,
+    queryKey: ['barberos-for-barberia', effectiveBarberiaId],
+    enabled: Boolean(effectiveBarberiaId),
     queryFn: async () => {
-      const responses = await Promise.all(barberias.map((barberia) => barberoService.getByBarberia(barberia.id)))
-      const merged = responses.flat().map((barbero) => ({ ...barbero, barberiaId: barbero.barberiaId || '' }))
-      return merged
+      const list = await barberoService.getByBarberia(effectiveBarberiaId as string)
+      return list.map((barbero) => ({ ...barbero, barberiaId: barbero.barberiaId || '' }))
     },
   })
 
@@ -208,11 +207,9 @@ export function DisponibilidadPage() {
 
       <PageHeader title="Disponibilidad" subtitle="Vista semanal operativa y slots del dia" />
 
-      {!canSelectBarberia ? (
-        <p className="mb-3 text-sm text-color-muted">
-          Barbería actual: <span className="font-medium text-color-base">{barberiaActualNombre}</span>
-        </p>
-      ) : null}
+      <p className="mb-3 text-sm text-color-muted">
+        Barbería: <span className="font-medium text-color-base">{barberiaActualNombre}</span>
+      </p>
 
       <div className="mb-4 grid gap-3 rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-4 md:grid-cols-3">
         <FormSelect

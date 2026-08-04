@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-import { useBarberias } from '../../hooks/useBarberias'
 import { useBarberos } from '../../hooks/useBarberos'
 import { useClientes } from '../../hooks/useClientes'
 import { useTenantBarberia } from '../../hooks/useTenantBarberia'
@@ -70,11 +69,9 @@ export function CreateCitaModal({
   initialHora,
 }: CreateCitaModalProps) {
   const queryClient = useQueryClient()
-  const { canSelectBarberia, effectiveBarberiaId, setSelectedBarberiaId } = useTenantBarberia()
-  const { barberiasQuery } = useBarberias()
+  const { effectiveBarberiaId } = useTenantBarberia()
   const { clientesQuery } = useClientes()
 
-  const barberias = barberiasQuery.data ?? []
   const clientes = clientesQuery.data ?? []
 
   const [form, setForm] = useState<CreateCitaForm>(() => emptyForm())
@@ -102,13 +99,6 @@ export function CreateCitaModal({
     setError(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
-
-  useEffect(() => {
-    if (!open || !canSelectBarberia || form.barberiaId || barberias.length === 0) return
-    const next = barberias[0].id
-    setSelectedBarberiaId(next)
-    setForm((prev) => ({ ...prev, barberiaId: next }))
-  }, [open, canSelectBarberia, form.barberiaId, barberias, setSelectedBarberiaId])
 
   const { barberosQuery } = useBarberos(form.barberiaId)
   const barberos = barberosQuery.data ?? []
@@ -227,19 +217,6 @@ export function CreateCitaModal({
     <Modal open={open} onClose={onClose} title="Crear cita" size="lg">
       <form className="space-y-4" onSubmit={onSubmit}>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {canSelectBarberia ? (
-            <FormSelect
-              label="Barbería"
-              required
-              value={form.barberiaId}
-              onChange={(e) => {
-                const next = e.target.value
-                setSelectedBarberiaId(next || null)
-                setForm((prev) => ({ ...prev, barberiaId: next, barberoId: '', servicioId: '', horaInicio: '' }))
-              }}
-              options={barberias.map((barberia) => ({ value: barberia.id, label: barberia.nombre }))}
-            />
-          ) : null}
           <FormSelect
             label="Barbero"
             required

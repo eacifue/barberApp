@@ -9,7 +9,6 @@ import { FormInput } from '../../components/ui/FormInput'
 import { FormSelect } from '../../components/ui/FormSelect'
 import { Modal } from '../../components/ui/Modal'
 import { useBarberos } from '../../hooks/useBarberos'
-import { useBarberias } from '../../hooks/useBarberias'
 import { useTenantBarberia } from '../../hooks/useTenantBarberia'
 import { citaService } from '../../services/citaService'
 import { toast } from '../../stores/toastStore'
@@ -168,36 +167,18 @@ export function AppointmentsScheduler() {
   const queryFecha = searchParams.get('fecha')
   const initialDate = queryFecha && /^\d{4}-\d{2}-\d{2}$/.test(queryFecha) ? queryFecha : todayIso
 
-  const { canSelectBarberia, effectiveBarberiaId, setSelectedBarberiaId, tenantError } = useTenantBarberia()
-  const { barberiasQuery } = useBarberias()
-
-  const barberias = barberiasQuery.data ?? []
+  const { effectiveBarberiaId, tenantError } = useTenantBarberia()
 
   const [view, setView] = useState<SchedulerView>('week')
   const [selectedDate, setSelectedDate] = useState(initialDate)
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
-  const [selectedBarberiaId, setLocalBarberiaId] = useState(effectiveBarberiaId ?? '')
   const [selectedBarberoId, setSelectedBarberoId] = useState('')
   const [status, setStatus] = useState('')
   const [openCreateModal, setOpenCreateModal] = useState(false)
   const [detailCita, setDetailCita] = useState<Cita | null>(null)
 
-  useEffect(() => {
-    if (effectiveBarberiaId && selectedBarberiaId !== effectiveBarberiaId) {
-      setLocalBarberiaId(effectiveBarberiaId)
-    }
-  }, [effectiveBarberiaId, selectedBarberiaId])
-
-  useEffect(() => {
-    if (canSelectBarberia && !selectedBarberiaId && barberias.length > 0) {
-      const next = barberias[0].id
-      setLocalBarberiaId(next)
-      setSelectedBarberiaId(next)
-    }
-  }, [barberias, canSelectBarberia, selectedBarberiaId, setSelectedBarberiaId])
-
-  const { barberosQuery } = useBarberos(selectedBarberiaId)
+  const { barberosQuery } = useBarberos(effectiveBarberiaId ?? '')
   const barberos = barberosQuery.data ?? []
 
   useEffect(() => {
@@ -223,11 +204,11 @@ export function AppointmentsScheduler() {
     return { date: undefined, from: historyFrom, to: historyTo }
   }, [view, selectedDate, weekRange.from, weekRange.to, fromDate, toDate, yesterdayIso])
 
-  const schedulerEnabled = Boolean(selectedBarberiaId) && view !== 'history'
+  const schedulerEnabled = Boolean(effectiveBarberiaId) && view !== 'history'
 
   const upcomingAnchorQuery = useQuery({
-    queryKey: ['appointments-anchor', selectedBarberiaId],
-    enabled: Boolean(selectedBarberiaId),
+    queryKey: ['appointments-anchor', effectiveBarberiaId],
+    enabled: Boolean(effectiveBarberiaId),
     queryFn: () =>
       citaService.getAdminList({
         from: todayIso,
@@ -242,7 +223,7 @@ export function AppointmentsScheduler() {
     queryKey: [
       'appointments-scheduler',
       view,
-      selectedBarberiaId,
+      effectiveBarberiaId,
       selectedBarberoId || 'all',
       status || 'all',
       dateFilter.date || '-',
@@ -265,13 +246,13 @@ export function AppointmentsScheduler() {
   const historyQuery = useInfiniteQuery({
     queryKey: [
       'appointments-history',
-      selectedBarberiaId,
+      effectiveBarberiaId,
       selectedBarberoId || 'all',
       status || 'all',
       dateFilter.from || '-',
       dateFilter.to || '-',
     ],
-    enabled: Boolean(selectedBarberiaId) && view === 'history',
+    enabled: Boolean(effectiveBarberiaId) && view === 'history',
     initialPageParam: 1,
     queryFn: ({ pageParam }) =>
       citaService.getAdminList({
@@ -397,19 +378,6 @@ export function AppointmentsScheduler() {
       />
 
       <div className="mb-5 grid gap-3 rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
-        {canSelectBarberia ? (
-          <FormSelect
-            label="Barbería"
-            value={selectedBarberiaId}
-            onChange={(e) => {
-              const next = e.target.value
-              setLocalBarberiaId(next)
-              setSelectedBarberiaId(next || null)
-            }}
-            options={barberias.map((b) => ({ value: b.id, label: b.nombre }))}
-          />
-        ) : null}
-
         <FormInput
           label="Fecha"
           type="date"
@@ -533,7 +501,7 @@ export function AppointmentsScheduler() {
       <CreateCitaModal
         open={openCreateModal}
         onClose={() => setOpenCreateModal(false)}
-        initialBarberiaId={selectedBarberiaId || undefined}
+        initialBarberiaId={effectiveBarberiaId || undefined}
       />
 
       <Modal open={Boolean(detailCita)} onClose={() => setDetailCita(null)} title="Detalle de cita" size="md">

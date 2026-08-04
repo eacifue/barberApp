@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 
 import { useClientes } from '../../hooks/useClientes'
-import { useBarberias } from '../../hooks/useBarberias'
 import { useTenantBarberia } from '../../hooks/useTenantBarberia'
 import type { Cliente, ClienteUpsertInput } from '../../types/cliente'
 import { PageHeader } from '../../components/shared/PageHeader'
@@ -11,7 +10,6 @@ import { Button } from '../../components/ui/Button'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { DataTable } from '../../components/ui/DataTable'
 import { FormInput } from '../../components/ui/FormInput'
-import { FormSelect } from '../../components/ui/FormSelect'
 import { Modal } from '../../components/ui/Modal'
 
 type ViewMode = 'tabla' | 'cards'
@@ -69,7 +67,6 @@ function daysSince(dateIso?: string) {
 
 export function ClientesList() {
   const { clientesQuery, createMutation, updateMutation } = useClientes()
-  const { barberiasQuery } = useBarberias()
   const { isAdmin, isAdminBarberia, effectiveBarberiaId, tenantError } = useTenantBarberia()
 
   const [viewMode, setViewMode] = useState<ViewMode>('tabla')
@@ -80,19 +77,10 @@ export function ClientesList() {
   const [confirmTarget, setConfirmTarget] = useState<Cliente | null>(null)
 
   const clientes = clientesQuery.data ?? []
-  const barberias = barberiasQuery.data ?? []
   const isSaving = createMutation.isPending || updateMutation.isPending
-  // AdministradorBarberia gestiona sus propios clientes; solo Admin puede reasignar barbería.
   const canManage = isAdmin || isAdminBarberia
 
   const modalTitle = useMemo(() => (editing ? 'Editar cliente' : 'Nuevo cliente'), [editing])
-  const barberiaOptions = useMemo(
-    () => [
-      { value: '', label: 'Sin asignar' },
-      ...barberias.map((barberia) => ({ value: barberia.id, label: barberia.nombre })),
-    ],
-    [barberias],
-  )
 
   const resetForm = () => {
     setOpenModal(false)
@@ -415,15 +403,6 @@ export function ClientesList() {
               value={form.password ?? ''}
               onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
             />
-            {isAdmin ? (
-              <FormSelect
-                label="Barbería asociada"
-                value={form.barberiaId ?? ''}
-                onChange={(e) => setForm((prev) => ({ ...prev, barberiaId: e.target.value || null }))}
-                options={barberiaOptions}
-                disabled={barberiasQuery.isLoading}
-              />
-            ) : null}
             <label className="form-check-label md:col-span-2 inline-flex items-center gap-2 text-sm">
               <input
                 type="checkbox"

@@ -54,8 +54,9 @@ export function UsersPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<UserDto | null>(null)
 
   const roleRequiresBarberia = form.rol === 'AdministradorBarberia' || form.rol === 'Barbero'
-  const showBarberiaSelect = roleRequiresBarberia && isGlobalAdmin
 
+  // The app only ever serves one barbershop, so a role that requires a
+  // BarberiaId is auto-assigned to it — no picker needed.
   const barberiasQuery = useQuery({
     queryKey: ['barberias-for-users-form'],
     queryFn: barberiaService.getAll,
@@ -69,10 +70,10 @@ export function UsersPage() {
       return
     }
 
-    if (showBarberiaSelect && !form.barberiaId && barberias.length > 0) {
+    if (!form.barberiaId && barberias.length > 0) {
       setForm((prev) => ({ ...prev, barberiaId: barberias[0].id }))
     }
-  }, [roleRequiresBarberia, showBarberiaSelect, form.barberiaId, barberias])
+  }, [roleRequiresBarberia, form.barberiaId, barberias])
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
@@ -146,8 +147,8 @@ export function UsersPage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
-    if (showBarberiaSelect && !form.barberiaId) {
-      addToast('Debes seleccionar una barbería para este rol.', 'error')
+    if (roleRequiresBarberia && !form.barberiaId) {
+      addToast('No pudimos asignar la barbería a este usuario. Intenta de nuevo.', 'error')
       return
     }
 
@@ -171,17 +172,6 @@ export function UsersPage() {
   const roleOptions = useMemo(
     () => ROLES.map((role) => ({ label: ROL_LABEL[role], value: role })),
     [],
-  )
-
-  const barberiaOptions = useMemo(
-    () => [
-      {
-        label: barberiasQuery.isLoading ? 'Cargando barberías...' : 'Selecciona una barbería',
-        value: '',
-      },
-      ...barberias.map((barberia) => ({ label: barberia.nombre, value: barberia.id })),
-    ],
-    [barberias, barberiasQuery.isLoading],
   )
 
   const columns = useMemo(
@@ -268,20 +258,8 @@ export function UsersPage() {
 
           <FormSelect label="Rol" value={form.rol} onChange={(e) => setForm((f) => ({ ...f, rol: e.target.value }))} options={roleOptions} />
 
-          {showBarberiaSelect ? (
-            <div>
-              <FormSelect
-                required
-                label="Barbería"
-                value={form.barberiaId ?? ''}
-                onChange={(e) => setForm((f) => ({ ...f, barberiaId: e.target.value || null }))}
-                disabled={barberiasQuery.isLoading || barberias.length === 0}
-                options={barberiaOptions}
-              />
-              {!barberiasQuery.isLoading && barberias.length === 0 ? (
-                <p className="mt-2 text-xs text-[var(--warning)]">No hay barberías disponibles para asociar.</p>
-              ) : null}
-            </div>
+          {roleRequiresBarberia && !barberiasQuery.isLoading && barberias.length === 0 ? (
+            <p className="text-xs text-[var(--warning)]">No hay una barbería configurada para asociar a este usuario.</p>
           ) : null}
 
           {form.rol === 'Barbero' ? (

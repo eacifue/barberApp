@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import { useBarberias } from '../../hooks/useBarberias'
 import { useTenantBarberia } from '../../hooks/useTenantBarberia'
@@ -85,9 +85,8 @@ function formatCurrency(value: number) {
 }
 
 export function ServiciosList() {
-  const { canSelectBarberia, effectiveBarberiaId, setSelectedBarberiaId, tenantError } = useTenantBarberia()
+  const { effectiveBarberiaId, tenantError } = useTenantBarberia()
   const { barberiasQuery } = useBarberias()
-  const barberias = barberiasQuery.data ?? []
 
   const [confirmTarget, setConfirmTarget] = useState<Servicio | null>(null)
   const { serviciosQuery, createMutation, updateMutation, removeMutation } = useServicios(effectiveBarberiaId ?? '')
@@ -96,18 +95,6 @@ export function ServiciosList() {
   const [editing, setEditing] = useState<Servicio | null>(null)
   const [form, setForm] = useState<ServicioUpsertInput>(initialForm)
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!canSelectBarberia) return
-    if (!effectiveBarberiaId && barberias.length > 0) {
-      setSelectedBarberiaId(barberias[0].id)
-    }
-  }, [barberias, canSelectBarberia, effectiveBarberiaId, setSelectedBarberiaId])
-
-  const barberiaOptions =
-    barberias.length > 0
-      ? barberias.map((b) => ({ label: b.nombre, value: b.id }))
-      : [{ label: 'Sin barberias disponibles', value: '' }]
 
   const servicios = serviciosQuery.data ?? []
   const isSaving = createMutation.isPending || updateMutation.isPending
@@ -204,17 +191,6 @@ export function ServiciosList() {
         subtitle="Catalogo editable de servicios y tarifas"
         actions={<Button onClick={openCreateModal}>Nuevo servicio</Button>}
       />
-
-      {canSelectBarberia ? (
-        <div className="mb-4 max-w-sm">
-          <FormSelect
-            label="Barberia"
-            value={effectiveBarberiaId ?? ''}
-            onChange={(e) => setSelectedBarberiaId(e.target.value || null)}
-            options={barberiaOptions}
-          />
-        </div>
-      ) : null}
 
       <DataTable<Servicio>
         loading={serviciosQuery.isLoading || barberiasQuery.isLoading}
