@@ -89,7 +89,6 @@ class ServicioResumen with _$ServicioResumen {
 
 class CrearCitaRequestModel {
   const CrearCitaRequestModel({
-    required this.barberiaId,
     required this.barberoId,
     required this.servicioId,
     required this.fechaCita,
@@ -98,7 +97,6 @@ class CrearCitaRequestModel {
     this.notas,
   });
 
-  final String barberiaId;
   final String barberoId;
   final String servicioId;
   final DateTime fechaCita;

@@ -39,7 +39,6 @@ class AdminServicioRepository {
   }
 
   Future<ServicioModel> createServicio({
-    required String barberiaId,
     required String nombre,
     required String descripcion,
     required String tipo,
@@ -50,7 +49,6 @@ class AdminServicioRepository {
     final response = await _apiClient.post<Map<String, dynamic>>(
       ApiEndpoints.servicios,
       data: {
-        'barberiaId': barberiaId,
         'nombre': nombre,
         'descripcion': descripcion,
         'tipo': tipo,
@@ -74,7 +72,6 @@ class AdminServicioRepository {
 
   Future<ServicioModel> updateServicio({
     required String id,
-    required String barberiaId,
     required String nombre,
     required String descripcion,
     required String tipo,
@@ -85,7 +82,6 @@ class AdminServicioRepository {
     final response = await _apiClient.put<Map<String, dynamic>>(
       ApiEndpoints.servicioPorId(id),
       data: {
-        'barberiaId': barberiaId,
         'nombre': nombre,
         'descripcion': descripcion,
         'tipo': tipo,

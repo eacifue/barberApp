@@ -37,7 +37,6 @@ class AdminBarberoRepository {
   }
 
   Future<BarberoModel> createBarbero({
-    required String barberiaId,
     required String nombre,
     required String apellido,
     required String telefono,
@@ -51,7 +50,6 @@ class AdminBarberoRepository {
     final response = await _apiClient.post<Map<String, dynamic>>(
       ApiEndpoints.barberos,
       data: {
-        'barberiaId': barberiaId,
         'nombre': nombre,
         'apellido': apellido,
         'telefono': telefono,
@@ -78,7 +76,6 @@ class AdminBarberoRepository {
 
   Future<BarberoModel> updateBarbero({
     required String id,
-    required String barberiaId,
     required String nombre,
     required String apellido,
     required String telefono,
@@ -92,7 +89,6 @@ class AdminBarberoRepository {
     final response = await _apiClient.put<Map<String, dynamic>>(
       ApiEndpoints.barberoPorId(id),
       data: {
-        'barberiaId': barberiaId,
         'nombre': nombre,
         'apellido': apellido,
         'telefono': telefono,

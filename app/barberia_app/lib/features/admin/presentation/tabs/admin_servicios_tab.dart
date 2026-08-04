@@ -41,11 +41,7 @@ class AdminServiciosTab extends ConsumerWidget {
               Align(
                 alignment: Alignment.centerRight,
                 child: FilledButton.icon(
-                  onPressed: () => _showServicioForm(
-                    context,
-                    ref,
-                    barberiaId: data.barberiaId!,
-                  ),
+                  onPressed: () => _showServicioForm(context, ref),
                   icon: const Icon(Icons.add_rounded),
                   label: const Text('Nuevo servicio'),
                 ),
@@ -69,12 +65,8 @@ class AdminServiciosTab extends ConsumerWidget {
                         children: [
                           IconButton(
                             tooltip: 'Editar',
-                            onPressed: () => _showServicioForm(
-                              context,
-                              ref,
-                              barberiaId: data.barberiaId!,
-                              servicio: item,
-                            ),
+                            onPressed: () =>
+                                _showServicioForm(context, ref, servicio: item),
                             icon: const Icon(Icons.edit_rounded),
                           ),
                           IconButton(
@@ -145,7 +137,6 @@ class AdminServiciosTab extends ConsumerWidget {
   Future<void> _showServicioForm(
     BuildContext context,
     WidgetRef ref, {
-    required String barberiaId,
     ServicioModel? servicio,
   }) {
     final isEdit = servicio != null;
@@ -279,27 +270,27 @@ class AdminServiciosTab extends ConsumerWidget {
                                   if (isEdit) {
                                     await repo.updateServicio(
                                       id: servicioId!,
-                                      barberiaId: barberiaId,
                                       nombre: nombreController.text.trim(),
                                       descripcion: descripcionController.text
                                           .trim(),
                                       tipo: tipoController.text.trim(),
                                       duracionMinutos: duracion,
                                       precio: precio,
-                                      fotoUrl: fotoController.text.trim().isEmpty
+                                      fotoUrl:
+                                          fotoController.text.trim().isEmpty
                                           ? null
                                           : fotoController.text.trim(),
                                     );
                                   } else {
                                     await repo.createServicio(
-                                      barberiaId: barberiaId,
                                       nombre: nombreController.text.trim(),
                                       descripcion: descripcionController.text
                                           .trim(),
                                       tipo: tipoController.text.trim(),
                                       duracionMinutos: duracion,
                                       precio: precio,
-                                      fotoUrl: fotoController.text.trim().isEmpty
+                                      fotoUrl:
+                                          fotoController.text.trim().isEmpty
                                           ? null
                                           : fotoController.text.trim(),
                                     );

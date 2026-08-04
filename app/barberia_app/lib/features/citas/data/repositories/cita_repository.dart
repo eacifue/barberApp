@@ -13,7 +13,6 @@ class CitaRepository {
     final response = await _apiClient.post<CitaModel>(
       ApiEndpoints.citas,
       data: {
-        'barberiaId': request.barberiaId,
         'barberoId': request.barberoId,
         'servicioId': request.servicioId,
         'fechaCita': request.fechaCita.toApiDate,

@@ -293,7 +293,6 @@ class _ConfirmacionScreenState extends ConsumerState<ConfirmacionScreen> {
                     try {
                       final cita = await citaRepo.crearCita(
                         CrearCitaRequestModel(
-                          barberiaId: barberiaId,
                           barberoId: barbero.id,
                           servicioId: servicio.id,
                           fechaCita: fecha,

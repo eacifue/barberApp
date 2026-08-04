@@ -47,7 +47,6 @@ class AdminBarberosTab extends ConsumerWidget {
                       : () => _showBarberoForm(
                           context,
                           ref,
-                          barberiaId: data.barberiaId!,
                           servicios: data.servicios,
                         ),
                   icon: const Icon(Icons.add_rounded),
@@ -80,7 +79,6 @@ class AdminBarberosTab extends ConsumerWidget {
                             onPressed: () => _showBarberoForm(
                               context,
                               ref,
-                              barberiaId: data.barberiaId!,
                               servicios: data.servicios,
                               barbero: item,
                             ),
@@ -156,7 +154,6 @@ class AdminBarberosTab extends ConsumerWidget {
   Future<void> _showBarberoForm(
     BuildContext context,
     WidgetRef ref, {
-    required String barberiaId,
     required List<ServicioModel> servicios,
     BarberoModel? barbero,
   }) {
@@ -357,7 +354,6 @@ class AdminBarberosTab extends ConsumerWidget {
                                     if (isEdit) {
                                       await repo.updateBarbero(
                                         id: barberoId!,
-                                        barberiaId: barberiaId,
                                         nombre: nombreController.text.trim(),
                                         apellido: apellidoController.text
                                             .trim(),
@@ -379,7 +375,6 @@ class AdminBarberosTab extends ConsumerWidget {
                                       );
                                     } else {
                                       await repo.createBarbero(
-                                        barberiaId: barberiaId,
                                         nombre: nombreController.text.trim(),
                                         apellido: apellidoController.text
                                             .trim(),
