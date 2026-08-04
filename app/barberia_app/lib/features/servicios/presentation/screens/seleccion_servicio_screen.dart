@@ -6,7 +6,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../barberias/presentation/providers/selected_barbershop_provider.dart';
 import '../../../../features/citas/presentation/providers/reserva_notifier.dart';
 import '../../../../shared/widgets/error_widget.dart';
-import '../../domain/servicio_model.dart';
 import '../providers/servicios_provider.dart';
 import '../widgets/servicio_card.dart';
 
@@ -20,21 +19,9 @@ class SeleccionServicioScreen extends ConsumerStatefulWidget {
 
 class _SeleccionServicioScreenState
     extends ConsumerState<SeleccionServicioScreen> {
-  static const _filtros = ['Todos', 'Corte', 'Barba', 'Combo', 'Tinte'];
+  static const _todos = 'Todos';
 
-  String _filtroSeleccionado = 'Todos';
-
-  List<ServicioModel> _filtrarServicios(List<ServicioModel> servicios) {
-    if (_filtroSeleccionado == 'Todos') {
-      return servicios;
-    }
-
-    return servicios.where((servicio) {
-      return servicio.tipo.toLowerCase().contains(
-        _filtroSeleccionado.toLowerCase(),
-      );
-    }).toList();
-  }
+  String _filtroSeleccionado = _todos;
 
   @override
   Widget build(BuildContext context) {
@@ -75,13 +62,6 @@ class _SeleccionServicioScreenState
               children: [
                 const _ReservaProgress(),
                 const SizedBox(height: 16),
-                _FiltroServicios(
-                  filtros: _filtros,
-                  seleccionado: _filtroSeleccionado,
-                  onChanged: (filtro) =>
-                      setState(() => _filtroSeleccionado = filtro),
-                ),
-                const SizedBox(height: 14),
                 Expanded(
                   child: serviciosAsync.when(
                     loading: () => const _LoadingServicios(),
@@ -95,36 +75,68 @@ class _SeleccionServicioScreenState
                     },
                     data: (servicios) {
                       final activos = servicios.where((s) => s.activo).toList();
-                      final filtrados = _filtrarServicios(activos);
-                      if (filtrados.isEmpty) {
-                        return const _EmptyServicios();
-                      }
+                      final tipos = <String>{for (final s in activos) s.tipo}
+                          .toList()
+                        ..sort();
+                      final filtros = [_todos, ...tipos];
+                      final filtroActivo = filtros.contains(_filtroSeleccionado)
+                          ? _filtroSeleccionado
+                          : _todos;
+                      final filtrados = filtroActivo == _todos
+                          ? activos
+                          : activos
+                                .where((s) => s.tipo == filtroActivo)
+                                .toList();
 
-                      return GridView.builder(
-                        itemCount: filtrados.length,
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: columns,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: columns == 1 ? 2.5 : 1.55,
-                        ),
-                        itemBuilder: (context, index) {
-                          final servicio = filtrados[index];
-                          final seleccionado =
-                              reservaState.servicioSeleccionado?.id ==
-                              servicio.id;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _FiltroServicios(
+                            filtros: filtros,
+                            seleccionado: filtroActivo,
+                            onChanged: (filtro) =>
+                                setState(() => _filtroSeleccionado = filtro),
+                          ),
+                          const SizedBox(height: 14),
+                          Expanded(
+                            child: filtrados.isEmpty
+                                ? const _EmptyServicios()
+                                : GridView.builder(
+                                    itemCount: filtrados.length,
+                                    gridDelegate:
+                                        SliverGridDelegateWithFixedCrossAxisCount(
+                                          crossAxisCount: columns,
+                                          crossAxisSpacing: 12,
+                                          mainAxisSpacing: 12,
+                                          childAspectRatio: columns == 1
+                                              ? 2.5
+                                              : 1.55,
+                                        ),
+                                    itemBuilder: (context, index) {
+                                      final servicio = filtrados[index];
+                                      final seleccionado =
+                                          reservaState
+                                              .servicioSeleccionado
+                                              ?.id ==
+                                          servicio.id;
 
-                          return ServicioCard(
-                            servicio: servicio,
-                            seleccionado: seleccionado,
-                            onTap: () {
-                              ref
-                                  .read(reservaNotifierProvider.notifier)
-                                  .seleccionarServicio(servicio);
-                              context.go('/reservar/barbero');
-                            },
-                          );
-                        },
+                                      return ServicioCard(
+                                        servicio: servicio,
+                                        seleccionado: seleccionado,
+                                        onTap: () {
+                                          ref
+                                              .read(
+                                                reservaNotifierProvider
+                                                    .notifier,
+                                              )
+                                              .seleccionarServicio(servicio);
+                                          context.go('/reservar/barbero');
+                                        },
+                                      );
+                                    },
+                                  ),
+                          ),
+                        ],
                       );
                     },
                   ),
@@ -159,7 +171,7 @@ class _ReservaProgress extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: i == 0
                         ? AppColors.primary
-                        : AppColors.textMuted.withValues(alpha: 0.25),
+                        : AppColors.textMutedOf(context).withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),
@@ -177,7 +189,9 @@ class _ReservaProgress extends StatelessWidget {
                   _steps[i],
                   textAlign: i == 0 ? TextAlign.left : TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: i == 0 ? AppColors.textPrimary : AppColors.textMuted,
+                    color: i == 0
+                        ? AppColors.textPrimaryOf(context)
+                        : AppColors.textMutedOf(context),
                     fontWeight: i == 0 ? FontWeight.w700 : FontWeight.w500,
                   ),
                 ),
@@ -221,17 +235,19 @@ class _FiltroServicios extends StatelessWidget {
                 borderRadius: BorderRadius.circular(99),
                 color: isSelected
                     ? AppColors.primary.withValues(alpha: 0.1)
-                    : AppColors.surface,
+                    : AppColors.surfaceOf(context),
                 border: Border.all(
                   color: isSelected
                       ? AppColors.primary
-                      : AppColors.textMuted.withValues(alpha: 0.28),
+                      : AppColors.textMutedOf(context).withValues(alpha: 0.28),
                 ),
               ),
               child: Text(
                 filtro,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: isSelected ? AppColors.primary : AppColors.textMuted,
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.textMutedOf(context),
                   fontWeight: FontWeight.w600,
                 ),
               ),

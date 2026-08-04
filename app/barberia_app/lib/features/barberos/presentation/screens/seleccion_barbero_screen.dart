@@ -164,7 +164,7 @@ class _ReservaProgressStep2 extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: i <= 1
                         ? AppColors.primary
-                        : AppColors.textMuted.withValues(alpha: 0.25),
+                        : AppColors.textMutedOf(context).withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),
@@ -186,7 +186,9 @@ class _ReservaProgressStep2 extends StatelessWidget {
                       ? TextAlign.right
                       : TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: i == 1 ? AppColors.textPrimary : AppColors.textMuted,
+                    color: i == 1
+                        ? AppColors.textPrimaryOf(context)
+                        : AppColors.textMutedOf(context),
                     fontWeight: i == 1 ? FontWeight.w700 : FontWeight.w500,
                   ),
                 ),
@@ -211,7 +213,7 @@ class _ServicioContextCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceOf(context),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
       ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +10,9 @@ import 'package:intl/intl.dart';
 
 import 'core/config/router.dart';
 import 'core/services/notification_service.dart';
+import 'core/storage/secure_storage.dart';
 import 'core/theme/app_theme.dart';
+import 'features/auth/data/auth_repository.dart';
 import 'firebase_options.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -40,6 +44,34 @@ Future<void> main() async {
   final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
   await notificationService.openInitialNotification(initialMessage);
 
+  Future<void> syncFcmTokenIfLoggedIn(String fcmToken) async {
+    final authToken = await container.read(secureStorageProvider).getToken();
+    if (authToken == null || authToken.isEmpty) {
+      return;
+    }
+    try {
+      await container
+          .read(authRepositoryProvider)
+          .actualizarTokenFCM(fcmToken);
+    } catch (_) {
+      // Best effort: notifications keep working with the old token until
+      // the next successful sync (e.g. next login or refresh event).
+    }
+  }
+
+  // Keep the backend's copy of the push token current across reinstalls
+  // and token rotations, not just at the moment of login.
+  FirebaseMessaging.instance.onTokenRefresh.listen(syncFcmTokenIfLoggedIn);
+
+  unawaited(
+    FirebaseMessaging.instance.getToken().then((token) {
+      if (token != null && token.isNotEmpty) {
+        return syncFcmTokenIfLoggedIn(token);
+      }
+      return null;
+    }),
+  );
+
   runApp(
     UncontrolledProviderScope(container: container, child: const BarberiaApp()),
   );
@@ -56,6 +88,8 @@ class BarberiaApp extends ConsumerWidget {
       title: 'Barbería App',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       locale: const Locale('es', 'CO'),
       supportedLocales: const [Locale('es', 'CO')],
       localizationsDelegates: const [

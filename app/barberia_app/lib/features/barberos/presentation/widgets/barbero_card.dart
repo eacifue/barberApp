@@ -24,10 +24,10 @@ class BarberoCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             child: Ink(
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: AppColors.surfaceOf(context),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppColors.textMuted.withValues(alpha: 0.2),
+                  color: AppColors.textMutedOf(context).withValues(alpha: 0.2),
                 ),
               ),
               child: Padding(
@@ -103,7 +103,7 @@ class BarberoCard extends StatelessWidget {
                       Icons.chevron_right_rounded,
                       color: isAvailable
                           ? AppColors.primary
-                          : AppColors.textMuted,
+                          : AppColors.textMutedOf(context),
                     ),
                   ],
                 ),
@@ -244,12 +244,12 @@ class BarberoCardShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: AppColors.background,
-      highlightColor: Colors.white,
+      baseColor: AppColors.backgroundOf(context),
+      highlightColor: AppColors.shimmerHighlightOf(context),
       child: Container(
         height: 170,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.surfaceOf(context),
           borderRadius: BorderRadius.circular(12),
         ),
       ),

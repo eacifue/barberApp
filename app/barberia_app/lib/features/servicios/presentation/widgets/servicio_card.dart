@@ -26,12 +26,12 @@ class ServicioCard extends StatelessWidget {
         onTap: onTap,
         child: Ink(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: AppColors.surfaceOf(context),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: seleccionado
                   ? AppColors.primary.withValues(alpha: 0.65)
-                  : AppColors.textMuted.withValues(alpha: 0.2),
+                  : AppColors.textMutedOf(context).withValues(alpha: 0.2),
             ),
           ),
           child: Row(
@@ -76,7 +76,7 @@ class ServicioCard extends StatelessWidget {
                                 Icon(
                                   Icons.schedule_rounded,
                                   size: 16,
-                                  color: AppColors.textMuted,
+                                  color: AppColors.textMutedOf(context),
                                 ),
                                 const SizedBox(width: 6),
                                 Text(servicio.duracionFormateada),
@@ -84,7 +84,9 @@ class ServicioCard extends StatelessWidget {
                                 Text(
                                   servicio.precioFormateado,
                                   style: Theme.of(context).textTheme.labelLarge
-                                      ?.copyWith(color: AppColors.secondary),
+                                      ?.copyWith(
+                                        color: AppColors.secondaryOf(context),
+                                      ),
                                 ),
                               ],
                             ),
@@ -124,9 +126,9 @@ class _ServicioImage extends StatelessWidget {
           imageUrl: imageUrl,
           fit: BoxFit.cover,
           placeholder: (context, url) => Shimmer.fromColors(
-            baseColor: AppColors.surface,
+            baseColor: AppColors.surfaceOf(context),
             highlightColor: AppColors.primary,
-            child: Container(color: AppColors.surface),
+            child: Container(color: AppColors.surfaceOf(context)),
           ),
           errorWidget: (context, url, error) => _TipoIcon(tipo: servicio.tipo),
         ),
@@ -170,12 +172,12 @@ class ServicioCardShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: AppColors.background,
-      highlightColor: Colors.white,
+      baseColor: AppColors.backgroundOf(context),
+      highlightColor: AppColors.shimmerHighlightOf(context),
       child: Container(
         height: 112,
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.surfaceOf(context),
           borderRadius: BorderRadius.circular(12),
         ),
       ),

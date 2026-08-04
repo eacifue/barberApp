@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/auth/auth_role_provider.dart';
+import '../../../../core/auth/logout_button.dart';
 import '../../../barberias/presentation/providers/selected_barbershop_provider.dart';
-import '../../../../features/auth/data/auth_repository.dart';
 import '../../../../shared/widgets/error_widget.dart';
 import '../../domain/models/cita_model.dart';
 import '../providers/citas_provider.dart';
@@ -50,21 +49,7 @@ class _MisCitasScreenState extends ConsumerState<MisCitasScreen> {
             onPressed: () => context.go('/select-barbershop'),
             icon: const Icon(Icons.storefront_rounded),
           ),
-          IconButton(
-            tooltip: 'Cerrar sesión',
-            onPressed: () async {
-              await ref.read(authRepositoryProvider).logout();
-              await ref
-                  .read(selectedBarbershopProvider.notifier)
-                  .clearSelection();
-              ref.invalidate(authRoleProvider);
-              if (!context.mounted) {
-                return;
-              }
-              context.go('/login');
-            },
-            icon: const Icon(Icons.logout_rounded),
-          ),
+          const LogoutButton(),
         ],
       ),
       body: citasAsync.when(

@@ -1,75 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../shared/widgets/barberia_card.dart';
+import '../../../../core/errors/exceptions.dart';
+import '../../../../shared/widgets/admin_empty_state.dart';
+import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/error_widget.dart';
 import '../../data/admin_repository.dart';
 import '../../data/models/admin_cliente_model.dart';
+import '../providers/admin_clientes_provider.dart';
 
-class AdminClientesTab extends ConsumerStatefulWidget {
+class AdminClientesTab extends ConsumerWidget {
   const AdminClientesTab({super.key});
 
   @override
-  ConsumerState<AdminClientesTab> createState() => _AdminClientesTabState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final clientesAsync = ref.watch(adminClientesProvider);
 
-class _AdminClientesTabState extends ConsumerState<AdminClientesTab> {
-  late Future<List<AdminClienteModel>> _future;
-
-  @override
-  void initState() {
-    super.initState();
-    _future = ref.read(adminRepositoryProvider).getClientes();
-  }
-
-  Future<void> _reload() async {
-    setState(() {
-      _future = ref.read(adminRepositoryProvider).getClientes();
-    });
-    await _future;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<List<AdminClienteModel>>(
-      future: _future,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasError) {
-          return _ErrorState(
-            message: snapshot.error.toString(),
-            onRetry: _reload,
-          );
-        }
-
-        final items = snapshot.data ?? const [];
-
+    return clientesAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stackTrace) => BarberiaErrorWidget(
+        message: error is AppException
+            ? error.message
+            : 'No pudimos cargar los clientes.',
+        onRetry: () => ref.invalidate(adminClientesProvider),
+      ),
+      data: (items) {
         return RefreshIndicator(
-          onRefresh: _reload,
+          onRefresh: () => ref.refresh(adminClientesProvider.future),
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
               Align(
                 alignment: Alignment.centerRight,
                 child: FilledButton.icon(
-                  onPressed: () async {
-                    final created = await _showClienteCreateForm(context);
-                    if (created == true) {
-                      await _reload();
-                    }
-                  },
+                  onPressed: () => _showClienteForm(context, ref),
                   icon: const Icon(Icons.person_add_alt_1_rounded),
                   label: const Text('Nuevo cliente'),
                 ),
               ),
               const SizedBox(height: 12),
               if (items.isEmpty)
-                const _EmptyState(message: 'No hay clientes registrados.')
+                const AdminEmptyState(message: 'No hay clientes registrados.')
               else
                 for (final item in items) ...[
-                  BarberiaCard(
+                  AppCard(
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(item.nombreCompleto),
@@ -87,15 +61,8 @@ class _AdminClientesTabState extends ConsumerState<AdminClientesTab> {
                           ),
                           IconButton(
                             tooltip: 'Editar',
-                            onPressed: () async {
-                              final updated = await _showClienteEditForm(
-                                context,
-                                cliente: item,
-                              );
-                              if (updated == true) {
-                                await _reload();
-                              }
-                            },
+                            onPressed: () =>
+                                _showClienteForm(context, ref, cliente: item),
                             icon: const Icon(Icons.edit_rounded),
                           ),
                           IconButton(
@@ -126,11 +93,35 @@ class _AdminClientesTabState extends ConsumerState<AdminClientesTab> {
                                       ),
                                     );
 
-                                    if (confirmed == true) {
+                                    if (confirmed != true) {
+                                      return;
+                                    }
+
+                                    try {
                                       await ref
                                           .read(adminRepositoryProvider)
                                           .deleteCliente(item.id);
-                                      await _reload();
+                                      ref.invalidate(adminClientesProvider);
+                                    } on AppException catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(content: Text(e.message)),
+                                        );
+                                      }
+                                    } catch (_) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'No pudimos desactivar el cliente. Intenta de nuevo.',
+                                            ),
+                                          ),
+                                        );
+                                      }
                                     }
                                   },
                             icon: const Icon(Icons.person_off_outlined),
@@ -148,283 +139,212 @@ class _AdminClientesTabState extends ConsumerState<AdminClientesTab> {
     );
   }
 
-  Future<bool?> _showClienteCreateForm(BuildContext context) {
-    final nombreController = TextEditingController();
-    final apellidoController = TextEditingController();
-    final telefonoController = TextEditingController();
-    final correoController = TextEditingController();
-    final passwordController = TextEditingController();
-
-    final formKey = GlobalKey<FormState>();
-
-    return showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (context) {
-        final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
-
-        return Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Nuevo cliente',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: nombreController,
-                  decoration: const InputDecoration(labelText: 'Nombre'),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Requerido'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: apellidoController,
-                  decoration: const InputDecoration(labelText: 'Apellido'),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Requerido'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: telefonoController,
-                  decoration: const InputDecoration(labelText: 'Teléfono'),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Requerido'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: correoController,
-                  decoration: const InputDecoration(labelText: 'Correo'),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Requerido'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: passwordController,
-                  decoration: const InputDecoration(labelText: 'Contraseña'),
-                  obscureText: true,
-                  validator: (value) {
-                    final text = value?.trim() ?? '';
-                    if (text.isEmpty) return 'Requerido';
-                    if (text.length < 6) return 'Mínimo 6 caracteres';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () async {
-                      if (!(formKey.currentState?.validate() ?? false)) {
-                        return;
-                      }
-
-                      await ref
-                          .read(adminRepositoryProvider)
-                          .createCliente(
-                            nombre: nombreController.text.trim(),
-                            apellido: apellidoController.text.trim(),
-                            telefono: telefonoController.text.trim(),
-                            correo: correoController.text.trim(),
-                            password: passwordController.text.trim(),
-                          );
-
-                      if (context.mounted) {
-                        Navigator.of(context).pop(true);
-                      }
-                    },
-                    child: const Text('Crear cliente'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<bool?> _showClienteEditForm(
-    BuildContext context, {
-    required AdminClienteModel cliente,
+  Future<void> _showClienteForm(
+    BuildContext context,
+    WidgetRef ref, {
+    AdminClienteModel? cliente,
   }) {
-    final nombreController = TextEditingController(text: cliente.nombre);
-    final apellidoController = TextEditingController(text: cliente.apellido);
-    final telefonoController = TextEditingController(text: cliente.telefono);
-    final correoController = TextEditingController(text: cliente.correo);
+    final isEdit = cliente != null;
+
+    final nombreController = TextEditingController(text: cliente?.nombre ?? '');
+    final apellidoController = TextEditingController(
+      text: cliente?.apellido ?? '',
+    );
+    final telefonoController = TextEditingController(
+      text: cliente?.telefono ?? '',
+    );
+    final correoController = TextEditingController(text: cliente?.correo ?? '');
     final passwordController = TextEditingController();
-    var activo = cliente.activo;
+    var activo = cliente?.activo ?? true;
 
     final formKey = GlobalKey<FormState>();
 
-    return showModalBottomSheet<bool>(
+    return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (context) {
         final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+        var saving = false;
+        var obscurePassword = true;
 
-        return Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Editar cliente',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: nombreController,
-                  decoration: const InputDecoration(labelText: 'Nombre'),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Requerido'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: apellidoController,
-                  decoration: const InputDecoration(labelText: 'Apellido'),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Requerido'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: telefonoController,
-                  decoration: const InputDecoration(labelText: 'Teléfono'),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Requerido'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: correoController,
-                  decoration: const InputDecoration(labelText: 'Correo'),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Requerido'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nueva contraseña (opcional)',
-                  ),
-                  obscureText: true,
-                  validator: (value) {
-                    final text = value?.trim() ?? '';
-                    if (text.isEmpty) return null;
-                    if (text.length < 6) return 'Mínimo 6 caracteres';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 4),
-                StatefulBuilder(
-                  builder: (context, setInnerState) {
-                    return SwitchListTile.adaptive(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Activo'),
-                      value: activo,
-                      onChanged: cliente.rol.toLowerCase() == 'admin'
-                          ? null
-                          : (value) => setInnerState(() => activo = value),
-                    );
-                  },
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () async {
-                      if (!(formKey.currentState?.validate() ?? false)) {
-                        return;
-                      }
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        isEdit ? 'Editar cliente' : 'Nuevo cliente',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: nombreController,
+                      decoration: const InputDecoration(labelText: 'Nombre'),
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                          ? 'Requerido'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: apellidoController,
+                      decoration: const InputDecoration(labelText: 'Apellido'),
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                          ? 'Requerido'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: telefonoController,
+                      decoration: const InputDecoration(labelText: 'Teléfono'),
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                          ? 'Requerido'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: correoController,
+                      decoration: const InputDecoration(labelText: 'Correo'),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                          ? 'Requerido'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: passwordController,
+                      decoration: InputDecoration(
+                        labelText: isEdit
+                            ? 'Nueva contraseña (opcional)'
+                            : 'Contraseña',
+                        suffixIcon: IconButton(
+                          tooltip: obscurePassword
+                              ? 'Mostrar contraseña'
+                              : 'Ocultar contraseña',
+                          icon: Icon(
+                            obscurePassword
+                                ? Icons.visibility_rounded
+                                : Icons.visibility_off_rounded,
+                          ),
+                          onPressed: () => setSheetState(
+                            () => obscurePassword = !obscurePassword,
+                          ),
+                        ),
+                      ),
+                      obscureText: obscurePassword,
+                      validator: (value) {
+                        final text = value?.trim() ?? '';
+                        if (!isEdit && text.isEmpty) return 'Requerido';
+                        if (text.isNotEmpty && text.length < 6) {
+                          return 'Mínimo 6 caracteres';
+                        }
+                        return null;
+                      },
+                    ),
+                    if (isEdit) ...[
+                      const SizedBox(height: 4),
+                      SwitchListTile.adaptive(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Activo'),
+                        value: activo,
+                        onChanged: cliente.rol.toLowerCase() == 'admin'
+                            ? null
+                            : (value) => setSheetState(() => activo = value),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: saving
+                            ? null
+                            : () async {
+                                if (!(formKey.currentState?.validate() ??
+                                    false)) {
+                                  return;
+                                }
 
-                      await ref
-                          .read(adminRepositoryProvider)
-                          .updateCliente(
-                            id: cliente.id,
-                            nombre: nombreController.text.trim(),
-                            apellido: apellidoController.text.trim(),
-                            telefono: telefonoController.text.trim(),
-                            correo: correoController.text.trim(),
-                            password: passwordController.text.trim().isEmpty
-                                ? null
-                                : passwordController.text.trim(),
-                            activo: activo,
-                          );
+                                setSheetState(() => saving = true);
+                                try {
+                                  final repo = ref.read(adminRepositoryProvider);
+                                  if (isEdit) {
+                                    await repo.updateCliente(
+                                      id: cliente.id,
+                                      nombre: nombreController.text.trim(),
+                                      apellido: apellidoController.text.trim(),
+                                      telefono: telefonoController.text.trim(),
+                                      correo: correoController.text.trim(),
+                                      password:
+                                          passwordController.text.trim().isEmpty
+                                          ? null
+                                          : passwordController.text.trim(),
+                                      activo: activo,
+                                    );
+                                  } else {
+                                    await repo.createCliente(
+                                      nombre: nombreController.text.trim(),
+                                      apellido: apellidoController.text.trim(),
+                                      telefono: telefonoController.text.trim(),
+                                      correo: correoController.text.trim(),
+                                      password: passwordController.text.trim(),
+                                    );
+                                  }
 
-                      if (context.mounted) {
-                        Navigator.of(context).pop(true);
-                      }
-                    },
-                    child: const Text('Guardar cambios'),
-                  ),
+                                  ref.invalidate(adminClientesProvider);
+                                  if (context.mounted) {
+                                    Navigator.of(context).pop();
+                                  }
+                                } on AppException catch (e) {
+                                  setSheetState(() => saving = false);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(e.message)),
+                                    );
+                                  }
+                                } catch (_) {
+                                  setSheetState(() => saving = false);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'No pudimos guardar el cliente. Intenta de nuevo.',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                        child: saving
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(
+                                isEdit ? 'Guardar cambios' : 'Crear cliente',
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48),
-      child: Center(child: Text(message)),
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final Future<void> Function() onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text('Ocurrió un error', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 8),
-        Text(message, style: Theme.of(context).textTheme.bodyMedium),
-        const SizedBox(height: 16),
-        FilledButton.icon(
-          onPressed: onRetry,
-          icon: const Icon(Icons.refresh_rounded),
-          label: const Text('Reintentar'),
-        ),
-      ],
     );
   }
 }

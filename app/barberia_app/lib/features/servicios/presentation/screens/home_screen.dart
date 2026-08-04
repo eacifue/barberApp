@@ -4,9 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/auth/jwt_utils.dart';
 import '../../../../core/auth/auth_role_provider.dart';
+import '../../../../core/auth/logout_button.dart';
 import '../../../../features/barberias/presentation/providers/selected_barbershop_provider.dart';
 import '../../../../features/citas/presentation/providers/citas_provider.dart';
-import '../../../../features/auth/data/auth_repository.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/error_widget.dart';
 import '../providers/servicios_provider.dart';
@@ -55,21 +55,7 @@ class HomeScreen extends ConsumerWidget {
               onPressed: () => context.go('/admin'),
               icon: const Icon(Icons.admin_panel_settings_rounded),
             ),
-          IconButton(
-            tooltip: 'Cerrar sesión',
-            onPressed: () async {
-              await ref.read(authRepositoryProvider).logout();
-              await ref
-                  .read(selectedBarbershopProvider.notifier)
-                  .clearSelection();
-              ref.invalidate(authRoleProvider);
-              if (!context.mounted) {
-                return;
-              }
-              context.go('/login');
-            },
-            icon: const Icon(Icons.logout_rounded),
-          ),
+          const LogoutButton(),
         ],
       ),
       body: ListView(

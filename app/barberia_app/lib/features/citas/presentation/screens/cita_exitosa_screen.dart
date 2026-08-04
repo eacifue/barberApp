@@ -59,10 +59,12 @@ class CitaExitosaScreen extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: AppColors.surfaceOf(context),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppColors.textMuted.withValues(alpha: 0.2),
+                        color: AppColors.textMutedOf(
+                          context,
+                        ).withValues(alpha: 0.2),
                       ),
                     ),
                     child: Column(

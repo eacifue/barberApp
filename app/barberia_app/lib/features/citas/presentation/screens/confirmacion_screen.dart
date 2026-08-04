@@ -3,13 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/errors/exceptions.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../barberias/presentation/providers/selected_barbershop_provider.dart';
 import '../../../../features/horarios/presentation/providers/disponibilidad_provider.dart';
 import '../../domain/models/cita_model.dart';
 import '../providers/citas_provider.dart';
+import '../providers/reprogramacion_provider.dart';
 import '../providers/reserva_notifier.dart';
-import '../../../../shared/widgets/barberia_button.dart';
+import '../../../../shared/widgets/app_button.dart';
 
 class ConfirmacionScreen extends ConsumerStatefulWidget {
   const ConfirmacionScreen({super.key});
@@ -57,6 +59,7 @@ class _ConfirmacionScreenState extends ConsumerState<ConfirmacionScreen> {
     final router = GoRouter.of(context);
     final selectedBarbershop = ref.watch(selectedBarbershopProvider);
     final barberiaId = selectedBarbershop.barberiaId;
+    final citaIdAReprogramar = ref.watch(citaIdAReprogramarProvider);
 
     final servicio = reserva.servicioSeleccionado;
     final barbero = reserva.barberoSeleccionado;
@@ -101,6 +104,7 @@ class _ConfirmacionScreenState extends ConsumerState<ConfirmacionScreen> {
                   .read(disponibilidadNotifierProvider.notifier)
                   .salirPantalla(barberoId: barbero.id);
               ref.read(reservaNotifierProvider.notifier).resetReserva();
+              ref.read(citaIdAReprogramarProvider.notifier).state = null;
               if (!context.mounted) {
                 return;
               }
@@ -124,6 +128,7 @@ class _ConfirmacionScreenState extends ConsumerState<ConfirmacionScreen> {
               .read(disponibilidadNotifierProvider.notifier)
               .salirPantalla(barberoId: barbero.id);
           ref.read(reservaNotifierProvider.notifier).resetReserva();
+          ref.read(citaIdAReprogramarProvider.notifier).state = null;
           if (!context.mounted) {
             return;
           }
@@ -132,13 +137,39 @@ class _ConfirmacionScreenState extends ConsumerState<ConfirmacionScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (citaIdAReprogramar != null) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.event_repeat_rounded, color: AppColors.primary),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Estás reprogramando tu cita. Al confirmar, la anterior se cancelará automáticamente.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+            ],
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: AppColors.surfaceOf(context),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppColors.textMuted.withValues(alpha: 0.2),
+                  color: AppColors.textMutedOf(context).withValues(alpha: 0.2),
                 ),
               ),
               child: Column(
@@ -164,9 +195,9 @@ class _ConfirmacionScreenState extends ConsumerState<ConfirmacionScreen> {
                   ),
                   _Section(
                     title: 'PRECIO',
-                    footer: const Text(
+                    footer: Text(
                       'Pago en el local',
-                      style: TextStyle(color: AppColors.textMuted),
+                      style: TextStyle(color: AppColors.textMutedOf(context)),
                     ),
                     child: Text(
                       NumberFormat.currency(
@@ -184,9 +215,9 @@ class _ConfirmacionScreenState extends ConsumerState<ConfirmacionScreen> {
                         LinearProgressIndicator(
                           value: horarioState.tiempoRestanteSegundos / 300,
                           color: isUrgent ? AppColors.error : AppColors.primary,
-                          backgroundColor: AppColors.textMuted.withValues(
-                            alpha: 0.2,
-                          ),
+                          backgroundColor: AppColors.textMutedOf(
+                            context,
+                          ).withValues(alpha: 0.2),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -213,7 +244,7 @@ class _ConfirmacionScreenState extends ConsumerState<ConfirmacionScreen> {
               ),
             ),
             const SizedBox(height: 18),
-            BarberiaButton(
+            AppButton(
               label: 'Reservar ahora',
               isLoading: _loading,
               onPressed: () async {
@@ -239,23 +270,65 @@ class _ConfirmacionScreenState extends ConsumerState<ConfirmacionScreen> {
                       .salirPantalla(barberoId: barbero.id);
                   ref.read(reservaNotifierProvider.notifier).resetReserva();
 
+                  if (citaIdAReprogramar != null) {
+                    try {
+                      await citaRepo.cancelarCita(
+                        citaIdAReprogramar,
+                        motivo: 'Reprogramada por el cliente',
+                      );
+                      ref.invalidate(citaByIdProvider(citaIdAReprogramar));
+                    } catch (_) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Tu nueva cita quedó confirmada, pero no pudimos '
+                              'cancelar la anterior automáticamente. '
+                              'Cancélala manualmente si sigue apareciendo activa.',
+                            ),
+                          ),
+                        );
+                      }
+                    } finally {
+                      ref.read(citaIdAReprogramarProvider.notifier).state =
+                          null;
+                    }
+                  }
+
                   if (!context.mounted) {
                     return;
                   }
                   router.go('/reservar/exito', extra: cita);
-                } catch (e) {
+                } on ValidationException catch (ex) {
+                  // Validation failures from the backend at this step are
+                  // almost always "this slot is no longer available" — send
+                  // the user back to pick a new time instead of retrying
+                  // the same (now invalid) confirmation.
                   if (!context.mounted) {
                     return;
                   }
-                  final message = e.toString().toLowerCase().contains('slot')
-                      ? 'Slot tomado, elige otro horario.'
-                      : 'No pudimos confirmar la cita. Intenta de nuevo.';
                   ScaffoldMessenger.of(
                     context,
-                  ).showSnackBar(SnackBar(content: Text(message)));
-                  if (message.contains('Slot')) {
-                    router.go('/reservar/horario');
+                  ).showSnackBar(SnackBar(content: Text(ex.message)));
+                  router.go('/reservar/horario');
+                } on AppException catch (ex) {
+                  if (!context.mounted) {
+                    return;
                   }
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(ex.message)));
+                } catch (_) {
+                  if (!context.mounted) {
+                    return;
+                  }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'No pudimos confirmar la cita. Intenta de nuevo.',
+                      ),
+                    ),
+                  );
                 } finally {
                   if (mounted) {
                     setState(() => _loading = false);
@@ -297,6 +370,8 @@ class _ConfirmacionScreenState extends ConsumerState<ConfirmacionScreen> {
                           .read(disponibilidadNotifierProvider.notifier)
                           .salirPantalla(barberoId: barbero.id);
                       ref.read(reservaNotifierProvider.notifier).resetReserva();
+                      ref.read(citaIdAReprogramarProvider.notifier).state =
+                          null;
                       if (!context.mounted) {
                         return;
                       }

@@ -1,79 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../shared/widgets/barberia_card.dart';
+import '../../../../core/errors/exceptions.dart';
+import '../../../../shared/widgets/admin_empty_state.dart';
+import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/error_widget.dart';
 import '../../../barberos/domain/barbero_model.dart';
 import '../../../servicios/domain/servicio_model.dart';
-import '../../data/admin_barberia_repository_helper.dart';
 import '../../data/admin_barbero_repository.dart';
-import '../../data/admin_servicio_repository.dart';
+import '../providers/admin_barberos_provider.dart';
 
-class AdminBarberosTab extends ConsumerStatefulWidget {
+class AdminBarberosTab extends ConsumerWidget {
   const AdminBarberosTab({super.key});
 
   @override
-  ConsumerState<AdminBarberosTab> createState() => _AdminBarberosTabState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dataAsync = ref.watch(adminBarberosTabProvider);
 
-class _AdminBarberosTabState extends ConsumerState<AdminBarberosTab> {
-  late Future<_TabData> _future;
-
-  @override
-  void initState() {
-    super.initState();
-    _future = _load();
-  }
-
-  Future<_TabData> _load() async {
-    final barberiaId = await ref.read(adminBarberiaIdProvider.future);
-    if (barberiaId == null) {
-      return const _TabData(barberiaId: null, barberos: [], servicios: []);
-    }
-
-    final repo = ref.read(adminBarberoRepositoryProvider);
-    final serviciosRepo = ref.read(adminServicioRepositoryProvider);
-
-    final results = await Future.wait([
-      repo.getBarberosPorBarberia(barberiaId),
-      serviciosRepo.getServiciosPorBarberia(barberiaId),
-    ]);
-
-    return _TabData(
-      barberiaId: barberiaId,
-      barberos: results[0] as List<BarberoModel>,
-      servicios: results[1] as List<ServicioModel>,
-    );
-  }
-
-  Future<void> _reload() async {
-    setState(() {
-      _future = _load();
-    });
-    await _future;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<_TabData>(
-      future: _future,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasError) {
-          return _ErrorState(
-            message: snapshot.error.toString(),
-            onRetry: _reload,
-          );
-        }
-
-        final data =
-            snapshot.data ??
-            const _TabData(barberiaId: null, barberos: [], servicios: []);
-
+    return dataAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stackTrace) => BarberiaErrorWidget(
+        message: error is AppException
+            ? error.message
+            : 'No pudimos cargar los barberos.',
+        onRetry: () => ref.invalidate(adminBarberosTabProvider),
+      ),
+      data: (data) {
         if (data.barberiaId == null) {
-          return const _EmptyState(
+          return const AdminEmptyState(
             message: 'Crea una barbería primero para administrar barberos.',
           );
         }
@@ -81,7 +35,7 @@ class _AdminBarberosTabState extends ConsumerState<AdminBarberosTab> {
         final items = data.barberos;
 
         return RefreshIndicator(
-          onRefresh: _reload,
+          onRefresh: () => ref.refresh(adminBarberosTabProvider.future),
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -90,32 +44,28 @@ class _AdminBarberosTabState extends ConsumerState<AdminBarberosTab> {
                 child: FilledButton.icon(
                   onPressed: data.servicios.isEmpty
                       ? null
-                      : () async {
-                          final created = await _showBarberoForm(
-                            context,
-                            barberiaId: data.barberiaId!,
-                            servicios: data.servicios,
-                          );
-                          if (created == true) {
-                            await _reload();
-                          }
-                        },
+                      : () => _showBarberoForm(
+                          context,
+                          ref,
+                          barberiaId: data.barberiaId!,
+                          servicios: data.servicios,
+                        ),
                   icon: const Icon(Icons.add_rounded),
                   label: const Text('Nuevo barbero'),
                 ),
               ),
               const SizedBox(height: 12),
               if (data.servicios.isEmpty)
-                const _EmptyState(
+                const AdminEmptyState(
                   message: 'Crea al menos un servicio antes de crear barberos.',
                 )
               else if (items.isEmpty)
-                const _EmptyState(
+                const AdminEmptyState(
                   message: 'No hay barberos para esta barbería.',
                 )
               else
                 for (final item in items) ...[
-                  BarberiaCard(
+                  AppCard(
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(item.nombreCompleto),
@@ -127,17 +77,13 @@ class _AdminBarberosTabState extends ConsumerState<AdminBarberosTab> {
                         children: [
                           IconButton(
                             tooltip: 'Editar',
-                            onPressed: () async {
-                              final updated = await _showBarberoForm(
-                                context,
-                                barberiaId: data.barberiaId!,
-                                servicios: data.servicios,
-                                barbero: item,
-                              );
-                              if (updated == true) {
-                                await _reload();
-                              }
-                            },
+                            onPressed: () => _showBarberoForm(
+                              context,
+                              ref,
+                              barberiaId: data.barberiaId!,
+                              servicios: data.servicios,
+                              barbero: item,
+                            ),
                             icon: const Icon(Icons.edit_rounded),
                           ),
                           IconButton(
@@ -165,11 +111,31 @@ class _AdminBarberosTabState extends ConsumerState<AdminBarberosTab> {
                                 ),
                               );
 
-                              if (confirmed == true) {
+                              if (confirmed != true) {
+                                return;
+                              }
+
+                              try {
                                 await ref
                                     .read(adminBarberoRepositoryProvider)
                                     .deleteBarbero(item.id);
-                                await _reload();
+                                ref.invalidate(adminBarberosTabProvider);
+                              } on AppException catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(e.message)),
+                                  );
+                                }
+                              } catch (_) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'No pudimos eliminar el barbero. Intenta de nuevo.',
+                                      ),
+                                    ),
+                                  );
+                                }
                               }
                             },
                             icon: const Icon(Icons.delete_outline_rounded),
@@ -187,8 +153,9 @@ class _AdminBarberosTabState extends ConsumerState<AdminBarberosTab> {
     );
   }
 
-  Future<bool?> _showBarberoForm(
-    BuildContext context, {
+  Future<void> _showBarberoForm(
+    BuildContext context,
+    WidgetRef ref, {
     required String barberiaId,
     required List<ServicioModel> servicios,
     BarberoModel? barbero,
@@ -221,109 +188,116 @@ class _AdminBarberosTabState extends ConsumerState<AdminBarberosTab> {
 
     final formKey = GlobalKey<FormState>();
 
-    return showModalBottomSheet<bool>(
+    return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (context) {
         final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+        var saving = false;
 
-        return Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
-          child: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      isEdit ? 'Editar barbero' : 'Nuevo barbero',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: nombreController,
-                    decoration: const InputDecoration(labelText: 'Nombre'),
-                    validator: (value) =>
-                        (value == null || value.trim().isEmpty)
-                        ? 'Requerido'
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: apellidoController,
-                    decoration: const InputDecoration(labelText: 'Apellido'),
-                    validator: (value) =>
-                        (value == null || value.trim().isEmpty)
-                        ? 'Requerido'
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: telefonoController,
-                    decoration: const InputDecoration(labelText: 'Teléfono'),
-                    validator: (value) =>
-                        (value == null || value.trim().isEmpty)
-                        ? 'Requerido'
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: correoController,
-                    decoration: const InputDecoration(labelText: 'Correo'),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) =>
-                        (value == null || value.trim().isEmpty)
-                        ? 'Requerido'
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: biografiaController,
-                    decoration: const InputDecoration(labelText: 'Biografía'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: experienciaController,
-                    decoration: const InputDecoration(
-                      labelText: 'Años de experiencia',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      final parsed = int.tryParse(value ?? '');
-                      if (parsed == null || parsed < 0) return 'Inválido';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: especialidadesController,
-                    decoration: const InputDecoration(
-                      labelText: 'Especialidades (separadas por coma)',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: fotoController,
-                    decoration: const InputDecoration(
-                      labelText: 'Foto URL (opcional)',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Servicios',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  StatefulBuilder(
-                    builder: (context, setInnerState) {
-                      return Column(
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
+              child: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          isEdit ? 'Editar barbero' : 'Nuevo barbero',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: nombreController,
+                        decoration: const InputDecoration(labelText: 'Nombre'),
+                        validator: (value) =>
+                            (value == null || value.trim().isEmpty)
+                            ? 'Requerido'
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: apellidoController,
+                        decoration: const InputDecoration(
+                          labelText: 'Apellido',
+                        ),
+                        validator: (value) =>
+                            (value == null || value.trim().isEmpty)
+                            ? 'Requerido'
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: telefonoController,
+                        decoration: const InputDecoration(
+                          labelText: 'Teléfono',
+                        ),
+                        validator: (value) =>
+                            (value == null || value.trim().isEmpty)
+                            ? 'Requerido'
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: correoController,
+                        decoration: const InputDecoration(labelText: 'Correo'),
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (value) =>
+                            (value == null || value.trim().isEmpty)
+                            ? 'Requerido'
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: biografiaController,
+                        decoration: const InputDecoration(
+                          labelText: 'Biografía',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: experienciaController,
+                        decoration: const InputDecoration(
+                          labelText: 'Años de experiencia',
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          final parsed = int.tryParse(value ?? '');
+                          if (parsed == null || parsed < 0) return 'Inválido';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: especialidadesController,
+                        decoration: const InputDecoration(
+                          labelText: 'Especialidades (separadas por coma)',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: fotoController,
+                        decoration: const InputDecoration(
+                          labelText: 'Foto URL (opcional)',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Servicios',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Column(
                         children: [
                           for (final servicio in servicios)
                             CheckboxListTile.adaptive(
@@ -334,7 +308,7 @@ class _AdminBarberosTabState extends ConsumerState<AdminBarberosTab> {
                               ),
                               value: selectedServicioIds.contains(servicio.id),
                               onChanged: (checked) {
-                                setInnerState(() {
+                                setSheetState(() {
                                   if (checked == true) {
                                     selectedServicioIds.add(servicio.id);
                                   } else {
@@ -344,137 +318,138 @@ class _AdminBarberosTabState extends ConsumerState<AdminBarberosTab> {
                               },
                             ),
                         ],
-                      );
-                    },
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: saving
+                              ? null
+                              : () async {
+                                  if (!(formKey.currentState?.validate() ??
+                                      false)) {
+                                    return;
+                                  }
+                                  if (selectedServicioIds.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Debes seleccionar al menos un servicio.',
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  final especialidades =
+                                      especialidadesController.text
+                                          .split(',')
+                                          .map((e) => e.trim())
+                                          .where((e) => e.isNotEmpty)
+                                          .toList();
+
+                                  setSheetState(() => saving = true);
+                                  try {
+                                    final repo = ref.read(
+                                      adminBarberoRepositoryProvider,
+                                    );
+
+                                    if (isEdit) {
+                                      await repo.updateBarbero(
+                                        id: barberoId!,
+                                        barberiaId: barberiaId,
+                                        nombre: nombreController.text.trim(),
+                                        apellido: apellidoController.text
+                                            .trim(),
+                                        telefono: telefonoController.text
+                                            .trim(),
+                                        correo: correoController.text.trim(),
+                                        biografia: biografiaController.text
+                                            .trim(),
+                                        aniosExperiencia: int.parse(
+                                          experienciaController.text.trim(),
+                                        ),
+                                        especialidades: especialidades,
+                                        servicioIds: selectedServicioIds
+                                            .toList(),
+                                        fotoUrl:
+                                            fotoController.text.trim().isEmpty
+                                            ? null
+                                            : fotoController.text.trim(),
+                                      );
+                                    } else {
+                                      await repo.createBarbero(
+                                        barberiaId: barberiaId,
+                                        nombre: nombreController.text.trim(),
+                                        apellido: apellidoController.text
+                                            .trim(),
+                                        telefono: telefonoController.text
+                                            .trim(),
+                                        correo: correoController.text.trim(),
+                                        biografia: biografiaController.text
+                                            .trim(),
+                                        aniosExperiencia: int.parse(
+                                          experienciaController.text.trim(),
+                                        ),
+                                        especialidades: especialidades,
+                                        servicioIds: selectedServicioIds
+                                            .toList(),
+                                        fotoUrl:
+                                            fotoController.text.trim().isEmpty
+                                            ? null
+                                            : fotoController.text.trim(),
+                                      );
+                                    }
+
+                                    ref.invalidate(adminBarberosTabProvider);
+                                    if (context.mounted) {
+                                      Navigator.of(context).pop();
+                                    }
+                                  } on AppException catch (e) {
+                                    setSheetState(() => saving = false);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(content: Text(e.message)),
+                                      );
+                                    }
+                                  } catch (_) {
+                                    setSheetState(() => saving = false);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'No pudimos guardar el barbero. Intenta de nuevo.',
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                          child: saving
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  isEdit ? 'Guardar cambios' : 'Crear barbero',
+                                ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () async {
-                        if (!(formKey.currentState?.validate() ?? false)) {
-                          return;
-                        }
-                        if (selectedServicioIds.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Debes seleccionar al menos un servicio.',
-                              ),
-                            ),
-                          );
-                          return;
-                        }
-
-                        final especialidades = especialidadesController.text
-                            .split(',')
-                            .map((e) => e.trim())
-                            .where((e) => e.isNotEmpty)
-                            .toList();
-
-                        final repo = ref.read(adminBarberoRepositoryProvider);
-
-                        if (isEdit) {
-                          await repo.updateBarbero(
-                            id: barberoId!,
-                            barberiaId: barberiaId,
-                            nombre: nombreController.text.trim(),
-                            apellido: apellidoController.text.trim(),
-                            telefono: telefonoController.text.trim(),
-                            correo: correoController.text.trim(),
-                            biografia: biografiaController.text.trim(),
-                            aniosExperiencia: int.parse(
-                              experienciaController.text.trim(),
-                            ),
-                            especialidades: especialidades,
-                            servicioIds: selectedServicioIds.toList(),
-                            fotoUrl: fotoController.text.trim().isEmpty
-                                ? null
-                                : fotoController.text.trim(),
-                          );
-                        } else {
-                          await repo.createBarbero(
-                            barberiaId: barberiaId,
-                            nombre: nombreController.text.trim(),
-                            apellido: apellidoController.text.trim(),
-                            telefono: telefonoController.text.trim(),
-                            correo: correoController.text.trim(),
-                            biografia: biografiaController.text.trim(),
-                            aniosExperiencia: int.parse(
-                              experienciaController.text.trim(),
-                            ),
-                            especialidades: especialidades,
-                            servicioIds: selectedServicioIds.toList(),
-                            fotoUrl: fotoController.text.trim().isEmpty
-                                ? null
-                                : fotoController.text.trim(),
-                          );
-                        }
-
-                        if (context.mounted) {
-                          Navigator.of(context).pop(true);
-                        }
-                      },
-                      child: Text(isEdit ? 'Guardar cambios' : 'Crear barbero'),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
-    );
-  }
-}
-
-class _TabData {
-  const _TabData({
-    required this.barberiaId,
-    required this.barberos,
-    required this.servicios,
-  });
-
-  final String? barberiaId;
-  final List<BarberoModel> barberos;
-  final List<ServicioModel> servicios;
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 16),
-      child: Center(child: Text(message, textAlign: TextAlign.center)),
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final Future<void> Function() onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text('Ocurrió un error', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 8),
-        Text(message, style: Theme.of(context).textTheme.bodyMedium),
-        const SizedBox(height: 16),
-        FilledButton.icon(
-          onPressed: onRetry,
-          icon: const Icon(Icons.refresh_rounded),
-          label: const Text('Reintentar'),
-        ),
-      ],
     );
   }
 }

@@ -26,9 +26,11 @@ class CitaCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: Ink(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.surfaceOf(context),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.textMuted.withValues(alpha: 0.2)),
+          border: Border.all(
+            color: AppColors.textMutedOf(context).withValues(alpha: 0.2),
+          ),
         ),
         child: Row(
           children: [

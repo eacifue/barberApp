@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/auth/logout_button.dart';
 import '../../../../shared/widgets/app_card.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/error_widget.dart';
+import '../../../citas/presentation/providers/reprogramacion_provider.dart';
 import '../../../citas/presentation/providers/reserva_notifier.dart';
-import '../../../auth/data/auth_repository.dart';
 import '../providers/barbershops_provider.dart';
 import '../providers/selected_barbershop_provider.dart';
 
@@ -30,24 +31,7 @@ class _SelectBarbershopScreenState
     return Scaffold(
       appBar: AppBar(
         title: const Text('Selecciona tu barbería'),
-        actions: [
-          IconButton(
-            tooltip: 'Cerrar sesión',
-            onPressed: _savingId != null
-                ? null
-                : () async {
-                    await ref.read(authRepositoryProvider).logout();
-                    await ref
-                        .read(selectedBarbershopProvider.notifier)
-                        .clearSelection();
-                    if (!context.mounted) {
-                      return;
-                    }
-                    context.go('/login');
-                  },
-            icon: const Icon(Icons.logout_rounded),
-          ),
-        ],
+        actions: [LogoutButton(disabled: _savingId != null)],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -79,6 +63,8 @@ class _SelectBarbershopScreenState
                           ref
                               .read(reservaNotifierProvider.notifier)
                               .resetReserva();
+                          ref.read(citaIdAReprogramarProvider.notifier).state =
+                              null;
                           await ref
                               .read(selectedBarbershopProvider.notifier)
                               .selectBarbershop(item.id);

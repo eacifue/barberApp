@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../barberias/presentation/providers/barbershops_provider.dart';
+import '../../../barberias/presentation/providers/selected_barbershop_provider.dart';
 import '../../../../features/citas/presentation/providers/reserva_notifier.dart';
 import '../../../../shared/extensions/date_extensions.dart';
 import '../../../../shared/widgets/error_widget.dart';
@@ -74,6 +76,20 @@ class _SeleccionHorarioScreenState
     final barbero = reserva.barberoSeleccionado;
     final servicio = reserva.servicioSeleccionado;
     final slotSeleccionado = disponibilidadState.slotSeleccionado;
+
+    final barberiaId = ref.watch(selectedBarbershopProvider).barberiaId;
+    final barbershops = ref.watch(barbershopsProvider).valueOrNull;
+    bool esDiaLaborable(DateTime date) {
+      if (barberiaId == null || barbershops == null) {
+        return true;
+      }
+      for (final b in barbershops) {
+        if (b.id == barberiaId) {
+          return b.esDiaLaborable(date);
+        }
+      }
+      return true;
+    }
 
     if (barbero == null || servicio == null) {
       return Scaffold(
@@ -158,9 +174,10 @@ class _SeleccionHorarioScreenState
               duracionMin: servicio.duracionMinutos,
             ),
             const SizedBox(height: 12),
-            _CalendarioSemana(
+            _CalendarioMensual(
               focusedDay: _focusedDay,
               fechaSeleccionada: disponibilidadState.fechaSeleccionada,
+              selectableDayPredicate: esDiaLaborable,
               onFocusedChanged: (focused) =>
                   setState(() => _focusedDay = focused),
               onDaySelected: (selected, focused) async {
@@ -266,7 +283,7 @@ class _ReservaProgressStep3 extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: i <= 2
                         ? AppColors.primary
-                        : AppColors.textMuted.withValues(alpha: 0.25),
+                        : AppColors.textMutedOf(context).withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),
@@ -296,7 +313,7 @@ class _ContextoReservaCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceOf(context),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
       ),
@@ -320,16 +337,18 @@ class _ContextoReservaCard extends StatelessWidget {
   }
 }
 
-class _CalendarioSemana extends StatelessWidget {
-  const _CalendarioSemana({
+class _CalendarioMensual extends StatelessWidget {
+  const _CalendarioMensual({
     required this.focusedDay,
     required this.fechaSeleccionada,
+    required this.selectableDayPredicate,
     required this.onFocusedChanged,
     required this.onDaySelected,
   });
 
   final DateTime focusedDay;
   final DateTime fechaSeleccionada;
+  final bool Function(DateTime day) selectableDayPredicate;
   final ValueChanged<DateTime> onFocusedChanged;
   final void Function(DateTime selected, DateTime focused) onDaySelected;
 
@@ -342,19 +361,19 @@ class _CalendarioSemana extends StatelessWidget {
       date: fechaSeleccionada,
       first: first,
       last: last,
-      selectableDayPredicate: (day) => day.weekday != DateTime.sunday,
+      selectableDayPredicate: selectableDayPredicate,
     );
     final safeCurrent = _coerceSelectableDate(
       date: focusedDay,
       first: first,
       last: last,
-      selectableDayPredicate: (day) => day.weekday != DateTime.sunday,
+      selectableDayPredicate: selectableDayPredicate,
     );
 
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.75),
+        color: AppColors.surfaceOf(context).withValues(alpha: 0.75),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
@@ -369,7 +388,7 @@ class _CalendarioSemana extends StatelessWidget {
             currentDate: safeCurrent,
             firstDate: first,
             lastDate: last,
-            selectableDayPredicate: (day) => day.weekday != DateTime.sunday,
+            selectableDayPredicate: selectableDayPredicate,
             onDateChanged: (selected) {
               onFocusedChanged(selected);
               onDaySelected(selected, selected);
@@ -425,8 +444,8 @@ class _SlotChip extends StatelessWidget {
     final unavailable = !slot.disponible;
     final blocked = slot.bloqueadoPorRedis;
 
-    Color background = AppColors.secondary.withValues(alpha: 0.12);
-    Color textColor = AppColors.textPrimary;
+    Color background = AppColors.secondaryOf(context).withValues(alpha: 0.12);
+    Color textColor = AppColors.textPrimaryOf(context);
     Widget? trailing;
 
     if (isSelected) {
@@ -445,8 +464,8 @@ class _SlotChip extends StatelessWidget {
         child: CircularProgressIndicator(strokeWidth: 1.8),
       );
     } else if (unavailable) {
-      background = AppColors.textMuted.withValues(alpha: 0.25);
-      textColor = AppColors.textMuted;
+      background = AppColors.textMutedOf(context).withValues(alpha: 0.25);
+      textColor = AppColors.textMutedOf(context);
     }
 
     return InkWell(
@@ -510,11 +529,11 @@ class _LoadingSlotsGrid extends StatelessWidget {
       ),
       itemBuilder: (context, index) {
         return Shimmer.fromColors(
-          baseColor: AppColors.background,
-          highlightColor: Colors.white,
+          baseColor: AppColors.backgroundOf(context),
+          highlightColor: AppColors.shimmerHighlightOf(context),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: AppColors.surfaceOf(context),
               borderRadius: BorderRadius.circular(12),
             ),
           ),
@@ -564,9 +583,11 @@ class _BottomReservaBar extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: AppColors.surfaceOf(context),
           border: Border(
-            top: BorderSide(color: AppColors.textMuted.withValues(alpha: 0.22)),
+            top: BorderSide(
+              color: AppColors.textMutedOf(context).withValues(alpha: 0.22),
+            ),
           ),
         ),
         child: Column(
@@ -592,9 +613,10 @@ class _BottomReservaBar extends StatelessWidget {
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: ElevatedButton.icon(
                 onPressed: estaBloqueando ? null : onContinuar,
-                child: const Text('CONTINUAR ->'),
+                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                label: const Text('CONTINUAR'),
               ),
             ),
             const SizedBox(height: 4),

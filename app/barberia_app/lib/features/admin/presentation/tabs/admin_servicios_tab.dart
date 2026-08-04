@@ -1,67 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../shared/widgets/barberia_card.dart';
+import '../../../../core/errors/exceptions.dart';
+import '../../../../shared/widgets/admin_empty_state.dart';
+import '../../../../shared/widgets/app_card.dart';
+import '../../../../shared/widgets/error_widget.dart';
 import '../../../servicios/domain/servicio_model.dart';
-import '../../data/admin_barberia_repository_helper.dart';
 import '../../data/admin_servicio_repository.dart';
+import '../providers/admin_servicios_provider.dart';
 
-class AdminServiciosTab extends ConsumerStatefulWidget {
+class AdminServiciosTab extends ConsumerWidget {
   const AdminServiciosTab({super.key});
 
   @override
-  ConsumerState<AdminServiciosTab> createState() => _AdminServiciosTabState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dataAsync = ref.watch(adminServiciosTabProvider);
 
-class _AdminServiciosTabState extends ConsumerState<AdminServiciosTab> {
-  late Future<_TabData> _future;
-
-  @override
-  void initState() {
-    super.initState();
-    _future = _load();
-  }
-
-  Future<_TabData> _load() async {
-    final barberiaId = await ref.read(adminBarberiaIdProvider.future);
-    if (barberiaId == null) {
-      return const _TabData(barberiaId: null, servicios: []);
-    }
-
-    final servicios = await ref
-        .read(adminServicioRepositoryProvider)
-        .getServiciosPorBarberia(barberiaId);
-    return _TabData(barberiaId: barberiaId, servicios: servicios);
-  }
-
-  Future<void> _reload() async {
-    setState(() {
-      _future = _load();
-    });
-    await _future;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<_TabData>(
-      future: _future,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasError) {
-          return _ErrorState(
-            message: snapshot.error.toString(),
-            onRetry: _reload,
-          );
-        }
-
-        final data =
-            snapshot.data ?? const _TabData(barberiaId: null, servicios: []);
-
+    return dataAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stackTrace) => BarberiaErrorWidget(
+        message: error is AppException
+            ? error.message
+            : 'No pudimos cargar los servicios.',
+        onRetry: () => ref.invalidate(adminServiciosTabProvider),
+      ),
+      data: (data) {
         if (data.barberiaId == null) {
-          return const _EmptyState(
+          return const AdminEmptyState(
             message: 'Crea una barbería primero para administrar servicios.',
           );
         }
@@ -69,34 +34,30 @@ class _AdminServiciosTabState extends ConsumerState<AdminServiciosTab> {
         final items = data.servicios;
 
         return RefreshIndicator(
-          onRefresh: _reload,
+          onRefresh: () => ref.refresh(adminServiciosTabProvider.future),
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
               Align(
                 alignment: Alignment.centerRight,
                 child: FilledButton.icon(
-                  onPressed: () async {
-                    final created = await _showServicioForm(
-                      context,
-                      barberiaId: data.barberiaId!,
-                    );
-                    if (created == true) {
-                      await _reload();
-                    }
-                  },
+                  onPressed: () => _showServicioForm(
+                    context,
+                    ref,
+                    barberiaId: data.barberiaId!,
+                  ),
                   icon: const Icon(Icons.add_rounded),
                   label: const Text('Nuevo servicio'),
                 ),
               ),
               const SizedBox(height: 12),
               if (items.isEmpty)
-                const _EmptyState(
+                const AdminEmptyState(
                   message: 'No hay servicios para esta barbería.',
                 )
               else
                 for (final item in items) ...[
-                  BarberiaCard(
+                  AppCard(
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(item.nombre),
@@ -108,16 +69,12 @@ class _AdminServiciosTabState extends ConsumerState<AdminServiciosTab> {
                         children: [
                           IconButton(
                             tooltip: 'Editar',
-                            onPressed: () async {
-                              final updated = await _showServicioForm(
-                                context,
-                                barberiaId: data.barberiaId!,
-                                servicio: item,
-                              );
-                              if (updated == true) {
-                                await _reload();
-                              }
-                            },
+                            onPressed: () => _showServicioForm(
+                              context,
+                              ref,
+                              barberiaId: data.barberiaId!,
+                              servicio: item,
+                            ),
                             icon: const Icon(Icons.edit_rounded),
                           ),
                           IconButton(
@@ -143,11 +100,31 @@ class _AdminServiciosTabState extends ConsumerState<AdminServiciosTab> {
                                 ),
                               );
 
-                              if (confirmed == true) {
+                              if (confirmed != true) {
+                                return;
+                              }
+
+                              try {
                                 await ref
                                     .read(adminServicioRepositoryProvider)
                                     .deleteServicio(item.id);
-                                await _reload();
+                                ref.invalidate(adminServiciosTabProvider);
+                              } on AppException catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(e.message)),
+                                  );
+                                }
+                              } catch (_) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'No pudimos eliminar el servicio. Intenta de nuevo.',
+                                      ),
+                                    ),
+                                  );
+                                }
                               }
                             },
                             icon: const Icon(Icons.delete_outline_rounded),
@@ -165,8 +142,9 @@ class _AdminServiciosTabState extends ConsumerState<AdminServiciosTab> {
     );
   }
 
-  Future<bool?> _showServicioForm(
-    BuildContext context, {
+  Future<void> _showServicioForm(
+    BuildContext context,
+    WidgetRef ref, {
     required String barberiaId,
     ServicioModel? servicio,
   }) {
@@ -192,179 +170,185 @@ class _AdminServiciosTabState extends ConsumerState<AdminServiciosTab> {
 
     final formKey = GlobalKey<FormState>();
 
-    return showModalBottomSheet<bool>(
+    return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (context) {
         final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+        var saving = false;
 
-        return Padding(
-          padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    isEdit ? 'Editar servicio' : 'Nuevo servicio',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: nombreController,
-                  decoration: const InputDecoration(labelText: 'Nombre'),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Requerido'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: descripcionController,
-                  decoration: const InputDecoration(labelText: 'Descripción'),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: tipoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Tipo (Corte, Barba, ... )',
-                  ),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Requerido'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: duracionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Duración (min)',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    final parsed = int.tryParse(value ?? '');
-                    if (parsed == null || parsed <= 0) return 'Inválido';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: precioController,
-                  decoration: const InputDecoration(labelText: 'Precio'),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    final parsed = double.tryParse(value ?? '');
-                    if (parsed == null || parsed < 0) return 'Inválido';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: fotoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Foto URL (opcional)',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () async {
-                      if (!(formKey.currentState?.validate() ?? false)) return;
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        isEdit ? 'Editar servicio' : 'Nuevo servicio',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: nombreController,
+                      decoration: const InputDecoration(labelText: 'Nombre'),
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                          ? 'Requerido'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: descripcionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Descripción',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: tipoController,
+                      decoration: const InputDecoration(
+                        labelText: 'Tipo (Corte, Barba, ... )',
+                      ),
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                          ? 'Requerido'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: duracionController,
+                      decoration: const InputDecoration(
+                        labelText: 'Duración (min)',
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        final parsed = int.tryParse(value ?? '');
+                        if (parsed == null || parsed <= 0) return 'Inválido';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: precioController,
+                      decoration: const InputDecoration(labelText: 'Precio'),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        final parsed = double.tryParse(value ?? '');
+                        if (parsed == null || parsed < 0) return 'Inválido';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: fotoController,
+                      decoration: const InputDecoration(
+                        labelText: 'Foto URL (opcional)',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: saving
+                            ? null
+                            : () async {
+                                if (!(formKey.currentState?.validate() ??
+                                    false)) {
+                                  return;
+                                }
 
-                      final repo = ref.read(adminServicioRepositoryProvider);
-                      final duracion = int.parse(
-                        duracionController.text.trim(),
-                      );
-                      final precio = double.parse(precioController.text.trim());
+                                final duracion = int.parse(
+                                  duracionController.text.trim(),
+                                );
+                                final precio = double.parse(
+                                  precioController.text.trim(),
+                                );
 
-                      if (isEdit) {
-                        await repo.updateServicio(
-                          id: servicioId!,
-                          barberiaId: barberiaId,
-                          nombre: nombreController.text.trim(),
-                          descripcion: descripcionController.text.trim(),
-                          tipo: tipoController.text.trim(),
-                          duracionMinutos: duracion,
-                          precio: precio,
-                          fotoUrl: fotoController.text.trim().isEmpty
-                              ? null
-                              : fotoController.text.trim(),
-                        );
-                      } else {
-                        await repo.createServicio(
-                          barberiaId: barberiaId,
-                          nombre: nombreController.text.trim(),
-                          descripcion: descripcionController.text.trim(),
-                          tipo: tipoController.text.trim(),
-                          duracionMinutos: duracion,
-                          precio: precio,
-                          fotoUrl: fotoController.text.trim().isEmpty
-                              ? null
-                              : fotoController.text.trim(),
-                        );
-                      }
+                                setSheetState(() => saving = true);
+                                try {
+                                  final repo = ref.read(
+                                    adminServicioRepositoryProvider,
+                                  );
+                                  if (isEdit) {
+                                    await repo.updateServicio(
+                                      id: servicioId!,
+                                      barberiaId: barberiaId,
+                                      nombre: nombreController.text.trim(),
+                                      descripcion: descripcionController.text
+                                          .trim(),
+                                      tipo: tipoController.text.trim(),
+                                      duracionMinutos: duracion,
+                                      precio: precio,
+                                      fotoUrl: fotoController.text.trim().isEmpty
+                                          ? null
+                                          : fotoController.text.trim(),
+                                    );
+                                  } else {
+                                    await repo.createServicio(
+                                      barberiaId: barberiaId,
+                                      nombre: nombreController.text.trim(),
+                                      descripcion: descripcionController.text
+                                          .trim(),
+                                      tipo: tipoController.text.trim(),
+                                      duracionMinutos: duracion,
+                                      precio: precio,
+                                      fotoUrl: fotoController.text.trim().isEmpty
+                                          ? null
+                                          : fotoController.text.trim(),
+                                    );
+                                  }
 
-                      if (context.mounted) {
-                        Navigator.of(context).pop(true);
-                      }
-                    },
-                    child: Text(isEdit ? 'Guardar cambios' : 'Crear servicio'),
-                  ),
+                                  ref.invalidate(adminServiciosTabProvider);
+                                  if (context.mounted) {
+                                    Navigator.of(context).pop();
+                                  }
+                                } on AppException catch (e) {
+                                  setSheetState(() => saving = false);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(e.message)),
+                                    );
+                                  }
+                                } catch (_) {
+                                  setSheetState(() => saving = false);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'No pudimos guardar el servicio. Intenta de nuevo.',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                        child: saving
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Text(
+                                isEdit ? 'Guardar cambios' : 'Crear servicio',
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
-    );
-  }
-}
-
-class _TabData {
-  const _TabData({required this.barberiaId, required this.servicios});
-
-  final String? barberiaId;
-  final List<ServicioModel> servicios;
-}
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 16),
-      child: Center(child: Text(message, textAlign: TextAlign.center)),
-    );
-  }
-}
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final Future<void> Function() onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text('Ocurrió un error', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 8),
-        Text(message, style: Theme.of(context).textTheme.bodyMedium),
-        const SizedBox(height: 16),
-        FilledButton.icon(
-          onPressed: onRetry,
-          icon: const Icon(Icons.refresh_rounded),
-          label: const Text('Reintentar'),
-        ),
-      ],
     );
   }
 }
