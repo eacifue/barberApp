@@ -7,7 +7,6 @@ using Barberia.Domain.Enums;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using AppValidationException = Barberia.Application.Exceptions.ValidationException;
-using BarberiaEntity = Barberia.Domain.Entities.Barberia;
 
 namespace Barberia.Application.Services;
 
@@ -53,38 +52,6 @@ public sealed class BarberiaService : IBarberiaService
         return mapper.Map<BarberiaDto>(barberia);
     }
 
-    public async Task<BarberiaDto> CreateAsync(UpsertBarberiaRequest request, CancellationToken cancellationToken)
-    {
-        await ValidateAsync(request, cancellationToken);
-
-        var barberia = new BarberiaEntity
-        {
-            Nombre = request.Nombre.Trim(),
-            Descripcion = request.Descripcion?.Trim() ?? string.Empty,
-            Slogan = request.Slogan?.Trim() ?? string.Empty,
-            Telefono = request.Telefono.Trim(),
-            Correo = request.Correo.Trim().ToLowerInvariant(),
-            SitioWeb = request.SitioWeb?.Trim() ?? string.Empty,
-            Direccion = request.Direccion.Trim(),
-            Ciudad = request.Ciudad.Trim(),
-            Departamento = request.Departamento.Trim(),
-            Pais = request.Pais.Trim(),
-            Latitud = request.Latitud,
-            Longitud = request.Longitud,
-            FotoPortada = request.FotoPortada?.Trim() ?? string.Empty,
-            HoraApertura = request.HoraApertura,
-            HoraCierre = request.HoraCierre,
-            DiasDescanso = ParseDiasDescanso(request.DiasDescanso),
-            Activa = request.Activa,
-            Activo = true
-        };
-
-        await dbContext.Barberias.AddAsync(barberia, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return mapper.Map<BarberiaDto>(barberia);
-    }
-
     public async Task<BarberiaDto> UpdateAsync(Guid id, UpsertBarberiaRequest request, CancellationToken cancellationToken)
     {
         await ValidateAsync(request, cancellationToken);
@@ -118,22 +85,6 @@ public sealed class BarberiaService : IBarberiaService
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return mapper.Map<BarberiaDto>(barberia);
-    }
-
-    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken)
-    {
-        var barberia = await dbContext.Barberias
-            .FirstOrDefaultAsync(x => x.Id == id && x.Activo, cancellationToken);
-
-        if (barberia is null)
-        {
-            throw new NotFoundException("La barbería no existe.");
-        }
-
-        barberia.Activo = false;
-        barberia.Activa = false;
-
-        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task ValidateAsync(UpsertBarberiaRequest request, CancellationToken cancellationToken)

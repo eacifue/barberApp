@@ -49,7 +49,7 @@ public sealed class BarberiasController : ControllerBase
         return Ok(ApiResponse<List<BarberiaDto>>.Ok(barberias, "Barberías obtenidas correctamente."));
     }
 
-    [HttpGet("api/v1/admin/barberias/{id:guid}", Name = "GetBarberiaByIdAdmin")]
+    [HttpGet("api/v1/admin/barberias/{id:guid}")]
     [Authorize(Policy = Roles.Admin)]
     public async Task<ActionResult<ApiResponse<BarberiaDto>>> GetByIdAdminAsync(
         [FromRoute] Guid id,
@@ -57,16 +57,6 @@ public sealed class BarberiasController : ControllerBase
     {
         var barberia = await barberiaService.GetByIdAsync(id, cancellationToken);
         return Ok(ApiResponse<BarberiaDto>.Ok(barberia, "Barbería obtenida correctamente."));
-    }
-
-    [HttpPost("api/v1/admin/barberias")]
-    [Authorize(Policy = Roles.Admin)]
-    public async Task<ActionResult<ApiResponse<BarberiaDto>>> CreateAsync(
-        [FromBody] UpsertBarberiaRequest request,
-        CancellationToken cancellationToken)
-    {
-        var barberia = await barberiaService.CreateAsync(request, cancellationToken);
-        return CreatedAtRoute("GetBarberiaByIdAdmin", new { id = barberia.Id }, ApiResponse<BarberiaDto>.Ok(barberia, "Barbería creada correctamente."));
     }
 
     [HttpPut("api/v1/admin/barberias/{id:guid}")]
@@ -78,15 +68,5 @@ public sealed class BarberiasController : ControllerBase
     {
         var barberia = await barberiaService.UpdateAsync(id, request, cancellationToken);
         return Ok(ApiResponse<BarberiaDto>.Ok(barberia, "Barbería actualizada correctamente."));
-    }
-
-    [HttpDelete("api/v1/admin/barberias/{id:guid}")]
-    [Authorize(Policy = Roles.Admin)]
-    public async Task<ActionResult<ApiResponse<object?>>> DeleteAsync(
-        [FromRoute] Guid id,
-        CancellationToken cancellationToken)
-    {
-        await barberiaService.DeleteAsync(id, cancellationToken);
-        return Ok(ApiResponse<object?>.Ok(null, "Barbería eliminada correctamente."));
     }
 }
