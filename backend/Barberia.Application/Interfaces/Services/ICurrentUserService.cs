@@ -18,7 +18,5 @@ public interface ICurrentUserService
 
     bool IsCliente { get; }
 
-    Guid? BarberiaId { get; }
-
     Guid? BarberoId { get; }
 }

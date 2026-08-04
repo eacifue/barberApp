@@ -9,7 +9,6 @@ public class CurrentUserService : ICurrentUserService
     private const string UserIdItemKey = "CurrentUserId";
     private const string ClienteIdItemKey = "CurrentClienteId";
     private const string RoleItemKey = "CurrentUserRole";
-    private const string BarberiaIdItemKey = "CurrentBarberiaId";
     private const string BarberoIdItemKey = "CurrentBarberoId";
 
     private readonly IHttpContextAccessor httpContextAccessor;
@@ -62,19 +61,6 @@ public class CurrentUserService : ICurrentUserService
     public bool IsBarbero => string.Equals(Role, Roles.Barbero, StringComparison.Ordinal);
 
     public bool IsCliente => string.Equals(Role, Roles.Cliente, StringComparison.Ordinal);
-
-    public Guid? BarberiaId
-    {
-        get
-        {
-            var contextualId = GetItemGuid(BarberiaIdItemKey);
-            if (contextualId.HasValue)
-                return contextualId;
-
-            var value = httpContextAccessor.HttpContext?.User.FindFirstValue("barberiaId");
-            return Guid.TryParse(value, out var id) ? id : null;
-        }
-    }
 
     public Guid? BarberoId
     {

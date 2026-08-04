@@ -34,8 +34,7 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             new(JwtRegisteredClaimNames.Sub, cliente.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, cliente.Correo),
             new(ClaimTypes.Role, rol),
-            new("clienteId", cliente.Id.ToString()),
-            new("barberiaId", cliente.BarberiaId?.ToString() ?? string.Empty)
+            new("clienteId", cliente.Id.ToString())
         };
 
         if (cliente.BarberoId.HasValue)
