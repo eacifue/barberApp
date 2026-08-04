@@ -49,8 +49,6 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
 
     private Guid? CurrentUserId => currentUserService.UserId;
 
-    private Guid? CurrentBarberiaId => currentUserService.BarberiaId;
-
     private Guid? CurrentBarberoId => currentUserService.BarberoId;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -146,7 +144,8 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
             entity.HasQueryFilter(x =>
                 BypassTenantFilter ||
                 CurrentRole == Roles.Cliente ||
-                (CurrentBarberiaId != null && x.BarberiaId == CurrentBarberiaId));
+                CurrentRole == Roles.AdminBarberia ||
+                CurrentRole == Roles.Barbero);
         });
     }
 
@@ -186,8 +185,8 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
             entity.HasQueryFilter(x =>
                 BypassTenantFilter ||
                 CurrentRole == Roles.Cliente ||
-                (CurrentRole == Roles.Barbero && CurrentBarberoId != null && x.Id == CurrentBarberoId) ||
-                (CurrentBarberiaId != null && x.BarberiaId == CurrentBarberiaId));
+                CurrentRole == Roles.AdminBarberia ||
+                CurrentRole == Roles.Barbero);
         });
     }
 
@@ -214,8 +213,8 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
             entity.HasQueryFilter(x =>
                 BypassTenantFilter ||
                 CurrentRole == Roles.Cliente ||
-                (CurrentRole == Roles.Barbero && CurrentBarberoId != null && x.BarberoId == CurrentBarberoId) ||
-                (CurrentBarberiaId != null && x.Barbero.BarberiaId == CurrentBarberiaId));
+                CurrentRole == Roles.AdminBarberia ||
+                CurrentRole == Roles.Barbero);
         });
     }
 
@@ -236,8 +235,8 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
             entity.HasQueryFilter(x =>
                 BypassTenantFilter ||
                 CurrentRole == Roles.Cliente ||
-                (CurrentRole == Roles.Barbero && CurrentBarberoId != null && x.BarberoId == CurrentBarberoId) ||
-                (CurrentBarberiaId != null && x.Barbero.BarberiaId == CurrentBarberiaId));
+                CurrentRole == Roles.AdminBarberia ||
+                CurrentRole == Roles.Barbero);
         });
     }
 
@@ -257,8 +256,8 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
             entity.HasQueryFilter(x =>
                 BypassTenantFilter ||
                 CurrentRole == Roles.Cliente ||
-                (CurrentRole == Roles.Barbero && CurrentBarberoId != null && x.BarberoId == CurrentBarberoId) ||
-                (CurrentBarberiaId != null && x.Barbero.BarberiaId == CurrentBarberiaId));
+                CurrentRole == Roles.AdminBarberia ||
+                CurrentRole == Roles.Barbero);
         });
     }
 
@@ -284,8 +283,8 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
             entity.HasQueryFilter(x =>
                 BypassTenantFilter ||
                 CurrentRole == Roles.Cliente ||
-                (CurrentRole == Roles.Barbero && CurrentBarberoId != null && x.BarberId == CurrentBarberoId) ||
-                (CurrentBarberiaId != null && x.Barber.BarberiaId == CurrentBarberiaId));
+                CurrentRole == Roles.AdminBarberia ||
+                CurrentRole == Roles.Barbero);
         });
     }
 
@@ -310,8 +309,8 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
             entity.HasQueryFilter(x =>
                 BypassTenantFilter ||
                 CurrentRole == Roles.Cliente ||
-                (CurrentRole == Roles.Barbero && CurrentBarberoId != null && x.BarberId == CurrentBarberoId) ||
-                (CurrentBarberiaId != null && x.Barber.BarberiaId == CurrentBarberiaId));
+                CurrentRole == Roles.AdminBarberia ||
+                CurrentRole == Roles.Barbero);
         });
     }
 
@@ -354,7 +353,7 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
 
             entity.HasQueryFilter(x =>
                 BypassTenantFilter ||
-                (CurrentRole == Roles.AdminBarberia && CurrentBarberiaId != null && x.BarberiaId == CurrentBarberiaId) ||
+                CurrentRole == Roles.AdminBarberia ||
                 ((CurrentRole == Roles.Barbero || CurrentRole == Roles.Cliente) && CurrentUserId != null && x.Id == CurrentUserId));
         });
     }
@@ -389,7 +388,7 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
 
             entity.HasQueryFilter(x =>
                 BypassTenantFilter ||
-                (CurrentRole == Roles.AdminBarberia && CurrentBarberiaId != null && x.Barbero.BarberiaId == CurrentBarberiaId) ||
+                CurrentRole == Roles.AdminBarberia ||
                 (CurrentRole == Roles.Barbero && CurrentBarberoId != null && x.BarberoId == CurrentBarberoId) ||
                 (CurrentRole == Roles.Cliente && CurrentUserId != null && x.ClienteId == CurrentUserId));
         });
@@ -415,7 +414,7 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
                 BypassTenantFilter ||
                 (CurrentRole == Roles.Cliente && CurrentUserId != null && x.ClienteId == CurrentUserId) ||
                 (CurrentRole == Roles.Barbero && CurrentBarberoId != null && x.BarberoId == CurrentBarberoId) ||
-                (CurrentRole == Roles.AdminBarberia && CurrentBarberiaId != null && x.Barbero.BarberiaId == CurrentBarberiaId));
+                CurrentRole == Roles.AdminBarberia);
 
             entity.HasOne(x => x.Barbero)
                 .WithMany(x => x.Reviews)

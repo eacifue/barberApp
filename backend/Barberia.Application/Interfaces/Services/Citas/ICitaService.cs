@@ -20,7 +20,6 @@ public interface ICitaService
 
     Task<List<CitaDto>> GetAdminListAsync(
         Guid? barberoId,
-        Guid? barberiaId,
         DateOnly? fechaInicio,
         DateOnly? fechaFin,
         string? estado,

@@ -71,15 +71,6 @@ public class CitasController : ControllerBase
     [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia}")]
     public async Task<ActionResult<ApiResponse<CitaDto>>> ConfirmarAsync([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        if (currentUserService.IsAdminBarberia)
-        {
-            if (currentUserService.BarberiaId is null)
-                return Forbid();
-
-            // Si no pertenece a su tenant, el query filter devolverá NotFound.
-            _ = await citaService.GetByIdAsync(id, cancellationToken);
-        }
-
         var result = await citaService.ConfirmarCitaAsync(id, cancellationToken);
         return Ok(ApiResponse<CitaDto>.Ok(result, "Cita confirmada correctamente."));
     }
@@ -88,15 +79,6 @@ public class CitasController : ControllerBase
     [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia}")]
     public async Task<ActionResult<ApiResponse<CitaDto>>> CompletarAsync([FromRoute] Guid id, CancellationToken cancellationToken)
     {
-        if (currentUserService.IsAdminBarberia)
-        {
-            if (currentUserService.BarberiaId is null)
-                return Forbid();
-
-            // Si no pertenece a su tenant, el query filter devolverá NotFound.
-            _ = await citaService.GetByIdAsync(id, cancellationToken);
-        }
-
         var result = await citaService.CompletarCitaAsync(id, cancellationToken);
         return Ok(ApiResponse<CitaDto>.Ok(result, "Cita completada correctamente."));
     }
@@ -121,7 +103,7 @@ public class CitasController : ControllerBase
 
     /// <summary>
     /// Panel admin: lista de citas con filtro opcional por barberoId + rango de fechas.
-    /// Admin ve todas; AdminBarberia solo las de su barbería; Barbero solo las suyas.
+    /// Admin y AdminBarberia ven todas; Barbero solo las suyas.
     /// </summary>
     [HttpGet("api/v1/admin/citas")]
     [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia},{Roles.Barbero}")]
@@ -160,7 +142,6 @@ public class CitasController : ControllerBase
 
         var result = await citaService.GetAdminListAsync(
             barberoId,
-            currentUserService.IsAdminBarberia ? currentUserService.BarberiaId : null,
             normalizedStart,
             normalizedEnd,
             status,

@@ -20,20 +20,17 @@ public class BarberosController : ControllerBase
     private readonly IAvailabilityService availabilityService;
     private readonly IDisponibilidadService disponibilidadService;
     private readonly IServicioService servicioService;
-    private readonly ICurrentUserService currentUserService;
 
     public BarberosController(
         IBarberoService barberoService,
         IAvailabilityService availabilityService,
         IDisponibilidadService disponibilidadService,
-        IServicioService servicioService,
-        ICurrentUserService currentUserService)
+        IServicioService servicioService)
     {
         this.barberoService = barberoService;
         this.availabilityService = availabilityService;
         this.disponibilidadService = disponibilidadService;
         this.servicioService = servicioService;
-        this.currentUserService = currentUserService;
     }
 
     [HttpGet("api/v1/barberias/{barberiaId:guid}/barberos")]
@@ -72,14 +69,6 @@ public class BarberosController : ControllerBase
         [FromBody] CreateBarberoRequest request,
         CancellationToken cancellationToken)
     {
-        // AdminBarberia solo puede crear barberos en su propia barbería
-        if (currentUserService.IsAdminBarberia)
-        {
-            if (currentUserService.BarberiaId is null)
-                return Forbid();
-            request.BarberiaId = currentUserService.BarberiaId.Value;
-        }
-
         var result = await barberoService.CreateAsync(request, cancellationToken);
         return Created($"/api/v1/barberos/{result.Id}", ApiResponse<BarberoDto>.Ok(result, "Barbero creado correctamente."));
     }
@@ -91,17 +80,6 @@ public class BarberosController : ControllerBase
         [FromBody] CreateBarberoRequest request,
         CancellationToken cancellationToken)
     {
-        // AdminBarberia solo puede modificar barberos de su barbería
-        if (currentUserService.IsAdminBarberia)
-        {
-            if (currentUserService.BarberiaId is null)
-                return Forbid();
-            var existing = await barberoService.GetByIdAsync(id, cancellationToken);
-            if (existing.BarberiaId != currentUserService.BarberiaId.Value)
-                return Forbid();
-            request.BarberiaId = currentUserService.BarberiaId.Value;
-        }
-
         var result = await barberoService.UpdateAsync(id, request, cancellationToken);
         return Ok(ApiResponse<BarberoDto>.Ok(result, "Barbero actualizado correctamente."));
     }
@@ -112,15 +90,6 @@ public class BarberosController : ControllerBase
         [FromRoute] Guid id,
         CancellationToken cancellationToken)
     {
-        if (currentUserService.IsAdminBarberia)
-        {
-            if (currentUserService.BarberiaId is null)
-                return Forbid();
-            var existing = await barberoService.GetByIdAsync(id, cancellationToken);
-            if (existing.BarberiaId != currentUserService.BarberiaId.Value)
-                return Forbid();
-        }
-
         await barberoService.DeleteAsync(id, cancellationToken);
         return Ok(ApiResponse<object?>.Ok(null, "Barbero eliminado correctamente."));
     }
@@ -132,9 +101,6 @@ public class BarberosController : ControllerBase
         [FromBody] SetHorarioRequest request,
         CancellationToken cancellationToken)
     {
-        if (!await ValidateBarberoOwnershipAsync(id, cancellationToken))
-            return Forbid();
-
         request.BarberoId = id;
         var result = await barberoService.SetHorariosAsync(request, cancellationToken);
         return Ok(ApiResponse<List<HorarioSemanaDto>>.Ok(result, "Horarios actualizados correctamente."));
@@ -169,9 +135,6 @@ public class BarberosController : ControllerBase
         [FromBody] UpsertBarberAvailabilityRequest request,
         CancellationToken cancellationToken)
     {
-        if (!await ValidateBarberoOwnershipAsync(id, cancellationToken))
-            return Forbid();
-
         request.BarberId = id;
         var result = await availabilityService.SetAvailabilityAsync(request, cancellationToken);
         return Ok(ApiResponse<List<BarberAvailabilityDto>>.Ok(result, "Disponibilidad configurada correctamente."));
@@ -184,9 +147,6 @@ public class BarberosController : ControllerBase
         [FromRoute] Guid id,
         CancellationToken cancellationToken)
     {
-        if (!await ValidateBarberoOwnershipAsync(id, cancellationToken))
-            return Forbid();
-
         var result = await availabilityService.GetAvailabilityAsync(id, cancellationToken);
         return Ok(ApiResponse<List<BarberAvailabilityDto>>.Ok(result, "Disponibilidad obtenida correctamente."));
     }
@@ -199,9 +159,6 @@ public class BarberosController : ControllerBase
         [FromBody] CreateBarberDayOffRequest request,
         CancellationToken cancellationToken)
     {
-        if (!await ValidateBarberoOwnershipAsync(id, cancellationToken))
-            return Forbid();
-
         request.BarberId = id;
         var result = await availabilityService.AddDayOffAsync(request, cancellationToken);
         return Ok(ApiResponse<BarberDayOffDto>.Ok(result, "Día no disponible agregado correctamente."));
@@ -248,20 +205,5 @@ public class BarberosController : ControllerBase
 
         var result = await disponibilidadService.GetSlotsDisponiblesAsync(barberoId, servicioId, fecha, cancellationToken);
         return Ok(ApiResponse<DisponibilidadBarberoDto>.Ok(result, "Disponibilidad obtenida correctamente."));
-    }
-
-    private async Task<bool> ValidateBarberoOwnershipAsync(Guid barberoId, CancellationToken cancellationToken)
-    {
-        if (!currentUserService.IsAdminBarberia)
-            return true;
-
-        if (currentUserService.BarberiaId is null)
-            return false;
-
-        var existing = await barberoService.GetByIdAsync(barberoId, cancellationToken);
-        if (existing.BarberiaId != currentUserService.BarberiaId.Value)
-            return false;
-
-        return true;
     }
 }

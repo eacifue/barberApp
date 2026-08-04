@@ -18,20 +18,17 @@ public sealed class ClienteAdminService : IClienteAdminService
     private readonly IMapper mapper;
     private readonly IValidator<CreateClienteAdminRequest> createValidator;
     private readonly IValidator<UpdateClienteAdminRequest> updateValidator;
-    private readonly ICurrentUserService currentUserService;
 
     public ClienteAdminService(
         IBarberiaDbContext dbContext,
         IMapper mapper,
         IValidator<CreateClienteAdminRequest> createValidator,
-        IValidator<UpdateClienteAdminRequest> updateValidator,
-        ICurrentUserService currentUserService)
+        IValidator<UpdateClienteAdminRequest> updateValidator)
     {
         this.dbContext = dbContext;
         this.mapper = mapper;
         this.createValidator = createValidator;
         this.updateValidator = updateValidator;
-        this.currentUserService = currentUserService;
     }
 
     public async Task<List<ClienteDto>> GetAllAsync(CancellationToken cancellationToken)
@@ -94,11 +91,7 @@ public sealed class ClienteAdminService : IClienteAdminService
     {
         await ValidateAsync(request, cancellationToken);
 
-        // Un AdministradorBarberia solo puede crear clientes de su propia barbería,
-        // sin importar lo que venga en el request.
-        var barberiaId = currentUserService.IsAdminBarberia
-            ? currentUserService.BarberiaId
-            : request.BarberiaId;
+        var barberiaId = request.BarberiaId;
 
         if (barberiaId.HasValue)
         {
@@ -134,11 +127,7 @@ public sealed class ClienteAdminService : IClienteAdminService
     {
         await ValidateAsync(request, cancellationToken);
 
-        // Un AdministradorBarberia no puede reasignar el cliente a otra barbería,
-        // sin importar lo que venga en el request.
-        var barberiaId = currentUserService.IsAdminBarberia
-            ? currentUserService.BarberiaId
-            : request.BarberiaId;
+        var barberiaId = request.BarberiaId;
 
         if (barberiaId.HasValue)
         {

@@ -12,12 +12,10 @@ namespace Barberia.API.Controllers;
 public class ServiciosController : ControllerBase
 {
     private readonly IServicioService servicioService;
-    private readonly ICurrentUserService currentUserService;
 
-    public ServiciosController(IServicioService servicioService, ICurrentUserService currentUserService)
+    public ServiciosController(IServicioService servicioService)
     {
         this.servicioService = servicioService;
-        this.currentUserService = currentUserService;
     }
 
     [HttpGet("api/v1/barberias/{barberiaId:guid}/servicios")]
@@ -46,13 +44,6 @@ public class ServiciosController : ControllerBase
         [FromBody] CreateServicioRequest request,
         CancellationToken cancellationToken)
     {
-        if (currentUserService.IsAdminBarberia)
-        {
-            if (currentUserService.BarberiaId is null)
-                return Forbid();
-            request.BarberiaId = currentUserService.BarberiaId.Value;
-        }
-
         var result = await servicioService.CreateAsync(request, cancellationToken);
         return CreatedAtRoute("GetServicioById", new { id = result.Id }, ApiResponse<ServicioDto>.Ok(result, "Servicio creado correctamente."));
     }
@@ -64,16 +55,6 @@ public class ServiciosController : ControllerBase
         [FromBody] CreateServicioRequest request,
         CancellationToken cancellationToken)
     {
-        if (currentUserService.IsAdminBarberia)
-        {
-            if (currentUserService.BarberiaId is null)
-                return Forbid();
-            var existing = await servicioService.GetByIdAsync(id, cancellationToken);
-            if (existing.BarberiaId != currentUserService.BarberiaId.Value)
-                return Forbid();
-            request.BarberiaId = currentUserService.BarberiaId.Value;
-        }
-
         var result = await servicioService.UpdateAsync(id, request, cancellationToken);
         return Ok(ApiResponse<ServicioDto>.Ok(result, "Servicio actualizado correctamente."));
     }
@@ -84,15 +65,6 @@ public class ServiciosController : ControllerBase
         [FromRoute] Guid id,
         CancellationToken cancellationToken)
     {
-        if (currentUserService.IsAdminBarberia)
-        {
-            if (currentUserService.BarberiaId is null)
-                return Forbid();
-            var existing = await servicioService.GetByIdAsync(id, cancellationToken);
-            if (existing.BarberiaId != currentUserService.BarberiaId.Value)
-                return Forbid();
-        }
-
         await servicioService.DeleteAsync(id, cancellationToken);
         return Ok(ApiResponse<object?>.Ok(null, "Servicio eliminado correctamente."));
     }

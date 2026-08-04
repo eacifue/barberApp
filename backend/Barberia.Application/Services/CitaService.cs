@@ -151,10 +151,7 @@ public class CitaService : ICitaService
 
         var clienteActualId = currentUserService.ClienteId;
         var esPropietario = currentUserService.IsCliente && clienteActualId == cita.ClienteId;
-        var esDeSuBarberia = currentUserService.IsAdminBarberia
-            && currentUserService.BarberiaId != null
-            && cita.Barbero.BarberiaId == currentUserService.BarberiaId;
-        if (!currentUserService.IsAdmin && !esPropietario && !esDeSuBarberia)
+        if (!currentUserService.IsAdmin && !currentUserService.IsAdminBarberia && !esPropietario)
         {
             throw new UnauthorizedException("No tienes permisos para cancelar esta cita.");
         }
@@ -242,7 +239,6 @@ public class CitaService : ICitaService
 
     public async Task<List<CitaDto>> GetAdminListAsync(
         Guid? barberoId,
-        Guid? barberiaId,
         DateOnly? fechaInicio,
         DateOnly? fechaFin,
         string? estado,
@@ -253,25 +249,7 @@ public class CitaService : ICitaService
         var normalizedPage = page < 1 ? 1 : page;
         var normalizedPageSize = Math.Clamp(pageSize, 1, 200);
 
-        Guid? effectiveBarberiaId = barberiaId;
         Guid? effectiveBarberoId = currentUserService.BarberoId;
-
-        if (currentUserService.IsAdminBarberia)
-        {
-            var userId = currentUserService.UserId;
-            if (userId.HasValue)
-            {
-                var barberiaFromDb = await dbContext.Clientes
-                    .IgnoreQueryFilters()
-                    .AsNoTracking()
-                    .Where(x => x.Id == userId.Value && x.Activo)
-                    .Select(x => x.BarberiaId)
-                    .FirstOrDefaultAsync(cancellationToken);
-
-                if (barberiaFromDb.HasValue)
-                    effectiveBarberiaId = barberiaFromDb;
-            }
-        }
 
         if (currentUserService.IsBarbero)
         {
@@ -298,14 +276,6 @@ public class CitaService : ICitaService
             .Include(x => x.Servicio)
             .AsQueryable();
 
-        if (currentUserService.IsAdminBarberia)
-        {
-            if (!effectiveBarberiaId.HasValue)
-                throw new UnauthorizedException("No se pudo resolver la barbería del usuario autenticado.");
-
-            query = query.Where(x => x.Barbero.BarberiaId == effectiveBarberiaId.Value);
-        }
-
         if (currentUserService.IsBarbero)
         {
             if (!effectiveBarberoId.HasValue)
@@ -316,9 +286,6 @@ public class CitaService : ICitaService
 
         if (barberoId.HasValue)
             query = query.Where(x => x.BarberoId == barberoId.Value);
-
-        if (effectiveBarberiaId.HasValue)
-            query = query.Where(x => x.Barbero.BarberiaId == effectiveBarberiaId.Value);
 
         if (fechaInicio.HasValue)
             query = query.Where(x => x.FechaCita >= fechaInicio.Value);
@@ -377,7 +344,7 @@ public class CitaService : ICitaService
 
     private async Task EnsureCanAccessCitaAsync(Cita cita, CancellationToken cancellationToken)
     {
-        if (currentUserService.IsAdmin)
+        if (currentUserService.IsAdmin || currentUserService.IsAdminBarberia)
             return;
 
         if (currentUserService.IsCliente)
@@ -388,38 +355,12 @@ public class CitaService : ICitaService
             return;
         }
 
-        if (currentUserService.IsAdminBarberia)
-        {
-            var effectiveBarberiaId = await ResolveCurrentBarberiaIdAsync(cancellationToken);
-            if (!effectiveBarberiaId.HasValue || cita.Barbero.BarberiaId != effectiveBarberiaId.Value)
-                throw new NotFoundException("La cita no existe.");
-
-            return;
-        }
-
         if (currentUserService.IsBarbero)
         {
             var effectiveBarberoId = await ResolveCurrentBarberoIdAsync(cancellationToken);
             if (!effectiveBarberoId.HasValue || cita.BarberoId != effectiveBarberoId.Value)
                 throw new NotFoundException("La cita no existe.");
         }
-    }
-
-    private async Task<Guid?> ResolveCurrentBarberiaIdAsync(CancellationToken cancellationToken)
-    {
-        if (currentUserService.BarberiaId.HasValue)
-            return currentUserService.BarberiaId;
-
-        var userId = currentUserService.UserId;
-        if (!userId.HasValue)
-            return null;
-
-        return await dbContext.Clientes
-            .IgnoreQueryFilters()
-            .AsNoTracking()
-            .Where(x => x.Id == userId.Value && x.Activo)
-            .Select(x => x.BarberiaId)
-            .FirstOrDefaultAsync(cancellationToken);
     }
 
     private async Task<Guid?> ResolveCurrentBarberoIdAsync(CancellationToken cancellationToken)

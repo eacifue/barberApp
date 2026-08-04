@@ -210,13 +210,10 @@ public class UsersController : ControllerBase
     private static UserDto ToDto(Cliente c) =>
         new(c.Id, c.Nombre, c.Apellido, c.Correo, c.Telefono, c.Rol, c.BarberiaId, c.BarberoId, c.Activo, c.CreatedAt);
 
-    private Guid? ResolveTargetBarberiaId(string role, Guid? requestedBarberiaId)
+    private static Guid? ResolveTargetBarberiaId(string role, Guid? requestedBarberiaId)
     {
         if (role == Roles.Admin)
             return null;
-
-        if (currentUserService.IsAdminBarberia)
-            return currentUserService.BarberiaId;
 
         return requestedBarberiaId;
     }
