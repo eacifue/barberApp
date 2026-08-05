@@ -124,34 +124,49 @@ function AppointmentCard({
 
   return (
     <article className="rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-3 transition hover:border-[rgba(212,160,23,.45)]">
-      <div className="mb-2 flex items-start justify-between gap-2">
-        <p className="font-mono text-sm text-color-base">
-          {normalizeHour(cita.horaInicio)} - {normalizeHour(cita.horaFin)}
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="truncate font-mono text-xs text-color-base">
+          {normalizeHour(cita.horaInicio)}–{normalizeHour(cita.horaFin)}
         </p>
         <Badge variant={getEstadoVariant(cita.estado)}>{cita.estado}</Badge>
       </div>
-      <p className="text-sm font-medium text-color-strong">
+      <p className="truncate text-sm font-medium text-color-strong">
         {cita.cliente.nombre} {cita.cliente.apellido}
       </p>
-      <p className="mt-1 text-xs text-color-muted">Barbero: {cita.barbero.nombre} {cita.barbero.apellido}</p>
-      <p className="text-xs text-color-muted">Servicio: {cita.servicio.nombre}</p>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Button size="sm" variant="ghost" onClick={() => onDetail(cita)}>
-          Ver detalle
-        </Button>
+      <p className="mt-1 truncate text-xs text-color-muted">Barbero: {cita.barbero.nombre} {cita.barbero.apellido}</p>
+      <p className="truncate text-xs text-color-muted">Servicio: {cita.servicio.nombre}</p>
+      <div className="mt-3 flex items-center gap-1.5">
         {canConfirm ? (
-          <Button size="sm" variant="gold" onClick={() => onConfirm(cita.id)} loading={loading}>
+          <Button size="sm" variant="gold" className="h-7 flex-1 px-2 text-[11px]" onClick={() => onConfirm(cita.id)} loading={loading}>
             Confirmar
           </Button>
         ) : null}
         {canComplete ? (
-          <Button size="sm" variant="ghost" onClick={() => onComplete(cita.id)} loading={loading}>
+          <Button size="sm" variant="gold" className="h-7 flex-1 px-2 text-[11px]" onClick={() => onComplete(cita.id)} loading={loading}>
             Completar
           </Button>
         ) : null}
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 w-7 shrink-0 px-0 text-[11px]"
+          title="Ver detalle"
+          aria-label="Ver detalle"
+          onClick={() => onDetail(cita)}
+        >
+          ⋯
+        </Button>
         {canCancel ? (
-          <Button size="sm" variant="danger" onClick={() => onCancel(cita.id)} loading={loading}>
-            Cancelar
+          <Button
+            size="sm"
+            variant="danger"
+            className="h-7 w-7 shrink-0 px-0 text-[11px]"
+            title="Cancelar"
+            aria-label="Cancelar"
+            onClick={() => onCancel(cita.id)}
+            loading={loading}
+          >
+            ✕
           </Button>
         ) : null}
       </div>
@@ -441,7 +456,7 @@ export function AppointmentsScheduler() {
 
       {view === 'week' ? (
         <div className="overflow-x-auto rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-3">
-          <div className="grid min-w-[980px] grid-cols-7 gap-3">
+          <div className="grid auto-cols-[240px] grid-flow-col gap-3">
             {weekDates.map((date) => (
               <div key={date} className="rounded-lg border border-[var(--border)] bg-[var(--ink2)] p-2">
                 <div className="mb-2 border-b border-[var(--border)] pb-2">

@@ -61,15 +61,25 @@ Future<void> main() async {
 
   // Keep the backend's copy of the push token current across reinstalls
   // and token rotations, not just at the moment of login.
-  FirebaseMessaging.instance.onTokenRefresh.listen(syncFcmTokenIfLoggedIn);
+  FirebaseMessaging.instance.onTokenRefresh.listen(
+    syncFcmTokenIfLoggedIn,
+    onError: (Object e) => debugPrint('Error en onTokenRefresh de FCM: $e'),
+  );
 
+  // FCM token retrieval requires a real Firebase project config; until that's
+  // set up this must not take the whole app down when it fails.
   unawaited(
-    FirebaseMessaging.instance.getToken().then((token) {
-      if (token != null && token.isNotEmpty) {
-        return syncFcmTokenIfLoggedIn(token);
-      }
-      return null;
-    }),
+    FirebaseMessaging.instance
+        .getToken()
+        .then((token) {
+          if (token != null && token.isNotEmpty) {
+            return syncFcmTokenIfLoggedIn(token);
+          }
+          return null;
+        })
+        .catchError((Object e) {
+          debugPrint('No se pudo obtener el token FCM: $e');
+        }),
   );
 
   runApp(

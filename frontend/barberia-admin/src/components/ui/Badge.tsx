@@ -13,7 +13,7 @@ export function Badge({ children, variant = 'muted', dot = false }: BadgeProps) 
   return (
     <span
       className={clsx(
-        'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold',
+        'inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold',
         {
           'bg-[var(--success-soft)] text-[var(--success)]': variant === 'success',
           'bg-[var(--warning-soft)] text-[var(--warning)]': variant === 'warning',
