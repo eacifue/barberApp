@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Eye, EyeOff, MoonStar, Scissors, SunMedium } from 'lucide-react'
+import { Eye, EyeOff, MoonStar, SunMedium } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useQueryClient } from '@tanstack/react-query'
@@ -89,10 +89,8 @@ export function LoginPage() {
 
       <div className="surface-panel relative w-full max-w-[420px] overflow-hidden rounded-[32px] px-6 py-8 md:px-10 md:py-10">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
-            <Scissors className="h-5 w-5" />
-          </div>
-          <p className="font-display text-2xl text-[var(--text-strong)]">Barber Admin</p>
+          <img src="/logo-mark.svg" alt="BarberShop Medellín" className="mb-4 h-14 w-14" />
+          <p className="font-display text-2xl text-[var(--text-strong)]">BarberShop Medellín</p>
           <p className="mt-1.5 text-sm text-[var(--text-muted)]">Ingresa con tu cuenta administrativa</p>
         </div>
 

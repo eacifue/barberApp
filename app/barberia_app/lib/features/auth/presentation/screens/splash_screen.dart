@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import '../../../../core/theme/app_colors.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -12,21 +11,13 @@ class SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppColors.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(
-                Icons.content_cut_rounded,
-                size: 36,
-                color: AppColors.primary,
-              ),
+            SizedBox(
+              width: 96,
+              height: 96,
+              child: SvgPicture.asset('assets/images/logo_mark.svg'),
             ),
             const SizedBox(height: 16),
-            Text('Barbería App', style: Theme.of(context).textTheme.titleLarge),
+            Text('BarberShop Medellín', style: Theme.of(context).textTheme.titleLarge),
           ],
         ),
       ),
