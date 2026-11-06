@@ -215,6 +215,7 @@ public class CitaService : ICitaService
             .Include(x => x.Cliente)
             .Include(x => x.Barbero)
             .Include(x => x.Servicio)
+            .Include(x => x.Review)
             .Where(x => x.ClienteId == clienteId)
             .OrderByDescending(x => x.FechaCita)
             .ThenByDescending(x => x.HoraInicio)
@@ -318,13 +319,72 @@ public class CitaService : ICitaService
         return MapCita(cita);
     }
 
+    public async Task<ReviewDto> CrearReviewAsync(Guid citaId, CrearReviewRequest request, CancellationToken cancellationToken)
+    {
+        var comentario = string.IsNullOrWhiteSpace(request.Comentario) ? null : request.Comentario.Trim();
+        var errores = new List<string>();
+        if (request.Calificacion is < 1 or > 5)
+        {
+            errores.Add("La calificación debe estar entre 1 y 5 estrellas.");
+        }
+
+        if (comentario is { Length: > 500 })
+        {
+            errores.Add("El comentario puede tener máximo 500 caracteres.");
+        }
+
+        if (errores.Count > 0)
+        {
+            throw new AppValidationException("La reseña contiene errores de validación.", errores);
+        }
+
+        var cita = await GetCitaWithRelationsAsync(citaId, cancellationToken);
+
+        if (!currentUserService.IsCliente || currentUserService.ClienteId != cita.ClienteId)
+        {
+            throw new UnauthorizedException("Solo puedes calificar tus propias citas.");
+        }
+
+        if (cita.Estado != EstadoCita.Completada)
+        {
+            throw new ConflictException("Solo puedes calificar citas completadas.");
+        }
+
+        if (await dbContext.Reviews.IgnoreQueryFilters().AnyAsync(x => x.CitaId == cita.Id, cancellationToken))
+        {
+            throw new ConflictException("Ya calificaste esta cita.");
+        }
+
+        var review = new Review
+        {
+            ClienteId = cita.ClienteId,
+            BarberoId = cita.BarberoId,
+            CitaId = cita.Id,
+            Calificacion = request.Calificacion,
+            Comentario = comentario,
+        };
+        dbContext.Reviews.Add(review);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new ReviewDto
+        {
+            Id = review.Id,
+            CitaId = review.CitaId,
+            BarberoId = review.BarberoId,
+            Calificacion = review.Calificacion,
+            Comentario = review.Comentario,
+            CreatedAt = review.CreatedAt,
+        };
+    }
+
     private async Task<Cita> GetCitaWithRelationsAsync(Guid citaId, CancellationToken cancellationToken, bool asNoTracking = false)
     {
         IQueryable<Cita> query = dbContext.Citas
             .IgnoreQueryFilters()
             .Include(x => x.Cliente)
             .Include(x => x.Barbero)
-            .Include(x => x.Servicio);
+            .Include(x => x.Servicio)
+            .Include(x => x.Review);
 
         if (asNoTracking)
         {

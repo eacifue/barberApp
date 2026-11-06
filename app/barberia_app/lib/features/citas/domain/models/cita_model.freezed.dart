@@ -32,6 +32,7 @@ mixin _$CitaModel {
   BarberoResumen get barbero => throw _privateConstructorUsedError;
   ServicioResumen get servicio => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
+  bool get tieneReview => throw _privateConstructorUsedError;
 
   /// Serializes this CitaModel to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -60,6 +61,7 @@ abstract class $CitaModelCopyWith<$Res> {
     BarberoResumen barbero,
     ServicioResumen servicio,
     DateTime createdAt,
+    bool tieneReview,
   });
 
   $ClienteResumenCopyWith<$Res> get cliente;
@@ -93,6 +95,7 @@ class _$CitaModelCopyWithImpl<$Res, $Val extends CitaModel>
     Object? barbero = null,
     Object? servicio = null,
     Object? createdAt = null,
+    Object? tieneReview = null,
   }) {
     return _then(
       _value.copyWith(
@@ -140,6 +143,10 @@ class _$CitaModelCopyWithImpl<$Res, $Val extends CitaModel>
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
                       as DateTime,
+            tieneReview: null == tieneReview
+                ? _value.tieneReview
+                : tieneReview // ignore: cast_nullable_to_non_nullable
+                      as bool,
           )
           as $Val,
     );
@@ -197,6 +204,7 @@ abstract class _$$CitaModelImplCopyWith<$Res>
     BarberoResumen barbero,
     ServicioResumen servicio,
     DateTime createdAt,
+    bool tieneReview,
   });
 
   @override
@@ -232,6 +240,7 @@ class __$$CitaModelImplCopyWithImpl<$Res>
     Object? barbero = null,
     Object? servicio = null,
     Object? createdAt = null,
+    Object? tieneReview = null,
   }) {
     return _then(
       _$CitaModelImpl(
@@ -279,6 +288,10 @@ class __$$CitaModelImplCopyWithImpl<$Res>
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
                   as DateTime,
+        tieneReview: null == tieneReview
+            ? _value.tieneReview
+            : tieneReview // ignore: cast_nullable_to_non_nullable
+                  as bool,
       ),
     );
   }
@@ -299,6 +312,7 @@ class _$CitaModelImpl extends _CitaModel {
     required this.barbero,
     required this.servicio,
     required this.createdAt,
+    this.tieneReview = false,
   }) : super._();
 
   factory _$CitaModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -326,10 +340,13 @@ class _$CitaModelImpl extends _CitaModel {
   final ServicioResumen servicio;
   @override
   final DateTime createdAt;
+  @override
+  @JsonKey()
+  final bool tieneReview;
 
   @override
   String toString() {
-    return 'CitaModel(id: $id, estado: $estado, fechaCita: $fechaCita, horaInicio: $horaInicio, horaFin: $horaFin, precioFinal: $precioFinal, notas: $notas, cliente: $cliente, barbero: $barbero, servicio: $servicio, createdAt: $createdAt)';
+    return 'CitaModel(id: $id, estado: $estado, fechaCita: $fechaCita, horaInicio: $horaInicio, horaFin: $horaFin, precioFinal: $precioFinal, notas: $notas, cliente: $cliente, barbero: $barbero, servicio: $servicio, createdAt: $createdAt, tieneReview: $tieneReview)';
   }
 
   @override
@@ -352,7 +369,9 @@ class _$CitaModelImpl extends _CitaModel {
             (identical(other.servicio, servicio) ||
                 other.servicio == servicio) &&
             (identical(other.createdAt, createdAt) ||
-                other.createdAt == createdAt));
+                other.createdAt == createdAt) &&
+            (identical(other.tieneReview, tieneReview) ||
+                other.tieneReview == tieneReview));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -370,6 +389,7 @@ class _$CitaModelImpl extends _CitaModel {
     barbero,
     servicio,
     createdAt,
+    tieneReview,
   );
 
   /// Create a copy of CitaModel
@@ -399,6 +419,7 @@ abstract class _CitaModel extends CitaModel {
     required final BarberoResumen barbero,
     required final ServicioResumen servicio,
     required final DateTime createdAt,
+    final bool tieneReview,
   }) = _$CitaModelImpl;
   const _CitaModel._() : super._();
 
@@ -427,6 +448,8 @@ abstract class _CitaModel extends CitaModel {
   ServicioResumen get servicio;
   @override
   DateTime get createdAt;
+  @override
+  bool get tieneReview;
 
   /// Create a copy of CitaModel
   /// with the given fields replaced by the non-null parameter values.

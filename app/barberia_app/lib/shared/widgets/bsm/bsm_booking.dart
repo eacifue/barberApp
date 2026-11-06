@@ -332,9 +332,89 @@ class SlotGrid extends StatelessWidget {
   }
 }
 
-/// Cuenta regresiva del horario apartado. Se calcula contra la expiración del
-/// servidor (no se resta en local). Latón hasta 1:01; en el último minuto pasa
-/// a `warning`, vibra y se anuncia una sola vez. Sigue con «reducir movimiento».
+/// Cuenta regresiva del horario apartado, presentacional: recibe los segundos
+/// restantes (p. ej. de `DisponibilidadNotifier`). Latón hasta 1:01; en el
+/// último minuto pasa a `warning` y lo anuncia una sola vez. Sigue con
+/// «reducir movimiento».
+class BsmCountdownView extends StatelessWidget {
+  const BsmCountdownView({super.key, required this.seconds, this.totalSeconds = 300, this.compact = false, this.label});
+
+  final int seconds;
+  final int totalSeconds;
+  final bool compact;
+
+  /// Etiqueta antes del último minuto (por defecto «Horario apartado por»).
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final s = seconds < 0 ? 0 : seconds;
+    final low = s <= 60;
+    final mm = s ~/ 60;
+    final ss = (s % 60).toString().padLeft(2, '0');
+    final accent = low ? p.warning : p.brass;
+    final fraction = totalSeconds <= 0 ? 0.0 : (s / totalSeconds).clamp(0.0, 1.0).toDouble();
+
+    return Semantics(
+      label: 'Tiempo restante $mm minutos ${s % 60} segundos',
+      excludeSemantics: true,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Container(
+          color: low ? p.warningBg : p.brassSoft,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: compact ? const EdgeInsets.fromLTRB(12, 8, 12, 6) : const EdgeInsets.fromLTRB(16, 12, 16, 10),
+                child: Row(
+                  children: [
+                    Icon(LucideIcons.timer, size: 20, color: low ? p.warning : p.brassInk),
+                    const SizedBox(width: AppSpace.s3),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            low ? 'Tu horario se libera en' : (label ?? 'Horario apartado por'),
+                            style: AppTextStyles.weight(AppTextStyles.body, FontWeight.w600).copyWith(color: p.ink),
+                          ),
+                          if (!compact)
+                            Text(
+                              low ? 'Confirma ahora para no perderlo.' : 'Lo guardamos 5 min mientras confirmas.',
+                              style: AppTextStyles.caption.copyWith(color: p.inkMuted, fontSize: 13),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '$mm:$ss',
+                      style: (compact ? AppTextStyles.numeric.copyWith(fontSize: 20, height: 24 / 20) : AppTextStyles.numeric)
+                          .copyWith(color: low ? p.warning : p.ink),
+                    ),
+                  ],
+                ),
+              ),
+              LinearProgressIndicator(value: fraction, minHeight: 4, color: accent, backgroundColor: p.line),
+              // Región viva: el texto aparece una vez al entrar al último minuto.
+              Semantics(
+                liveRegion: true,
+                child: SizedBox(
+                  height: 0,
+                  child: Text(low && s > 0 ? 'Queda menos de un minuto para confirmar tu horario.' : '', style: const TextStyle(fontSize: 0)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Cuenta regresiva autónoma contra la expiración del servidor (no resta en
+/// local). Vibra al entrar al último minuto y avisa al expirar.
 class BsmCountdown extends StatefulWidget {
   const BsmCountdown({super.key, required this.expiresAt, this.total = const Duration(minutes: 5), this.compact = false, this.onExpired});
 
@@ -396,59 +476,6 @@ class _BsmCountdownState extends State<BsmCountdown> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    final left = _left;
-    final s = left.inSeconds;
-    final low = s <= 60;
-    final mm = s ~/ 60;
-    final ss = (s % 60).toString().padLeft(2, '0');
-    final accent = low ? p.warning : p.brass;
-    final fraction = widget.total.inSeconds == 0 ? 0.0 : (s / widget.total.inSeconds).clamp(0.0, 1.0).toDouble();
-
-    return Semantics(
-      label: 'Tiempo restante $mm minutos ${s % 60} segundos',
-      excludeSemantics: true,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: Container(
-          color: low ? p.warningBg : p.brassSoft,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: widget.compact ? const EdgeInsets.fromLTRB(12, 8, 12, 6) : const EdgeInsets.fromLTRB(16, 12, 16, 10),
-                child: Row(
-                  children: [
-                    Icon(LucideIcons.timer, size: 20, color: low ? p.warning : p.brassInk),
-                    const SizedBox(width: AppSpace.s3),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(low ? 'Tu horario se libera en' : 'Horario apartado por', style: AppTextStyles.weight(AppTextStyles.body, FontWeight.w600).copyWith(color: p.ink)),
-                          if (!widget.compact)
-                            Text(
-                              low ? 'Confirma ahora para no perderlo.' : 'Lo guardamos 5 min mientras confirmas.',
-                              style: AppTextStyles.caption.copyWith(color: p.inkMuted, fontSize: 13),
-                            ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      '$mm:$ss',
-                      style: (widget.compact ? AppTextStyles.numeric.copyWith(fontSize: 20, height: 24 / 20) : AppTextStyles.numeric).copyWith(color: low ? p.warning : p.ink),
-                    ),
-                  ],
-                ),
-              ),
-              LinearProgressIndicator(value: fraction, minHeight: 4, color: accent, backgroundColor: p.line),
-              // Región viva: el texto aparece una vez al entrar al último minuto.
-              Semantics(liveRegion: true, child: SizedBox(height: 0, child: Text(low && s > 0 ? 'Queda menos de un minuto para confirmar tu horario.' : '', style: const TextStyle(fontSize: 0)))),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      BsmCountdownView(seconds: _left.inSeconds, totalSeconds: widget.total.inSeconds, compact: widget.compact);
 }

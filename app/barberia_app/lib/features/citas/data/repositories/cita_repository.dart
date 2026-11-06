@@ -95,4 +95,19 @@ class CitaRepository {
 
     return response.data!;
   }
+
+  /// Califica una cita completada (1–5 estrellas, comentario opcional ≤ 500).
+  Future<void> calificarCita(String citaId, {required int calificacion, String? comentario}) async {
+    final response = await _apiClient.post<Map<String, dynamic>>(
+      ApiEndpoints.reviewCita(citaId),
+      data: {'calificacion': calificacion, 'comentario': comentario},
+      fromJson: (json) => json,
+    );
+
+    if (!response.success) {
+      throw AppException(
+        response.message.isEmpty ? 'No pudimos enviar tu reseña. Inténtalo de nuevo.' : response.message,
+      );
+    }
+  }
 }

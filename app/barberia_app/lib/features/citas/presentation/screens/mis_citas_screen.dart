@@ -1,211 +1,196 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/auth/logout_button.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/format/formato.dart';
+import '../../../../shared/widgets/bsm/bsm.dart';
 import '../../../barberias/presentation/providers/barbershops_provider.dart';
-import '../../../../shared/widgets/error_widget.dart';
 import '../../domain/models/cita_model.dart';
+import '../booking_actions.dart';
 import '../providers/citas_provider.dart';
-import '../widgets/cita_card.dart';
+import '../widgets/booking_scaffold.dart';
 
-class MisCitasScreen extends ConsumerStatefulWidget {
+/// Mis citas: «Próximas (n)» / «Historial». En Próximas la tarjeta entera abre
+/// el detalle (sin botones, para evitar cancelaciones por error); el historial
+/// va por mes con «Calificar servicio» o «Reservar de nuevo»
+/// (design/pantallas/app-movil/Mis-citas, Citas-historial, Citas-vacio).
+class MisCitasScreen extends ConsumerWidget {
   const MisCitasScreen({super.key});
 
   @override
-  ConsumerState<MisCitasScreen> createState() => _MisCitasScreenState();
-}
-
-class _MisCitasScreenState extends ConsumerState<MisCitasScreen> {
-  String? _citaCancelandoId;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final p = context.palette;
     final barbershopAsync = ref.watch(myBarbershopProvider);
-    final repo = ref.watch(citaRepositoryProvider);
+    final barberiaId = barbershopAsync.valueOrNull?.id;
+    final citasAsync = barberiaId == null ? null : ref.watch(misCitasProvider(barberiaId));
 
-    return barbershopAsync.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (error, stackTrace) => Scaffold(
-        appBar: AppBar(title: const Text('Mis citas')),
-        body: BarberiaErrorWidget(
-          message: 'No pudimos cargar la información de tu barbería.',
-          onRetry: () => ref.refresh(myBarbershopProvider),
-        ),
-      ),
-      data: (barbershop) {
-        if (barbershop == null) {
-          return Scaffold(
-            appBar: AppBar(title: const Text('Mis citas')),
-            body: const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'No hay una barbería configurada. Contacta al administrador.',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          );
-        }
+    Widget cuerpo(Widget Function(List<CitaModel> proximas, List<CitaModel> historial) data) {
+      if (barbershopAsync.hasError || (citasAsync?.hasError ?? false)) {
+        return BsmEmptyState(
+          isError: true,
+          title: 'No pudimos cargar tus citas',
+          body: 'Revisa tu conexión e inténtalo de nuevo.',
+          actionLabel: 'Reintentar',
+          actionIcon: LucideIcons.refreshCw,
+          onAction: () => barberiaId == null ? ref.invalidate(myBarbershopProvider) : ref.invalidate(misCitasProvider(barberiaId)),
+        );
+      }
+      final citas = citasAsync?.valueOrNull;
+      if (citas == null) {
+        return const Padding(padding: EdgeInsets.all(AppSpace.s4), child: BsmSkeleton(variant: BsmSkeletonVariant.card, count: 3));
+      }
+      return data(_proximas(citas), _historial(citas));
+    }
 
-        final barberiaId = barbershop.id;
-        final citasAsync = ref.watch(misCitasProvider(barberiaId));
+    final proximasCount = citasAsync?.valueOrNull == null ? null : _proximas(citasAsync!.valueOrNull!).length;
 
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Mis citas'),
-            actions: [const LogoutButton()],
-          ),
-          body: citasAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stackTrace) => BarberiaErrorWidget(
-              message: 'No pudimos cargar tus citas.',
-              onRetry: () => ref.invalidate(misCitasProvider(barberiaId)),
-            ),
-            data: (citas) {
-              final proximas = _proximas(citas);
-              final historial = _historial(citas);
-
-              return DefaultTabController(
-                length: 2,
-                child: Column(
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpace.s4, AppSpace.s4, AppSpace.s2, AppSpace.s2),
+                child: Row(
                   children: [
-                    const TabBar(
-                      tabs: [
-                        Tab(text: 'PRÓXIMAS'),
-                        Tab(text: 'HISTORIAL'),
-                      ],
-                    ),
-                    Expanded(
-                      child: TabBarView(
-                        children: [
-                          _CitasList(
-                            items: proximas,
-                            citaCancelandoId: _citaCancelandoId,
-                            onTap: (cita) =>
-                                context.go('/appointments/${cita.id}'),
-                            onCancelar: (cita) async {
-                              final ok = await _confirmCancel(context);
-                              if (!ok || !mounted) {
-                                return;
-                              }
-                              setState(() => _citaCancelandoId = cita.id);
-                              try {
-                                await repo.cancelarCita(
-                                  cita.id,
-                                  motivo: 'Cancelada por cliente en app',
-                                );
-                                ref.invalidate(misCitasProvider(barberiaId));
-                              } finally {
-                                if (mounted) {
-                                  setState(() => _citaCancelandoId = null);
-                                }
-                              }
-                            },
-                          ),
-                          _CitasList(
-                            items: historial,
-                            citaCancelandoId: _citaCancelandoId,
-                            onTap: (cita) =>
-                                context.go('/appointments/${cita.id}'),
-                          ),
-                        ],
-                      ),
-                    ),
+                    Expanded(child: Semantics(header: true, child: Text('Mis citas', style: AppTextStyles.display.copyWith(color: p.ink)))),
+                    // Cerrar sesión vive aquí hasta que exista la pestaña Perfil.
+                    const LogoutButton(),
                   ],
                 ),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  Future<bool> _confirmCancel(BuildContext context) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Cancelar cita'),
-            content: const Text('¿Seguro que deseas cancelar esta cita?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('No'),
               ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Sí, cancelar'),
+              TabBar(
+                tabs: [
+                  Tab(text: proximasCount == null || proximasCount == 0 ? 'Próximas' : 'Próximas ($proximasCount)'),
+                  const Tab(text: 'Historial'),
+                ],
+              ),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    cuerpo((proximas, _) {
+                      if (proximas.isEmpty) {
+                        return BsmEmptyState(
+                          icon: LucideIcons.calendarDays,
+                          title: 'Aún no tienes citas',
+                          body: 'Reserva en menos de un minuto y te avisamos antes de tu turno.',
+                          actionLabel: 'Reservar',
+                          actionIcon: LucideIcons.calendarPlus,
+                          onAction: () => context.go('/reservar/servicio'),
+                        );
+                      }
+                      return RefreshIndicator(
+                        onRefresh: () => ref.refresh(misCitasProvider(barberiaId!).future),
+                        child: ListView(
+                          padding: const EdgeInsets.all(AppSpace.s4),
+                          children: [
+                            for (final c in proximas) ...[_tarjeta(context, c), const SizedBox(height: AppSpace.s3)],
+                            const SizedBox(height: AppSpace.s1),
+                            Text(
+                              'Toca una cita para reprogramarla, cancelarla o ver cómo llegar.',
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.body.copyWith(color: p.inkMuted),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                    cuerpo((_, historial) {
+                      if (historial.isEmpty) {
+                        return const BsmEmptyState(
+                          icon: LucideIcons.history,
+                          title: 'Aún no tienes historial',
+                          body: 'Aquí verás tus citas pasadas para calificarlas o repetirlas.',
+                        );
+                      }
+                      final porMes = <String, List<CitaModel>>{};
+                      for (final c in historial) {
+                        porMes.putIfAbsent(Formato.mesAnio(c.fechaCita), () => []).add(c);
+                      }
+                      return RefreshIndicator(
+                        onRefresh: () => ref.refresh(misCitasProvider(barberiaId!).future),
+                        child: ListView(
+                          padding: const EdgeInsets.all(AppSpace.s4),
+                          children: [
+                            for (final mes in porMes.entries) ...[
+                              Padding(padding: const EdgeInsets.only(bottom: AppSpace.s2, top: AppSpace.s2), child: Overline(mes.key)),
+                              for (final c in mes.value) ...[_tarjeta(context, c, ref: ref), const SizedBox(height: AppSpace.s3)],
+                            ],
+                          ],
+                        ),
+                      );
+                    }),
+                  ],
+                ),
               ),
             ],
           ),
-        ) ??
-        false;
+        ),
+      ),
+    );
   }
-}
 
-class _CitasList extends StatelessWidget {
-  const _CitasList({
-    required this.items,
-    required this.onTap,
-    this.onCancelar,
-    this.citaCancelandoId,
-  });
-
-  final List<CitaModel> items;
-  final void Function(CitaModel) onTap;
-  final void Function(CitaModel)? onCancelar;
-  final String? citaCancelandoId;
-
-  @override
-  Widget build(BuildContext context) {
-    if (items.isEmpty) {
-      return const Center(child: Text('Sin citas en esta sección.'));
+  Widget _tarjeta(BuildContext context, CitaModel c, {WidgetRef? ref}) {
+    final status = AppointmentStatus.fromBackend(c.estado);
+    final acciones = <Widget>[];
+    if (ref != null && status == AppointmentStatus.completada && !c.tieneReview) {
+      acciones.add(BsmButton(
+        label: 'Calificar servicio',
+        icon: LucideIcons.star,
+        variant: BsmButtonVariant.ghost,
+        size: BsmButtonSize.sm,
+        onPressed: () => context.go('/appointments/${c.id}/calificar'),
+      ));
     }
-
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: items.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final cita = items[index];
-        return Stack(
-          children: [
-            CitaCard(
-              cita: cita,
-              onTap: () => onTap(cita),
-              onCancelar: onCancelar == null ? null : () => onCancelar!(cita),
-            ),
-            if (citaCancelandoId == cita.id)
-              const Positioned.fill(
-                child: ColoredBox(
-                  color: Color(0x66000000),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              ),
-          ],
-        );
-      },
+    if (ref != null && (status == AppointmentStatus.cancelada || status == AppointmentStatus.noShow)) {
+      acciones.add(BsmButton(
+        label: 'Reservar de nuevo',
+        icon: LucideIcons.rotateCcw,
+        variant: BsmButtonVariant.ghost,
+        size: BsmButtonSize.sm,
+        onPressed: () => iniciarReservaDesdeCita(context, ref, c, reprogramar: false),
+      ));
+    }
+    return AppointmentCard(
+      service: c.servicio.nombre,
+      barber: '${c.barbero.nombre} ${c.barbero.apellido}'.trim(),
+      barberPhotoUrl: c.barbero.fotoUrl,
+      date: c.fechaCita,
+      start: fechaConHora(c.fechaCita, c.horaInicio),
+      end: fechaConHora(c.fechaCita, c.horaFin),
+      status: status,
+      price: status == AppointmentStatus.cancelada || status == AppointmentStatus.noShow ? null : c.precioFinal,
+      onTap: () => context.go('/appointments/${c.id}'),
+      actions: acciones,
     );
   }
 }
 
 List<CitaModel> _proximas(List<CitaModel> citas) {
-  final allowed = {'pendiente', 'confirmada', 'enprogreso'};
-  final filtered = citas
-      .where((c) => allowed.contains(c.estado.toLowerCase()))
-      .toList();
-  filtered.sort((a, b) => a.fechaCita.compareTo(b.fechaCita));
-  return filtered;
+  final lista = citas.where((c) => AppointmentStatus.fromBackend(c.estado).isUpcoming || AppointmentStatus.fromBackend(c.estado) == AppointmentStatus.enProgreso).toList()
+    ..sort((a, b) {
+      final f = a.fechaCita.compareTo(b.fechaCita);
+      return f != 0 ? f : a.horaInicio.compareTo(b.horaInicio);
+    });
+  return lista;
 }
 
 List<CitaModel> _historial(List<CitaModel> citas) {
-  final allowed = {'completada', 'cancelada'};
-  final filtered = citas
-      .where((c) => allowed.contains(c.estado.toLowerCase()))
-      .toList();
-  filtered.sort((a, b) => b.fechaCita.compareTo(a.fechaCita));
-  return filtered;
+  final lista = citas.where((c) {
+    final s = AppointmentStatus.fromBackend(c.estado);
+    return s == AppointmentStatus.completada || s == AppointmentStatus.cancelada || s == AppointmentStatus.noShow;
+  }).toList()
+    ..sort((a, b) {
+      final f = b.fechaCita.compareTo(a.fechaCita);
+      return f != 0 ? f : b.horaInicio.compareTo(a.horaInicio);
+    });
+  return lista;
 }

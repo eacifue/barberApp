@@ -1,7 +1,4 @@
-import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-
-import '../../../../core/theme/app_colors.dart';
 
 part 'cita_model.freezed.dart';
 part 'cita_model.g.dart';
@@ -22,30 +19,11 @@ class CitaModel with _$CitaModel {
     required BarberoResumen barbero,
     required ServicioResumen servicio,
     required DateTime createdAt,
+    @Default(false) bool tieneReview,
   }) = _CitaModel;
 
   factory CitaModel.fromJson(Map<String, dynamic> json) =>
       _$CitaModelFromJson(json);
-
-  Color get estadoColor {
-    switch (estado.toLowerCase()) {
-      case 'pendiente':
-        return AppColors.warning;
-      case 'confirmada':
-        return AppColors.success;
-      case 'completada':
-        return const Color(0xFF4D96FF);
-      case 'cancelada':
-        return AppColors.error;
-      default:
-        return AppColors.textMuted;
-    }
-  }
-
-  bool get esCancelable {
-    final value = estado.toLowerCase();
-    return value == 'pendiente' || value == 'confirmada';
-  }
 }
 
 @freezed

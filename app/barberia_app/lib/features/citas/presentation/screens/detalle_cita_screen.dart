@@ -1,24 +1,26 @@
-import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, TargetPlatform;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/errors/error_message.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/format/formato.dart';
+import '../../../../shared/widgets/bsm/bsm.dart';
 import '../../../barberias/domain/barbershop_model.dart';
 import '../../../barberias/presentation/providers/barbershops_provider.dart';
-import '../../../barberos/presentation/providers/barberos_provider.dart';
-import '../../../horarios/presentation/providers/disponibilidad_provider.dart';
-import '../../../servicios/presentation/providers/servicios_provider.dart';
-import '../../../../shared/widgets/error_widget.dart';
 import '../../domain/models/cita_model.dart';
+import '../booking_actions.dart';
 import '../providers/citas_provider.dart';
-import '../providers/reprogramacion_provider.dart';
-import '../providers/reserva_notifier.dart';
+import '../widgets/booking_scaffold.dart';
 
+/// Tu cita: estado arriba, servicio, barbero, fecha, ubicación con «Cómo
+/// llegar» y notas. Acciones al pie según el estado
+/// (design/pantallas/app-movil/Cita-detalle y Cita-cancelar).
 class DetalleCitaScreen extends ConsumerStatefulWidget {
   const DetalleCitaScreen({super.key, required this.citaId});
 
@@ -33,332 +35,280 @@ class _DetalleCitaScreenState extends ConsumerState<DetalleCitaScreen> {
   bool _reprogramando = false;
 
   Future<void> _reprogramar(CitaModel cita) async {
-    final barbershop = await ref.read(myBarbershopProvider.future);
-    if (barbershop == null) {
-      return;
-    }
-
     setState(() => _reprogramando = true);
+    await iniciarReservaDesdeCita(context, ref, cita, reprogramar: true);
+    if (mounted) setState(() => _reprogramando = false);
+  }
+
+  Future<void> _cancelar(CitaModel cita, DateTime inicio) async {
+    final confirmado = await showBsmConfirm(
+      context,
+      title: '¿Cancelar esta cita?',
+      body: 'Se liberará el horario del ${Formato.fechaLarga(inicio)} a las ${Formato.hora(inicio)} con ${cita.barbero.nombre}. '
+          'Esta acción no se puede deshacer.',
+      confirmLabel: 'Sí, cancelar cita',
+    );
+    if (!confirmado || !mounted) return;
+    setState(() => _cancelando = true);
     try {
-      final servicios = await ref.read(serviciosProvider(barbershop.id).future);
-      var servicio = servicios.where((s) => s.id == cita.servicio.id).toList();
+      await ref.read(citaRepositoryProvider).cancelarCita(cita.id);
+      ref.invalidate(citaByIdProvider(widget.citaId));
+      final barberiaId = ref.read(myBarbershopProvider).valueOrNull?.id;
+      if (barberiaId != null) ref.invalidate(misCitasProvider(barberiaId));
+      if (mounted) showBsmToast(context, 'Cita cancelada');
+    } catch (e) {
+      if (mounted) showBsmToast(context, mensajeDeError(e, 'No pudimos cancelar la cita. Inténtalo de nuevo.'), tone: BsmToastTone.danger);
+    } finally {
+      if (mounted) setState(() => _cancelando = false);
+    }
+  }
 
-      if (servicio.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Este servicio ya no está disponible para reprogramar.',
+  Future<void> _comoLlegar(BarbershopModel barbershop) async {
+    final query = Uri.encodeComponent('${barbershop.nombre}, ${barbershop.direccionCompleta}');
+    final apple = defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS;
+    final uri = apple ? Uri.parse('https://maps.apple.com/?q=$query') : Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
+    final abierto = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!abierto && mounted) {
+      showBsmToast(context, 'No pudimos abrir la aplicación de mapas.', tone: BsmToastTone.danger);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final citaAsync = ref.watch(citaByIdProvider(widget.citaId));
+    final barbershop = ref.watch(myBarbershopProvider).valueOrNull;
+    final cita = citaAsync.valueOrNull;
+    final status = cita == null ? null : AppointmentStatus.fromBackend(cita.estado);
+
+    Widget header() => Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpace.s2, AppSpace.s1, AppSpace.s4, AppSpace.s2),
+          child: Row(
+            children: [
+              IconButton(
+                tooltip: 'Volver a Mis citas',
+                onPressed: () => context.go('/appointments'),
+                icon: const Icon(LucideIcons.arrowLeft, size: 24),
               ),
-            ),
-          );
-        }
-        return;
-      }
-
-      final barberos = await ref.read(
-        barberosPorServicioProvider(servicio.first.id).future,
-      );
-      final barbero = barberos.where((b) => b.id == cita.barbero.id).toList();
-
-      if (barbero.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Este barbero ya no está disponible para este servicio.',
-              ),
-            ),
-          );
-        }
-        return;
-      }
-
-      final reservaNotifier = ref.read(reservaNotifierProvider.notifier);
-      reservaNotifier.resetReserva();
-      reservaNotifier.seleccionarServicio(servicio.first);
-      reservaNotifier.seleccionarBarbero(barbero.first);
-      await ref
-          .read(disponibilidadNotifierProvider.notifier)
-          .reiniciarParaNuevaSeleccion(
-            barberoId: barbero.first.id,
-            servicioId: servicio.first.id,
-          );
-      ref.read(citaIdAReprogramarProvider.notifier).state = cita.id;
-
-      if (!mounted) {
-        return;
-      }
-      context.go('/reservar/horario');
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'No pudimos iniciar la reprogramación. Intenta de nuevo.',
-            ),
+              const SizedBox(width: AppSpace.s1),
+              Expanded(child: Semantics(header: true, child: Text('Tu cita', style: AppTextStyles.display.copyWith(color: p.ink)))),
+              if (status != null) StatusBadge(status),
+            ],
           ),
         );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _reprogramando = false);
-      }
-    }
-  }
 
-  Future<bool> _confirmCancel() async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Cancelar cita'),
-            content: const Text('¿Seguro que deseas cancelar esta cita?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('No'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Sí, cancelar'),
+    if (cita == null || status == null) {
+      return Scaffold(
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              header(),
+              Expanded(
+                child: citaAsync.hasError
+                    ? BsmEmptyState(
+                        isError: true,
+                        title: 'No pudimos cargar tu cita',
+                        body: 'Revisa tu conexión e inténtalo de nuevo.',
+                        actionLabel: 'Reintentar',
+                        actionIcon: LucideIcons.refreshCw,
+                        onAction: () => ref.invalidate(citaByIdProvider(widget.citaId)),
+                      )
+                    : const Padding(padding: EdgeInsets.all(AppSpace.s4), child: BsmSkeleton(variant: BsmSkeletonVariant.card, count: 2)),
               ),
             ],
           ),
-        ) ??
-        false;
-  }
-
-  Future<void> _abrirEnMapas(BarbershopModel barbershop) async {
-    final query = Uri.encodeComponent(
-      '${barbershop.nombre}, ${barbershop.direccionCompleta}',
-    );
-    final isApple =
-        defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.macOS;
-    final uri = isApple
-        ? Uri.parse('https://maps.apple.com/?q=$query')
-        : Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
-
-    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!launched && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No pudimos abrir la aplicación de mapas.'),
         ),
       );
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
-    final citaAsync = ref.watch(citaByIdProvider(widget.citaId));
-    final repo = ref.watch(citaRepositoryProvider);
-    final barbershopAsync = ref.watch(myBarbershopProvider);
+    final inicio = fechaConHora(cita.fechaCita, cita.horaInicio);
+    final fin = fechaConHora(cita.fechaCita, cita.horaFin);
+    final barbero = '${cita.barbero.nombre} ${cita.barbero.apellido}'.trim();
+
+    Widget fila({required Widget leading, required String title, required String subtitle, Widget? trailing}) => Row(
+          children: [
+            leading,
+            const SizedBox(width: AppSpace.s3),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: AppTextStyles.titleSm.copyWith(color: p.ink)),
+                  Text(subtitle, style: AppTextStyles.body.copyWith(color: p.inkMuted)),
+                ],
+              ),
+            ),
+            if (trailing != null) trailing,
+          ],
+        );
+
+    Widget? acciones;
+    if (status.isUpcoming) {
+      acciones = Row(
+        children: [
+          Expanded(
+            child: BsmButton(
+              label: 'Reprogramar',
+              icon: LucideIcons.calendarClock,
+              variant: BsmButtonVariant.secondary,
+              size: BsmButtonSize.lg,
+              block: true,
+              loading: _reprogramando,
+              onPressed: _cancelando ? null : () => _reprogramar(cita),
+            ),
+          ),
+          const SizedBox(width: AppSpace.s2),
+          Expanded(
+            child: BsmButton(
+              label: 'Cancelar cita',
+              variant: BsmButtonVariant.dangerGhost,
+              size: BsmButtonSize.lg,
+              block: true,
+              loading: _cancelando,
+              onPressed: _reprogramando ? null : () => _cancelar(cita, inicio),
+            ),
+          ),
+        ],
+      );
+    } else if (status == AppointmentStatus.completada && !cita.tieneReview) {
+      acciones = BsmButton(
+        label: 'Calificar servicio',
+        icon: LucideIcons.star,
+        size: BsmButtonSize.lg,
+        block: true,
+        onPressed: () => context.go('/appointments/${cita.id}/calificar'),
+      );
+    } else if (status == AppointmentStatus.cancelada || status == AppointmentStatus.noShow || status == AppointmentStatus.completada) {
+      acciones = BsmButton(
+        label: 'Reservar de nuevo',
+        icon: LucideIcons.rotateCcw,
+        variant: BsmButtonVariant.secondary,
+        size: BsmButtonSize.lg,
+        block: true,
+        loading: _reprogramando,
+        onPressed: () async {
+          setState(() => _reprogramando = true);
+          await iniciarReservaDesdeCita(context, ref, cita, reprogramar: false);
+          if (mounted) setState(() => _reprogramando = false);
+        },
+      );
+    }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Detalle de cita')),
-      body: citaAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => BarberiaErrorWidget(
-          message: 'No pudimos cargar el detalle de la cita.',
-          onRetry: () => ref.invalidate(citaByIdProvider(widget.citaId)),
-        ),
-        data: (cita) {
-          final fecha = DateFormat(
-            "EEEE d 'de' MMMM, y",
-            'es_CO',
-          ).format(cita.fechaCita);
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _Box(
-                title: 'Servicio',
-                child: Text(
-                  '${cita.servicio.nombre} · ${cita.servicio.duracionMinutos} min',
-                ),
-              ),
-              _Box(
-                title: 'Barbero',
-                child: Text('${cita.barbero.nombre} ${cita.barbero.apellido}'),
-              ),
-              _Box(
-                title: 'Fecha y hora',
-                child: Text(
-                  '$fecha\n${cita.horaInicio.substring(0, 5)} - ${cita.horaFin.substring(0, 5)}',
-                ),
-              ),
-              _Box(
-                title: 'Precio',
-                child: Text(
-                  NumberFormat.currency(
-                    locale: 'es_CO',
-                    symbol: r'$',
-                    decimalDigits: 0,
-                  ).format(cita.precioFinal),
-                ),
-              ),
-              _Box(
-                title: 'Estado',
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: cita.estadoColor.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                  child: Text(
-                    cita.estado,
-                    style: TextStyle(
-                      color: cita.estadoColor,
-                      fontWeight: FontWeight.w700, fontVariations: const [FontVariation('wght', 700.0)],
-                    ),
-                  ),
-                ),
-              ),
-              _Box(
-                title: 'Ubicación',
-                child: barbershopAsync.when(
-                  loading: () => const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8),
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                  error: (error, stackTrace) =>
-                      const Text('No pudimos cargar la ubicación.'),
-                  data: (barbershop) {
-                    if (barbershop == null) {
-                      return const Text('Ubicación no disponible.');
-                    }
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(barbershop.nombre),
-                        Text(
-                          barbershop.direccionCompleta,
-                          style: Theme.of(context).textTheme.bodyMedium,
+      bottomNavigationBar: acciones == null
+          ? null
+          : DecoratedBox(
+              decoration: BoxDecoration(color: p.surface, border: Border(top: BorderSide(color: p.line))),
+              child: SafeArea(top: false, child: Padding(padding: const EdgeInsets.all(AppSpace.s4), child: acciones)),
+            ),
+      body: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: AppSpace.s6),
+          children: [
+            header(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpace.s4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SummaryCard(
+                    children: [
+                      fila(
+                        leading: ServiceTypeBadge(tipo: cita.servicio.nombre),
+                        title: cita.servicio.nombre,
+                        subtitle: '${Formato.duracion(cita.servicio.duracionMinutos)} · ${Formato.dinero(cita.precioFinal)} · Pago en el local',
+                      ),
+                      fila(
+                        leading: BsmAvatar(name: barbero, photoUrl: cita.barbero.fotoUrl),
+                        title: barbero,
+                        subtitle: 'Tu barbero',
+                      ),
+                      fila(
+                        leading: Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(color: p.surfaceSunken, borderRadius: BorderRadius.circular(AppRadius.sm)),
+                          child: Icon(LucideIcons.calendarDays, size: 20, color: p.ink),
                         ),
-                        const SizedBox(height: 10),
-                        OutlinedButton.icon(
-                          onPressed: () => _abrirEnMapas(barbershop),
-                          icon: const Icon(LucideIcons.navigation),
-                          label: const Text('Cómo llegar'),
+                        title: capitalizar(Formato.fechaLarga(inicio)),
+                        subtitle: status.isUpcoming ? '${Formato.rango(inicio, fin)} · Te avisaremos antes de tu cita' : Formato.rango(inicio, fin),
+                      ),
+                    ],
+                  ),
+                  if (barbershop != null) ...[
+                    const SizedBox(height: AppSpace.s4),
+                    Semantics(
+                      label: 'Ubicación',
+                      container: true,
+                      child: Container(
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(color: p.surface, border: Border.all(color: p.line), borderRadius: BorderRadius.circular(AppRadius.md)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Marcador de posición hasta integrar el proveedor de mapas.
+                            Semantics(
+                              label: 'Mapa de la ubicación de la barbería',
+                              image: true,
+                              child: Container(
+                                height: 120,
+                                color: p.surfaceSunken,
+                                alignment: Alignment.center,
+                                child: Icon(LucideIcons.mapPin, size: 28, color: p.brassInk),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(AppSpace.s4),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Overline('Ubicación'),
+                                        const SizedBox(height: AppSpace.s1),
+                                        Text(barbershop.nombre, style: AppTextStyles.label.copyWith(color: p.ink)),
+                                        Text(barbershop.direccionCompleta, style: AppTextStyles.body.copyWith(color: p.inkMuted)),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpace.s2),
+                                  BsmButton(
+                                    label: 'Cómo llegar',
+                                    icon: LucideIcons.navigation,
+                                    variant: BsmButtonVariant.secondary,
+                                    onPressed: () => _comoLlegar(barbershop),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (cita.notas != null && cita.notas!.trim().isNotEmpty) ...[
+                    const SizedBox(height: AppSpace.s4),
+                    SummaryCard(
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Overline('Tu nota para el barbero'),
+                            const SizedBox(height: AppSpace.s1),
+                            Text(cita.notas!.trim(), style: AppTextStyles.bodyLg.copyWith(color: p.ink)),
+                          ],
                         ),
                       ],
-                    );
-                  },
-                ),
+                    ),
+                  ],
+                ],
               ),
-              if (cita.esCancelable) ...[
-                OutlinedButton.icon(
-                  onPressed: _reprogramando || _cancelando
-                      ? null
-                      : () => _reprogramar(cita),
-                  icon: _reprogramando
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(LucideIcons.calendarSync),
-                  label: const Text('Reprogramar'),
-                ),
-                const SizedBox(height: 10),
-              ],
-              if (cita.esCancelable)
-                OutlinedButton(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    side: const BorderSide(color: AppColors.error),
-                  ),
-                  onPressed: _cancelando || _reprogramando
-                      ? null
-                      : () async {
-                          final confirmado = await _confirmCancel();
-                          if (!confirmado || !context.mounted) {
-                            return;
-                          }
-
-                          setState(() => _cancelando = true);
-                          try {
-                            await repo.cancelarCita(
-                              cita.id,
-                              motivo: 'Cancelada desde detalle de cita',
-                            );
-                            ref.invalidate(citaByIdProvider(widget.citaId));
-                            final barbershop = ref
-                                .read(myBarbershopProvider)
-                                .valueOrNull;
-                            if (barbershop != null) {
-                              ref.invalidate(misCitasProvider(barbershop.id));
-                            }
-                          } catch (_) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'No pudimos cancelar la cita. Intenta de nuevo.',
-                                  ),
-                                ),
-                              );
-                            }
-                          } finally {
-                            if (mounted) {
-                              setState(() => _cancelando = false);
-                            }
-                          }
-                        },
-                  child: _cancelando
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Cancelar cita'),
-                ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _Box extends StatelessWidget {
-  const _Box({required this.title, required this.child});
-
-  final String title;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceOf(context),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppColors.textMutedOf(context).withValues(alpha: 0.2),
+            ),
+          ],
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.labelLarge?.copyWith(color: AppColors.primary),
-          ),
-          const SizedBox(height: 6),
-          child,
-        ],
       ),
     );
   }

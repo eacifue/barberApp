@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Barberia.Infrastructure", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Barberia.Shared", "Barberia.Shared\Barberia.Shared.csproj", "{7007A909-46A1-4CA3-AAD1-4CDA7860E4CD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Barberia.Tests", "Barberia.Tests\Barberia.Tests.csproj", "{C4CEF430-BAB4-442E-A729-D7B2886A88F2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,18 @@ Global
 		{7007A909-46A1-4CA3-AAD1-4CDA7860E4CD}.Release|x64.Build.0 = Release|Any CPU
 		{7007A909-46A1-4CA3-AAD1-4CDA7860E4CD}.Release|x86.ActiveCfg = Release|Any CPU
 		{7007A909-46A1-4CA3-AAD1-4CDA7860E4CD}.Release|x86.Build.0 = Release|Any CPU
+		{C4CEF430-BAB4-442E-A729-D7B2886A88F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4CEF430-BAB4-442E-A729-D7B2886A88F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4CEF430-BAB4-442E-A729-D7B2886A88F2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C4CEF430-BAB4-442E-A729-D7B2886A88F2}.Debug|x64.Build.0 = Debug|Any CPU
+		{C4CEF430-BAB4-442E-A729-D7B2886A88F2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C4CEF430-BAB4-442E-A729-D7B2886A88F2}.Debug|x86.Build.0 = Debug|Any CPU
+		{C4CEF430-BAB4-442E-A729-D7B2886A88F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4CEF430-BAB4-442E-A729-D7B2886A88F2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4CEF430-BAB4-442E-A729-D7B2886A88F2}.Release|x64.ActiveCfg = Release|Any CPU
+		{C4CEF430-BAB4-442E-A729-D7B2886A88F2}.Release|x64.Build.0 = Release|Any CPU
+		{C4CEF430-BAB4-442E-A729-D7B2886A88F2}.Release|x86.ActiveCfg = Release|Any CPU
+		{C4CEF430-BAB4-442E-A729-D7B2886A88F2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
