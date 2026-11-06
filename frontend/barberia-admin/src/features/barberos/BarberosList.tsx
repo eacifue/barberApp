@@ -75,7 +75,7 @@ export function BarberosList() {
   const citasHoyPorBarbero = useMemo(() => {
     const map = new Map<string, number>()
     for (const cita of citasHoyQuery.data ?? []) {
-      map.set(cita.barberoId, (map.get(cita.barberoId) ?? 0) + 1)
+      map.set(cita.barbero.id, (map.get(cita.barbero.id) ?? 0) + 1)
     }
     return map
   }, [citasHoyQuery.data])

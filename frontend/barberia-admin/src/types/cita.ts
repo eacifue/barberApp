@@ -9,21 +9,20 @@ export const EstadoCita = {
 
 export type EstadoCita = (typeof EstadoCita)[keyof typeof EstadoCita]
 
+/** Forma de `CitaDto` del backend: los IDs vienen dentro de cliente/barbero/servicio. */
 export interface Cita {
   id: string
-  clienteId: string
-  barberoId: string
-  servicioId: string
   fechaCita: string
   horaInicio: string
   horaFin: string
   estado: EstadoCita
-  notas?: string
+  notas?: string | null
   precioFinal: number
-  tokenRedisBloqueo?: string
-  cliente: { nombre: string; apellido: string; fotoUrl?: string }
-  barbero: { nombre: string; apellido: string; fotoUrl?: string }
-  servicio: { nombre: string; duracionMinutos: number }
+  createdAt?: string
+  tieneReview?: boolean
+  cliente: { id: string; nombre: string; apellido: string; telefono?: string; fotoUrl?: string | null }
+  barbero: { id: string; nombre: string; apellido: string; fotoUrl?: string | null }
+  servicio: { id: string; nombre: string; duracionMinutos: number; precio?: number }
 }
 
 export type CitaCreateInput = {

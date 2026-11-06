@@ -83,7 +83,7 @@ export function Topbar({ title, search, theme, onThemeChange, unread, onNotifica
     <header className="bsm-topbar">
       {compact && <IconButton icon="menu" label="Abrir menú" onClick={onMenu} />}
       {title && <h1 className="bsm-topbar-title">{title}</h1>}
-      {search}
+      {search ?? <span className="flex-1" aria-hidden="true" />}
       <div className="bsm-topbar-actions">
         <div className="bsm-tabs bsm-tabs-segmented bsm-theme-toggle" role="radiogroup" aria-label="Tema">
           {(
@@ -113,21 +113,34 @@ export function Topbar({ title, search, theme, onThemeChange, unread, onNotifica
   )
 }
 
-type BottomNavProps = { items: NavItem[]; floating?: boolean; className?: string }
+export type BottomNavAction = { icon: IconName; label: string; onClick: () => void; badge?: boolean }
+
+type BottomNavProps = { items: Array<NavItem | BottomNavAction>; floating?: boolean; className?: string }
 
 /** Panel en celular: barra flotante con Inicio, Agenda, Clientes, Más. */
 export function BottomNav({ items, floating, className }: BottomNavProps) {
+  const content = (it: NavItem | BottomNavAction) => (
+    <>
+      <span className="bsm-bottomnav-pill">
+        <Icon name={it.icon} size={24} />
+        {it.badge && <span className="bsm-iconbtn-dot" />}
+      </span>
+      <span className="bsm-bottomnav-label">{it.label}</span>
+    </>
+  )
   return (
     <nav className={cx('bsm-bottomnav', floating && 'is-floating', className)} aria-label="Navegación">
-      {items.map((it) => (
-        <NavLink key={it.to} to={it.to} end={it.end} className={({ isActive }) => cx('bsm-bottomnav-item', isActive && 'is-active')}>
-          <span className="bsm-bottomnav-pill">
-            <Icon name={it.icon} size={24} />
-            {it.badge && <span className="bsm-iconbtn-dot" />}
-          </span>
-          <span className="bsm-bottomnav-label">{it.label}</span>
-        </NavLink>
-      ))}
+      {items.map((it) =>
+        'to' in it ? (
+          <NavLink key={it.to} to={it.to} end={it.end} className={({ isActive }) => cx('bsm-bottomnav-item', isActive && 'is-active')}>
+            {content(it)}
+          </NavLink>
+        ) : (
+          <button key={it.label} type="button" className="bsm-bottomnav-item bsm-bottomnav-btn" onClick={it.onClick}>
+            {content(it)}
+          </button>
+        ),
+      )}
     </nav>
   )
 }

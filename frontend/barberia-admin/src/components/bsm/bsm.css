@@ -420,3 +420,5 @@ a.bsm-agenda-item, a.bsm-btn { text-decoration: none; }
 /* Tarjetas dentro de grillas: pueden encogerse sin desbordar (texto del sistema al 130 %). */
 .bsm-card { min-width: 0; }
 .bsm-stat-delta { flex-wrap: wrap; }
+
+.bsm-bottomnav-btn { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }

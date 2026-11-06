@@ -12,6 +12,12 @@ public interface ICitaService
 
     Task<CitaDto> CompletarCitaAsync(Guid citaId, CancellationToken cancellationToken);
 
+    /// <summary>El barbero empieza el servicio: Confirmada → En progreso.</summary>
+    Task<CitaDto> IniciarCitaAsync(Guid citaId, CancellationToken cancellationToken);
+
+    /// <summary>El cliente no llegó: Pendiente o Confirmada → No asistió, solo desde la hora de inicio.</summary>
+    Task<CitaDto> MarcarNoAsistioAsync(Guid citaId, CancellationToken cancellationToken);
+
     Task<List<CitaDto>> GetByClienteAsync(Guid clienteId, CancellationToken cancellationToken);
 
     Task<List<CitaDto>> GetByBarberoAsync(Guid barberoId, DateOnly fecha, CancellationToken cancellationToken);

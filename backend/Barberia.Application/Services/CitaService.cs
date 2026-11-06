@@ -24,6 +24,7 @@ public class CitaService : ICitaService
     private readonly ICurrentUserService currentUserService;
     private readonly IValidator<CreateCitaRequest> createValidator;
     private readonly IMapper mapper;
+    private readonly TimeProvider timeProvider;
 
     public CitaService(
         IBarberiaDbContext dbContext,
@@ -31,7 +32,8 @@ public class CitaService : ICitaService
         INotificationService notificationService,
         ICurrentUserService currentUserService,
         IValidator<CreateCitaRequest> createValidator,
-        IMapper mapper)
+        IMapper mapper,
+        TimeProvider timeProvider)
     {
         this.dbContext = dbContext;
         this.slotBloqueoService = slotBloqueoService;
@@ -39,6 +41,7 @@ public class CitaService : ICitaService
         this.currentUserService = currentUserService;
         this.createValidator = createValidator;
         this.mapper = mapper;
+        this.timeProvider = timeProvider;
     }
 
     public async Task<CitaDto> CrearCitaAsync(CreateCitaRequest request, CancellationToken cancellationToken)
@@ -200,6 +203,45 @@ public class CitaService : ICitaService
 
         cita.Estado = EstadoCita.Completada;
         await dbContext.SaveChangesAsync(cancellationToken);
+        return MapCita(cita);
+    }
+
+    public async Task<CitaDto> IniciarCitaAsync(Guid citaId, CancellationToken cancellationToken)
+    {
+        var cita = await GetCitaWithRelationsAsync(citaId, cancellationToken);
+        if (cita.Estado != EstadoCita.Confirmada)
+        {
+            throw new ConflictException("Solo se pueden iniciar citas confirmadas.");
+        }
+
+        cita.Estado = EstadoCita.EnProgreso;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return MapCita(cita);
+    }
+
+    public async Task<CitaDto> MarcarNoAsistioAsync(Guid citaId, CancellationToken cancellationToken)
+    {
+        var cita = await GetCitaWithRelationsAsync(citaId, cancellationToken);
+        if (!EstadosCancelables.Contains(cita.Estado))
+        {
+            throw new ConflictException("Solo puedes marcar «No asistió» en citas pendientes o confirmadas.");
+        }
+
+        var colombiaZone = TimeZoneInfo.FindSystemTimeZoneById("America/Bogota");
+        var ahoraLocal = TimeZoneInfo.ConvertTime(timeProvider.GetUtcNow(), colombiaZone).DateTime;
+        if (ahoraLocal < cita.FechaCita.ToDateTime(cita.HoraInicio))
+        {
+            throw new ConflictException("Podrás marcar «No asistió» desde la hora de inicio de la cita.");
+        }
+
+        cita.Estado = EstadoCita.NoShow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        await notificationService.NotificarCitaNoAsistidaClienteAsync(
+            cita.ClienteId,
+            "Te esperábamos hoy. Si quieres, reserva un nuevo horario desde la app.",
+            cancellationToken);
+
         return MapCita(cita);
     }
 

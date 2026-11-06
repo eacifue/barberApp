@@ -1,405 +1,338 @@
-import { useMemo } from 'react'
-import { Activity, ArrowRight, CalendarCheck2, CircleDollarSign, Scissors, UsersRound, UserRoundCheck } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useMemo, useState, type ReactNode } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link, useNavigate } from 'react-router-dom'
 
+import { Avatar, Button, Calendar, EmptyState, Icon, Skeleton, StatCard, StatusBadge, formatCOP, formatLongDate, formatTime, useDelayedFlag } from '../../components/bsm'
 import { useBarberias } from '../../hooks/useBarberias'
+import { useBarberos } from '../../hooks/useBarberos'
 import { useTenantBarberia } from '../../hooks/useTenantBarberia'
-import { barberoService } from '../../services/barberoService'
 import { citaService } from '../../services/citaService'
 import { clienteService } from '../../services/clienteService'
-import { slotsRedisService } from '../../services/slotsRedisService'
-import { EstadoCita } from '../../types/cita'
+import { useAuthStore } from '../../stores/authStore'
+import { toast } from '../../stores/toastStore'
 import type { Cita } from '../../types/cita'
-import { PageHeader } from '../../components/shared/PageHeader'
-import { StatCard } from '../../components/shared/StatCard'
-import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
-import { DataTable } from '../../components/ui/DataTable'
+import { addDaysIso, cuentaParaIngresos, esDiaDescanso, hhmm, mensajeDeError, minutesOf, mondayOf, nombreBarbero, nombreCliente, nowHHMM, parseIso, todayIso } from '../citas/agendaUtils'
+import { invalidarCitas } from '../citas/invalidarCitas'
+import { BarList, ColumnChart, LineChart, type ColumnDatum } from './charts'
 
-function toIsoDateLocal(date: Date) {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
+const SEMANAS = 8
+const WEEKDAY_SHORT = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
 
-function monthBounds(date = new Date()) {
-  const start = new Date(date.getFullYear(), date.getMonth(), 1)
-  const end = new Date(date.getFullYear(), date.getMonth() + 1, 0)
-  return {
-    start: toIsoDateLocal(start),
-    end: toIsoDateLocal(end),
-  }
-}
-
-async function getAdminCitasRange(from: string, to: string) {
+async function citasEnRango(from: string, to: string): Promise<Cita[]> {
   const pageSize = 200
-  const maxPages = 20
-  let page = 1
-  const all = [] as Awaited<ReturnType<typeof citaService.getAdminList>>
-
-  while (page <= maxPages) {
+  const all: Cita[] = []
+  for (let page = 1; page <= 20; page++) {
     const chunk = await citaService.getAdminList({ from, to, page, pageSize })
-    if (chunk.length === 0) break
-
     all.push(...chunk)
     if (chunk.length < pageSize) break
-    page += 1
   }
-
-  return Array.from(new Map(all.map((cita) => [cita.id, cita])).values())
+  return Array.from(new Map(all.map((c) => [c.id, c])).values())
 }
 
-function getEstadoVariant(estado: string) {
-  if (estado === EstadoCita.Confirmada) return 'success'
-  if (estado === EstadoCita.Pendiente) return 'warning'
-  if (estado === EstadoCita.EnProgreso) return 'info'
-  if (estado === EstadoCita.Completada) return 'muted'
-  return 'danger'
+/** `$1,71 M` · `$840 mil` · `$0` para ejes y etiquetas directas. */
+function millones(n: number): string {
+  if (n === 0) return '$0'
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2).replace(/\.?0+$/, '').replace('.', ',')} M`
+  return `$${Math.round(n / 1000)} mil`
 }
 
+function Panel({ title, subtitle, action, children, className }: { title: string; subtitle?: string; action?: ReactNode; children: ReactNode; className?: string }) {
+  return (
+    <section className={`bsm-card flex-col gap-4 ${className ?? ''}`} aria-label={title}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-title text-ink">{title}</h3>
+          {subtitle && <p className="text-body text-ink-muted">{subtitle}</p>}
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  )
+}
+
+/** Hoy en la barbería: KPI, gráficas y próximas citas (design/pantallas/panel-web/Dashboard). */
 export function DashboardPage() {
   const navigate = useNavigate()
-  const today = useMemo(() => toIsoDateLocal(new Date()), [])
-  const thisMonth = useMemo(() => monthBounds(), [])
-  const { isAdminBarberia, effectiveBarberiaId, tenantError } = useTenantBarberia()
+  const queryClient = useQueryClient()
+  const rol = useAuthStore((s) => s.usuario?.rol ?? '')
+  const esBarbero = rol === 'Barbero'
+  const hoy = todayIso()
+  const desde = addDaysIso(mondayOf(hoy), -7 * (SEMANAS - 1))
+  const hoyDate = parseIso(hoy)
+  const finMes = `${hoy.slice(0, 7)}-${String(new Date(hoyDate.getFullYear(), hoyDate.getMonth() + 1, 0).getDate()).padStart(2, '0')}`
+  const [mes] = useState({ year: hoyDate.getFullYear(), month: hoyDate.getMonth() })
 
-  // ── Barberias ──────────────────────────────────────────────────────────────
+  const { effectiveBarberiaId } = useTenantBarberia()
   const { barberiasQuery } = useBarberias()
-  const barberias = barberiasQuery.data ?? []
-
-  // ── Barberos de la única barbería ───────────────────────────────────────────
-  const allBarberosQuery = useQuery({
-    queryKey: ['dashboard-barberos', effectiveBarberiaId],
-    enabled: Boolean(effectiveBarberiaId),
-    queryFn: () => barberoService.getByBarberia(effectiveBarberiaId as string),
+  const barberia = barberiasQuery.data?.[0]
+  const { barberosQuery } = useBarberos(esBarbero ? '' : (effectiveBarberiaId ?? ''))
+  const citasQuery = useQuery({
+    queryKey: ['dashboard', 'citas', desde, finMes],
+    queryFn: () => citasEnRango(desde, finMes > hoy ? finMes : hoy),
+    refetchInterval: 120_000,
   })
-
-  const allBarberos = useMemo(() => allBarberosQuery.data ?? [], [allBarberosQuery.data])
-  const barberoIds = useMemo(() => new Set(allBarberos.map((barbero) => barbero.id)), [allBarberos])
-  const barberosActivos = useMemo(() => allBarberos.filter((b) => b.activo).length, [allBarberos])
-  const barberosLoading = barberiasQuery.isLoading || allBarberosQuery.isLoading
-
   const clientesQuery = useQuery({
-    queryKey: ['dashboard-clientes', isAdminBarberia, effectiveBarberiaId],
-    queryFn: () => (isAdminBarberia ? clienteService.getAllTenant() : clienteService.getAll()),
+    queryKey: ['dashboard', 'clientes', rol],
+    enabled: !esBarbero,
+    queryFn: () => (rol === 'Admin' ? clienteService.getAll() : clienteService.getAllTenant()),
   })
 
-  // ── Citas HOY: endpoint admin, robusto e independiente por barbero ─────────
-  const citasHoyQuery = useQuery({
-    queryKey: ['dashboard-citas-hoy', today],
-    queryFn: () => getAdminCitasRange(today, today),
-  })
-
-  // ── Citas del mes para el mini-calendario (lazy, no bloquea métricas) ──────
-  const citasMesQuery = useQuery({
-    queryKey: ['dashboard-citas-mes', thisMonth.start, thisMonth.end],
-    staleTime: 5 * 60 * 1000, // 5 min – no necesita ser tan fresco
-    queryFn: () => getAdminCitasRange(thisMonth.start, thisMonth.end),
-  })
-
-  // ── Slots Redis ────────────────────────────────────────────────────────────
-  const slotsRedisQuery = useQuery({
-    queryKey: ['slots-activos-dashboard'],
-    queryFn: async () => {
-      try { return await slotsRedisService.getActivos() } catch { return [] }
+  const confirmMutation = useMutation({
+    mutationFn: (id: string) => citaService.confirm(id),
+    onSuccess: async () => {
+      toast.success('Cita confirmada')
+      await invalidarCitas(queryClient)
     },
+    onError: (e) => toast.error(mensajeDeError(e, 'No pudimos confirmar la cita. Inténtalo de nuevo.')),
   })
 
-  const citasHoyRaw = citasHoyQuery.data ?? []
-  const citasMesRaw = citasMesQuery.data ?? []
-  const slotsActivosRaw = slotsRedisQuery.data ?? []
+  const citas = useMemo(() => citasQuery.data ?? [], [citasQuery.data])
+  const barberos = useMemo(() => (barberosQuery.data ?? []).filter((b) => b.activo), [barberosQuery.data])
+  const apertura = barberia?.horaApertura ? hhmm(barberia.horaApertura) : '09:00'
+  const cierre = barberia?.horaCierre ? hhmm(barberia.horaCierre) : '20:00'
+  const minutosAbierto = Math.max(60, minutesOf(cierre) - minutesOf(apertura))
+  const descansa = (iso: string) => esDiaDescanso(barberia?.diasDescanso as Array<string | number> | undefined, iso)
 
-  const citasHoy = useMemo(() => {
-    if (!isAdminBarberia) return citasHoyRaw
-    return citasHoyRaw.filter((cita) => barberoIds.has(cita.barberoId))
-  }, [isAdminBarberia, citasHoyRaw, barberoIds])
+  const porDia = useMemo(() => {
+    const m = new Map<string, Cita[]>()
+    for (const c of citas) m.set(c.fechaCita, [...(m.get(c.fechaCita) ?? []), c])
+    return m
+  }, [citas])
 
-  const citasMes = useMemo(() => {
-    if (!isAdminBarberia) return citasMesRaw
-    return citasMesRaw.filter((cita) => barberoIds.has(cita.barberoId))
-  }, [isAdminBarberia, citasMesRaw, barberoIds])
+  const delDia = (iso: string) => porDia.get(iso) ?? []
+  const citasHoy = delDia(hoy)
+  const activasHoy = citasHoy.filter(cuentaParaIngresos)
+  const mismaDiaSemanaPasada = delDia(addDaysIso(hoy, -7)).filter(cuentaParaIngresos)
+  const deltaCitas = mismaDiaSemanaPasada.length ? Math.round(((activasHoy.length - mismaDiaSemanaPasada.length) / mismaDiaSemanaPasada.length) * 100) : undefined
+  const estimadoHoy = activasHoy.reduce((s, c) => s + c.precioFinal, 0)
+  const cobradoHoy = citasHoy.filter((c) => c.estado === 'Completada').reduce((s, c) => s + c.precioFinal, 0)
+  const disponibles = barberos.filter((b) => b.disponible).length
+  const clientesActivos = (clientesQuery.data ?? []).filter((c) => c.activo).length
+  const clientesConCitaMes = new Set(citas.filter((c) => c.fechaCita.slice(0, 7) === hoy.slice(0, 7)).map((c) => c.cliente.id)).size
 
-  const slotsActivos = useMemo(() => {
-    if (!isAdminBarberia) return slotsActivosRaw
-    return slotsActivosRaw.filter((slot) => barberoIds.has(slot.barberoId))
-  }, [isAdminBarberia, slotsActivosRaw, barberoIds])
+  /* Ingresos por día: últimos 14 días; cobrado = completadas, hoy = estimado. */
+  const ingresos: ColumnDatum[] = useMemo(() => {
+    const days = Array.from({ length: 14 }, (_, i) => addDaysIso(hoy, i - 13))
+    const values = days.map((iso) => {
+      const lista = porDia.get(iso) ?? []
+      if (descansa(iso) && lista.length === 0) return null
+      return iso === hoy ? lista.filter(cuentaParaIngresos).reduce((s, c) => s + c.precioFinal, 0) : lista.filter((c) => c.estado === 'Completada').reduce((s, c) => s + c.precioFinal, 0)
+    })
+    const maxIdx = values.reduce<number>((best, v, i) => ((v ?? -1) > (values[best] ?? -1) ? i : best), 0)
+    return days.map((iso, i) => {
+      const d = parseIso(iso)
+      return {
+        key: iso,
+        x: values[i] == null ? '–' : String(d.getDate()),
+        label: `${WEEKDAY_SHORT[d.getDay()]} ${formatLongDate(d).split(' ').slice(1).join(' ')}`,
+        value: values[i],
+        estimated: iso === hoy,
+        showLabel: (i === maxIdx && (values[i] ?? 0) > 0) || iso === hoy,
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [porDia, hoy, barberia])
 
-  const clientes = clientesQuery.data ?? []
+  /* Ocupación por barbero (hoy): minutos reservados / minutos de atención. */
+  const ocupacion = barberos
+    .map((b) => {
+      const minutos = activasHoy.filter((c) => c.barbero.id === b.id).reduce((s, c) => s + (minutesOf(c.horaFin) - minutesOf(c.horaInicio)), 0)
+      const pct = Math.round((minutos / minutosAbierto) * 100)
+      const nombre = `${b.nombre} ${b.apellido}`.trim()
+      return {
+        key: b.id,
+        text: nombre,
+        value: pct,
+        display: `${pct} %`,
+        label: (
+          <span className="flex items-center gap-2">
+            <Avatar name={nombre} src={b.fotoUrl} size={24} />
+            <span className="truncate">{nombre}</span>
+          </span>
+        ),
+      }
+    })
+    .sort((a, b) => b.value - a.value)
 
-  const barberiaScopeLabel = useMemo(() => {
-    if (!isAdminBarberia) return null
-    if (!effectiveBarberiaId) return 'Sin barbería asignada'
-    return barberias.find((barberia) => barberia.id === effectiveBarberiaId)?.nombre ?? 'Mi barbería'
-  }, [isAdminBarberia, effectiveBarberiaId, barberias])
-
-  const citasPendientes = citasHoy.filter((c) => c.estado === EstadoCita.Pendiente).length
-  const ingresosHoy = citasHoy
-    .filter((cita) => cita.estado === EstadoCita.Completada || cita.estado === EstadoCita.EnProgreso)
-    .reduce((total, cita) => total + cita.precioFinal, 0)
-  const clientesConActividad = new Set(citasMes.map((cita) => cita.clienteId)).size
-
-  const citasRecientes = useMemo(
-    () => [...citasHoy].sort((a, b) => `${a.horaInicio}`.localeCompare(`${b.horaInicio}`)).slice(0, 10),
-    [citasHoy],
+  /* Servicios más vendidos: últimos 30 días, citas completadas. */
+  const hace30 = addDaysIso(hoy, -30)
+  const servicios = Array.from(
+    citas
+      .filter((c) => c.estado === 'Completada' && c.fechaCita >= hace30 && c.fechaCita <= hoy)
+      .reduce((m, c) => m.set(c.servicio.nombre, (m.get(c.servicio.nombre) ?? 0) + 1), new Map<string, number>()),
   )
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([nombre, n]) => ({ key: nombre, text: nombre, label: nombre, value: n, display: String(n) }))
 
-  const systemStatusLoading = slotsRedisQuery.isLoading || citasHoyQuery.isLoading
-
-  const calendar = useMemo(() => {
-    const now = new Date()
-    const year = now.getFullYear()
-    const month = now.getMonth()
-    const firstDay = new Date(year, month, 1)
-    const lastDay = new Date(year, month + 1, 0)
-    const startOffset = (firstDay.getDay() + 6) % 7
-    const daysInMonth = lastDay.getDate()
-
-    const items: Array<{ day: number | null; dateIso: string | null }> = []
-    for (let i = 0; i < startOffset; i += 1) {
-      items.push({ day: null, dateIso: null })
-    }
-    for (let day = 1; day <= daysInMonth; day += 1) {
-      const date = new Date(year, month, day)
-      items.push({ day, dateIso: toIsoDateLocal(date) })
-    }
-
-    const citasPorDia = new Set(citasMes.map((cita) => cita.fechaCita.slice(0, 10)))
-
+  /* Cancelaciones y no asistencias: % de las citas de cada semana (8 semanas). */
+  const semanas = Array.from({ length: SEMANAS }, (_, i) => addDaysIso(mondayOf(hoy), -7 * (SEMANAS - 1 - i)))
+  const porSemana = semanas.map((lunes) => {
+    const fin = addDaysIso(lunes, 6)
+    const lista = citas.filter((c) => c.fechaCita >= lunes && c.fechaCita <= fin && c.fechaCita <= hoy)
+    const total = lista.length || 1
     return {
-      title: now.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }),
-      items,
-      citasPorDia,
-      todayIso: toIsoDateLocal(new Date()),
+      cancel: (lista.filter((c) => c.estado === 'Cancelada').length / total) * 100,
+      noShow: (lista.filter((c) => c.estado === 'NoShow').length / total) * 100,
     }
-  }, [citasMes])
+  })
+
+  /* Próximas citas de hoy: desde ahora, sin las cerradas. */
+  const ahora = nowHHMM()
+  const proximas = citasHoy
+    .filter((c) => (c.estado === 'Pendiente' || c.estado === 'Confirmada' || c.estado === 'EnProgreso') && (hhmm(c.horaFin) > ahora || c.estado === 'EnProgreso'))
+    .sort((a, b) => a.horaInicio.localeCompare(b.horaInicio))
+    .slice(0, 6)
+
+  /* Calendario: ocupación por día del mes (> 80 % = punto naranja). */
+  const marks: Record<number, 'few' | 'any'> = {}
+  const capacidadDia = minutosAbierto * Math.max(1, disponibles)
+  for (const [iso, lista] of porDia) {
+    if (iso.slice(0, 7) !== hoy.slice(0, 7)) continue
+    const minutos = lista.filter(cuentaParaIngresos).reduce((s, c) => s + (minutesOf(c.horaFin) - minutesOf(c.horaInicio)), 0)
+    if (minutos > 0) marks[parseIso(iso).getDate()] = minutos / capacidadDia > 0.8 ? 'few' : 'any'
+  }
+
+  const loading = useDelayedFlag(citasQuery.isLoading)
+  const trabajando = barberos.filter((b) => b.disponible).length
 
   return (
-    <section>
-      <PageHeader
-        title="Dashboard"
-        subtitle={
-          tenantError
-            ? 'No se pudo cargar el dashboard por una configuración incompleta del tenant.'
-            : isAdminBarberia
-              ? `Monitorea agenda, ingresos, clientes y capacidad operativa de ${barberiaScopeLabel ?? 'tu barbería'}.`
-              : 'Monitorea agenda, ingresos, clientes y capacidad operativa desde un panel más claro, ligero y orientado a acción.'
-        }
-        actions={
-          tenantError ? null : (
-            <div className="flex flex-wrap gap-3">
-              <Button variant="ghost" onClick={() => navigate('/clientes')}>Clientes</Button>
-              <Button onClick={() => navigate('/citas')}>Ir a agenda</Button>
-            </div>
-          )
-        }
-      />
-
-      {tenantError ? (
-        <div className="surface-panel rounded-[28px] px-5 py-10 text-center text-sm text-[var(--warning)]">
-          {tenantError}
+    <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-4 py-5 md:px-6 lg:px-8">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="font-display text-display text-ink">Hoy en la barbería</h2>
+          <p className="text-body text-ink-muted">
+            {formatLongDate(hoyDate).charAt(0).toUpperCase() + formatLongDate(hoyDate).slice(1)}
+            {descansa(hoy) ? ' · Hoy la barbería descansa' : ` · Abierto de ${formatTime(apertura)} a ${formatTime(cierre)}`}
+            {!esBarbero && barberos.length > 0 && ` · ${trabajando} ${trabajando === 1 ? 'barbero trabajando' : 'barberos trabajando'}`}
+          </p>
         </div>
-      ) : null}
+        <Button variant="secondary" icon="calendar-days" onClick={() => navigate('/citas')}>
+          Ir a la agenda
+        </Button>
+      </div>
 
-      {!tenantError ? (
+      {citasQuery.isError ? (
+        <EmptyState tone="error" title="No pudimos cargar el resumen" body="Revisa tu conexión e inténtalo de nuevo." actionLabel="Reintentar" actionIcon="refresh-cw" actionVariant="secondary" onAction={() => void citasQuery.refetch()} />
+      ) : loading ? (
+        <Skeleton variant="card" rows={4} label="Cargando el resumen" />
+      ) : citasQuery.isLoading ? null : (
         <>
-        <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <article className="surface-panel rounded-[32px] p-6 md:p-8">
-          <div className="flex flex-wrap items-start justify-between gap-6">
-            <div className="max-w-2xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-faint)]">Resumen diario</p>
-              <h2 className="mt-3 font-display text-4xl leading-none text-[var(--text-strong)] md:text-5xl">
-                La operación de hoy está bajo control.
-              </h2>
-              <p className="mt-4 max-w-xl text-sm leading-6 text-[var(--text-ink-muted)] md:text-base">
-                Visualiza de inmediato el estado de las citas, la ocupación del equipo y la actividad comercial sin cambiar de módulo.
-              </p>
-            </div>
-            <div className="grid w-full gap-3 sm:grid-cols-2 xl:w-auto xl:grid-cols-1">
-              <div className="rounded-[24px] border border-[var(--border-subtle)] bg-[var(--surface-overlay)] p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-faint)]">Citas pendientes</p>
-                {citasHoyQuery.isLoading ? (
-                  <span className="mt-3 block h-8 w-12 animate-pulse rounded-lg bg-[var(--surface-hover)]" aria-hidden="true" />
-                ) : (
-                  <p className="mt-3 text-3xl font-semibold text-[var(--text-strong)]">{citasPendientes}</p>
-                )}
-              </div>
-              <div className="rounded-[24px] border border-[var(--border-subtle)] bg-[var(--surface-overlay)] p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-faint)]">Clientes con actividad</p>
-                {citasMesQuery.isLoading ? (
-                  <span className="mt-3 block h-8 w-12 animate-pulse rounded-lg bg-[var(--surface-hover)]" aria-hidden="true" />
-                ) : (
-                  <p className="mt-3 text-3xl font-semibold text-[var(--text-strong)]">{clientesConActividad}</p>
-                )}
-              </div>
-            </div>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <StatCard label="Citas de hoy" value={String(activasHoy.length)} icon="calendar-days" delta={deltaCitas} deltaLabel={`vs. ${WEEKDAY_SHORT[hoyDate.getDay()]} pasado`} hint={deltaCitas == null ? 'Sin citas el mismo día de la semana pasada' : undefined} />
+            <StatCard label="Ingresos estimados de hoy" value={formatCOP(estimadoHoy)} icon="banknote" hint={`${formatCOP(cobradoHoy)} ya cobrados en el local`} />
+            {!esBarbero && (
+              <StatCard
+                label="Clientes activos"
+                value={clientesQuery.isError ? '—' : String(clientesActivos)}
+                icon="users"
+                hint={`${clientesConCitaMes} con cita este mes`}
+              />
+            )}
+            {!esBarbero && (
+              <StatCard
+                label="Barberos activos"
+                value={`${disponibles} de ${barberos.length}`}
+                icon="scissors"
+                hint={barberos.length - disponibles > 0 ? `${barberos.length - disponibles} no ${barberos.length - disponibles === 1 ? 'disponible' : 'disponibles'} hoy` : 'Todo el equipo disponible'}
+              />
+            )}
           </div>
-        </article>
 
-        {!isAdminBarberia ? (
-          <aside className="surface-panel rounded-[32px] p-6">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-faint)]">Estado del sistema</p>
-            <div className="mt-4 space-y-3">
-              {systemStatusLoading ? (
-                <div className="rounded-[22px] border border-[var(--border-subtle)] bg-[var(--surface-overlay)] px-4 py-3 text-sm text-[var(--text-ink-muted)]">
-                  Revisando estado del sistema…
-                </div>
-              ) : (
-                <>
-                  {slotsActivos.length > 0 ? (
-                    <div className="rounded-[22px] border border-[var(--border-subtle)] bg-[var(--info-soft)] px-4 py-3 text-sm text-[var(--info)]">
-                      {slotsActivos.length} slots bloqueados activos.
-                    </div>
-                  ) : null}
-
-                  {citasPendientes > 0 ? (
-                    <div className="rounded-[22px] border border-[var(--border-subtle)] bg-[var(--warning-soft)] px-4 py-3 text-sm text-[var(--warning)]">
-                      {citasPendientes} citas sin confirmar requieren atención.
-                    </div>
-                  ) : null}
-
-                  {slotsActivos.length === 0 && citasPendientes === 0 ? (
-                    <div className="rounded-[22px] border border-[var(--border-subtle)] bg-[var(--success-soft)] px-4 py-3 text-sm text-[var(--success)]">
-                      No hay alertas críticas por ahora.
-                    </div>
-                  ) : null}
-                </>
-              )}
-            </div>
-          </aside>
-        ) : null}
-      </div>
-
-      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Citas del día"
-          value={String(citasHoy.length)}
-          loading={citasHoyQuery.isLoading}
-          icon={<CalendarCheck2 className="h-5 w-5" />}
-          caption="Reservas previstas para hoy"
-          valueTone="text-brass-ink"
-        />
-        <StatCard
-          label="Ingresos"
-          value={`$${ingresosHoy.toFixed(2)}`}
-          loading={citasHoyQuery.isLoading}
-          icon={<CircleDollarSign className="h-5 w-5" />}
-          caption="Ingresos generados hoy"
-        />
-        <StatCard
-          label="Clientes"
-          value={String(clientes.length)}
-          loading={clientesQuery.isLoading}
-          icon={<UsersRound className="h-5 w-5" />}
-          caption="Base activa de clientes"
-        />
-        <StatCard
-          label="Barberos activos"
-          value={String(barberosActivos)}
-          loading={barberosLoading}
-          icon={<UserRoundCheck className="h-5 w-5" />}
-          caption="Equipo disponible en el sistema"
-        />
-      </div>
-
-      <div className="mt-5 grid gap-4 xl:grid-cols-[1.7fr_1fr]">
-        <div className="surface-panel rounded-[32px] p-5 md:p-6">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="font-display text-3xl text-[var(--text-strong)]">Citas recientes</h3>
-              <p className="mt-2 text-sm text-[var(--text-ink-muted)]">Turnos del día ordenados por hora y estado.</p>
-            </div>
-            <Button variant="ghost" onClick={() => navigate('/citas')}>
-              Ver agenda
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-          <DataTable<Cita>
-            loading={citasHoyQuery.isLoading}
-            emptyMessage="No hay citas recientes hoy."
-            columns={[
-              { key: 'index', header: '#', width: '50px', render: (_row, index) => index + 1 },
-              {
-                key: 'cliente',
-                header: 'Cliente',
-                width: '1.2fr',
-                render: (row) => `${row.cliente.nombre} ${row.cliente.apellido}`,
-              },
-              {
-                key: 'barbero',
-                header: 'Barbero',
-                width: '1fr',
-                render: (row) => `${row.barbero.nombre} ${row.barbero.apellido}`,
-              },
-              { key: 'servicio', header: 'Servicio', width: '1fr', render: (row) => row.servicio.nombre },
-              { key: 'hora', header: 'Hora', width: '90px', render: (row) => row.horaInicio.slice(0, 5) },
-              {
-                key: 'estado',
-                header: 'Estado',
-                width: '130px',
-                render: (row) => <Badge variant={getEstadoVariant(row.estado)}>{row.estado}</Badge>,
-              },
-            ]}
-            data={citasRecientes}
-          />
-        </div>
-
-        <aside className="surface-panel rounded-[32px] p-5 md:p-6">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-faint)]">Calendario operativo</p>
-              <h3 className="mt-2 font-display text-3xl capitalize text-[var(--text-strong)]">{calendar.title}</h3>
-            </div>
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-brass-ink">
-              <Activity className="h-5 w-5" />
-            </span>
-          </div>
-          <div className="mb-3 mt-5 grid grid-cols-7 text-center text-[11px] uppercase tracking-[0.18em] text-[var(--text-faint)]">
-            <div>L</div><div>M</div><div>X</div><div>J</div><div>V</div><div>S</div><div>D</div>
-          </div>
-          <div className="grid grid-cols-7 gap-2">
-            {calendar.items.map((item, idx) => {
-              if (!item.day || !item.dateIso) {
-                return <div key={`empty-${idx}`} className="h-12" />
+          <div className="grid gap-4 xl:grid-cols-[3fr_2fr]">
+            <Panel
+              title="Ingresos por día"
+              subtitle="Últimos 14 días · citas completadas"
+              action={
+                <span className="inline-flex items-center gap-2 text-caption text-ink-muted">
+                  <span className="h-3 w-3 rounded-xs border-[1.5px] border-dashed border-chart-1 bg-brass-soft" aria-hidden="true" />
+                  Hoy, estimado
+                </span>
               }
-
-              const hasCitas = calendar.citasPorDia.has(item.dateIso)
-              const isToday = item.dateIso === calendar.todayIso
-
-              return (
-                <button
-                  type="button"
-                  key={item.dateIso}
-                  onClick={() => navigate(`/citas?fecha=${item.dateIso}`)}
-                  className={[
-                    'relative h-12 rounded-2xl border border-transparent text-sm text-[var(--text-base)] transition hover:border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:shadow-focus',
-                    isToday ? 'border-[var(--border-subtle)] bg-[var(--accent-soft)] text-brass-ink' : 'bg-[var(--surface-overlay)]',
-                  ].join(' ')}
-                >
-                  {item.day}
-                  {hasCitas ? <span className="absolute bottom-1.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-brass" /> : null}
-                </button>
-              )
-            })}
+            >
+              <ColumnChart data={ingresos} format={formatCOP} formatAxis={millones} caption="Ingresos por día de los últimos 14 días" valueHead="Ingresos" />
+            </Panel>
+            {!esBarbero && (
+              <Panel title="Ocupación por barbero" subtitle="Hoy · horas reservadas sobre horas de atención">
+                {ocupacion.length ? (
+                  <BarList data={ocupacion} max={100} caption="Ocupación de hoy por barbero" valueHead="Ocupación" />
+                ) : (
+                  <p className="text-body text-ink-muted">No hay barberos activos.</p>
+                )}
+              </Panel>
+            )}
           </div>
-          <div className="mt-5 rounded-[24px] border border-[var(--border-subtle)] bg-[var(--surface-overlay)] p-4">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-brass-ink">
-                <Scissors className="h-4 w-4" />
-              </span>
-              <div>
-                <p className="text-sm font-semibold text-[var(--text-strong)]">Operación del mes</p>
-                <p className="mt-1 text-sm leading-6 text-[var(--text-ink-muted)]">
-                  {citasMes.length} citas registradas en el mes actual.
-                </p>
-              </div>
-            </div>
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            <Panel title="Servicios más vendidos" subtitle="Últimos 30 días · citas completadas">
+              {servicios.length ? (
+                <BarList data={servicios} max={servicios[0].value} color="var(--chart-2)" caption="Servicios más vendidos en los últimos 30 días" valueHead="Citas" />
+              ) : (
+                <p className="text-body text-ink-muted">Aún no hay citas completadas en los últimos 30 días.</p>
+              )}
+            </Panel>
+            <Panel title="Cancelaciones y no asistencias" subtitle={`Últimas ${SEMANAS} semanas · % de las citas de cada semana`}>
+              <LineChart
+                caption={`Porcentaje semanal de citas canceladas y de clientes que no asistieron, últimas ${SEMANAS} semanas`}
+                labels={semanas.map((l) => String(parseIso(l).getDate()))}
+                longLabels={semanas.map((l) => `Semana del ${formatLongDate(parseIso(l)).split(' ').slice(1).join(' ')}`)}
+                series={[
+                  { key: 'cancel', name: 'Canceladas', color: 'var(--chart-1)', values: porSemana.map((s) => s.cancel) },
+                  { key: 'noshow', name: 'No asistió', color: 'var(--chart-2)', values: porSemana.map((s) => s.noShow) },
+                ]}
+              />
+            </Panel>
           </div>
-        </aside>
-      </div>
-      </>
-      ) : null}
-    </section>
+
+          <div className="grid gap-4 xl:grid-cols-[3fr_2fr]">
+            <Panel title="Próximas citas de hoy" action={<Link to="/citas" className="bsm-link">Ver agenda completa</Link>}>
+              {proximas.length === 0 ? (
+                <EmptyState icon="calendar-check" title="No quedan citas por hoy" body="Las nuevas reservas aparecerán aquí." />
+              ) : (
+                <ul className="flex flex-col">
+                  {proximas.map((c) => (
+                    <li key={c.id} className="flex flex-wrap items-center gap-3 border-t border-line py-3 first:border-t-0 first:pt-0">
+                      <span className="tnum w-20 flex-none text-label-sm text-ink">{formatTime(hhmm(c.horaInicio))}</span>
+                      <span className="flex min-w-0 flex-1 items-center gap-3">
+                        <Avatar name={nombreBarbero(c)} src={c.barbero.fotoUrl} size={32} />
+                        <span className="flex min-w-0 flex-col">
+                          <strong className="truncate text-label-sm text-ink">{nombreCliente(c)}</strong>
+                          <span className="truncate text-caption text-ink-muted">
+                            {c.servicio.nombre} · con {c.barbero.nombre}
+                          </span>
+                        </span>
+                      </span>
+                      <StatusBadge status={c.estado} />
+                      {c.estado === 'Pendiente' && !esBarbero && (
+                        <Button size="sm" variant="secondary" icon="check" loading={confirmMutation.isPending && confirmMutation.variables === c.id} onClick={() => confirmMutation.mutate(c.id)}>
+                          Confirmar
+                        </Button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Panel>
+            <section className="bsm-card flex-col" aria-label="Calendario del mes">
+              <Calendar
+                year={mes.year}
+                month={mes.month}
+                today={hoyDate.getDate()}
+                selected={hoyDate.getDate()}
+                disabled={(d) => descansa(`${hoy.slice(0, 7)}-${String(d).padStart(2, '0')}`)}
+                marks={marks}
+                legend="Punto naranja: más del 80 % de ocupación. Toca un día para abrir su agenda."
+                onSelect={(d) => navigate(`/citas?fecha=${hoy.slice(0, 7)}-${String(d).padStart(2, '0')}`)}
+              />
+              <p className="mt-2 inline-flex items-center gap-1 text-caption text-ink-muted">
+                <Icon name="info" size={16} />
+                Los días en gris son de descanso.
+              </p>
+            </section>
+          </div>
+        </>
+      )}
+    </div>
   )
 }
