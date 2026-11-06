@@ -1,0 +1,20 @@
+// Componentes del sistema BarberShop Medellín (design/docs/componentes/).
+// Estilos en ./bsm.css, importado una vez en main.tsx.
+
+export { Icon, Logo } from './Icon'
+export { Avatar, Badge, Button, Chip, IconButton, Input, Rating, Select, StatusBadge, Switch } from './controls'
+export type { ButtonSize, ButtonVariant, SelectOption } from './controls'
+export { AppointmentCard, BarberCard, ServiceCard, StatCard } from './cards'
+export { renderActions } from './actions'
+export type { ActionSpec } from './actions'
+export { Calendar, Countdown, SlotGrid, Stepper } from './booking'
+export type { Slot } from './booking'
+export { Banner, ConfirmDialog, EmptyState, Modal, Pagination, Skeleton, Table, Tabs, Toast } from './structure'
+export type { TabItem, TableColumn, ToastTone } from './structure'
+export { AgendaBoard, BottomNav, Sidebar, Topbar } from './shell'
+export type { AgendaColumn, AgendaItem, NavItem, NavSection } from './shell'
+export { useDelayedFlag } from './hooks'
+export { SERVICE_ICON, SLOT_ADMIN, STATUS, statusOf } from './constants'
+export type { AppointmentStatus, ServiceType, SlotState, Tone } from './constants'
+export { cx, formatCOP, formatDecimal, formatDuration, formatLongDate, formatShortDate, formatTime, initials, parseHM } from './format'
+export type { IconName } from './icons'

@@ -67,6 +67,10 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  // Galería de componentes del sistema de diseño: solo en desarrollo.
+  ...(import.meta.env.DEV
+    ? [{ path: '/_componentes', lazy: async () => ({ Component: (await import('./features/dev/ComponentesPage')).ComponentesPage }) }]
+    : []),
   // Ruta desconocida: va a login para que el guard decida
   { path: '*', element: <Navigate to="/login" replace /> },
 ])
