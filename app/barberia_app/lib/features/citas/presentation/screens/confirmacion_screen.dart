@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -141,7 +142,7 @@ class _ConfirmacionScreenState extends ConsumerState<ConfirmacionScreen> {
                   }
                   router.go('/dashboard');
                 },
-                icon: const Icon(Icons.close),
+                icon: const Icon(LucideIcons.x),
               ),
             ],
           ),
@@ -179,7 +180,7 @@ class _ConfirmacionScreenState extends ConsumerState<ConfirmacionScreen> {
                     child: Row(
                       children: [
                         const Icon(
-                          Icons.event_repeat_rounded,
+                          LucideIcons.calendarSync,
                           color: AppColors.primary,
                         ),
                         const SizedBox(width: 10),
@@ -189,7 +190,7 @@ class _ConfirmacionScreenState extends ConsumerState<ConfirmacionScreen> {
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
                                   color: AppColors.primary,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w600, fontVariations: const [FontVariation('wght', 600.0)],
                                 ),
                           ),
                         ),
@@ -267,7 +268,7 @@ class _ConfirmacionScreenState extends ConsumerState<ConfirmacionScreen> {
                                 color: isUrgent
                                     ? AppColors.error
                                     : AppColors.primary,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w700, fontVariations: const [FontVariation('wght', 700.0)],
                               ),
                             ),
                           ],

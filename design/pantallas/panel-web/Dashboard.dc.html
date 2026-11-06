@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Panel · Dashboard</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="min-height: 1600px; position: relative; display: flex; flex-wrap: wrap; align-items: stretch; background: var(--bg); color: var(--ink); font-family: var(--font-sans);">
+  <div style="flex: 0 0 264px; display: flex;">
+    <x-import component-from-global-scope="BSM.Sidebar" active="Dashboard" sections="{{sections}}" user="{{user}}"></x-import>
+  </div>
+
+  <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column;">
+    <x-import component-from-global-scope="BSM.Topbar" title="Dashboard" unread="{{yes}}" theme="{{theme}}"></x-import>
+
+    <div style="padding: 28px 32px 40px; display: flex; flex-direction: column; gap: 24px; max-width: 1200px; box-sizing: border-box; width: 100%;">
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px;">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <h2 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 32px; line-height: 36px;">Hoy en la barbería</h2>
+          <p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted);">Viernes 6 de noviembre · Abierto de 9:00 a. m. a 8:00 p. m. · 4 barberos trabajando</p>
+        </div>
+        <a href="Main.dc.html" class="bsm-btn bsm-btn-secondary bsm-btn-md" style="margin-left: auto;">
+          <x-import component-from-global-scope="BSM.Icon" name="calendar-days" size="20"></x-import>
+          Ir a la agenda
+        </a>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+        <x-import component-from-global-scope="BSM.StatCard" label="Citas de hoy" value="23" icon="calendar-days" delta="{{d15}}" delta-label="vs. viernes pasado"></x-import>
+        <x-import component-from-global-scope="BSM.StatCard" label="Ingresos estimados de hoy" value="$840.000" icon="banknote" hint="$130.000 ya cobrados en el local"></x-import>
+        <x-import component-from-global-scope="BSM.StatCard" label="Clientes activos" value="342" icon="users" delta="{{d42}}" delta-label="vs. octubre"></x-import>
+        <x-import component-from-global-scope="BSM.StatCard" label="Barberos activos" value="4 de 5" icon="scissors" hint="1 barbero de vacaciones esta semana"></x-import>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px;">
+        <section aria-labelledby="ch-ing" style="border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div>
+              <h3 id="ch-ing" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 600;">Ingresos por día</h3>
+              <p style="margin: 2px 0 0; font-size: 13px; line-height: 18px; color: var(--ink-muted);">Últimos 14 días · domingos cerrado</p>
+            </div>
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; color: var(--ink-muted);"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 3px; border: 1.5px dashed var(--chart-1); background: var(--brass-soft); box-sizing: border-box;"></span>Hoy, estimado</span>
+          </div>
+          <div role="img" aria-label="Barras de ingresos diarios de los últimos 14 días. Máximo el sábado 31 de octubre con $1.710.000; hoy se estiman $840.000." style="position: relative; height: 220px; padding-left: 56px;">
+            <sc-for list="{{grid}}" as="g" hint-placeholder-count="5">
+              <div style="position: absolute; left: 56px; right: 0; bottom: {{g.pos}}; border-top: 1px solid var(--line);"></div>
+              <span style="position: absolute; left: 0; width: 48px; text-align: right; bottom: {{g.pos}}; transform: translateY(50%); font-size: 11px; line-height: 16px; color: var(--ink-muted); font-variant-numeric: tabular-nums;">{{g.label}}</span>
+            </sc-for>
+            <div style="position: absolute; left: 56px; right: 0; top: 0; bottom: 24px; display: flex; align-items: flex-end; gap: 2px;">
+              <sc-for list="{{days}}" as="d" hint-placeholder-count="14">
+                <div style="flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative;">
+                  <sc-if value="{{d.label}}" hint-placeholder-val="{{no}}">
+                    <span style="font-size: 11px; line-height: 14px; font-weight: 600; color: var(--ink); margin-bottom: 4px; white-space: nowrap; font-variant-numeric: tabular-nums;">{{d.label}}</span>
+                  </sc-if>
+                  <div style="display: block; {{d.style}}"></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="position: absolute; left: 56px; right: 0; bottom: 0; height: 20px; display: flex; gap: 2px;">
+              <sc-for list="{{days}}" as="d" hint-placeholder-count="14">
+                <span style="flex: 1; text-align: center; font-size: 11px; line-height: 16px; color: var(--ink-muted); font-variant-numeric: tabular-nums; white-space: nowrap;">{{d.x}}</span>
+              </sc-for>
+            </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="ch-ocu" style="border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;">
+          <div>
+            <h3 id="ch-ocu" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 600;">Ocupación por barbero</h3>
+            <p style="margin: 2px 0 0; font-size: 13px; line-height: 18px; color: var(--ink-muted);">Hoy · horas reservadas sobre horas de trabajo</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <sc-for list="{{occupancy}}" as="o" hint-placeholder-count="4">
+              <div style="display: grid; grid-template-columns: 170px minmax(0, 1fr) 48px; align-items: center; gap: 12px;">
+                <span style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                  <x-import component-from-global-scope="BSM.Avatar" name="{{o.name}}" size="{{s24}}"></x-import>
+                  <span style="font-size: 14px; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{o.name}}</span>
+                </span>
+                <div style="height: 12px; border-radius: 4px; background: var(--surface-sunken); overflow: hidden;"><div style="display: block; {{o.style}}"></div></div>
+                <span style="font-size: 14px; line-height: 20px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums;">{{o.label}}</span>
+              </div>
+            </sc-for>
+          </div>
+          <p style="margin: 0; font-size: 13px; line-height: 18px; color: var(--ink-muted);">Sebastián tuvo capacitación de 9:00 a 11:00 a. m.</p>
+        </section>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px;">
+        <section aria-labelledby="ch-srv" style="border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); padding: 20px 24px; display: flex; flex-direction: column; gap: 16px;">
+          <div>
+            <h3 id="ch-srv" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 600;">Servicios más vendidos</h3>
+            <p style="margin: 2px 0 0; font-size: 13px; line-height: 18px; color: var(--ink-muted);">Últimos 30 días · número de citas completadas</p>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <sc-for list="{{services}}" as="s" hint-placeholder-count="6">
+              <div style="display: grid; grid-template-columns: 200px minmax(0, 1fr) 40px; align-items: center; gap: 12px;">
+                <span style="font-size: 14px; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{s.name}}</span>
+                <div style="height: 12px;"><div style="display: block; {{s.style}}"></div></div>
+                <span style="font-size: 14px; line-height: 20px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums;">{{s.value}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <section aria-labelledby="ch-can" style="border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); padding: 20px 24px; display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div>
+              <h3 id="ch-can" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 600;">Cancelaciones y no asistencias</h3>
+              <p style="margin: 2px 0 0; font-size: 13px; line-height: 18px; color: var(--ink-muted);">Últimas 8 semanas · % de las citas de cada semana</p>
+            </div>
+            <div style="display: flex; gap: 14px; font-size: 12px; line-height: 16px; color: var(--ink-muted);">
+              <span style="display: inline-flex; align-items: center; gap: 6px;"><span aria-hidden="true" style="width: 14px; height: 3px; border-radius: 2px; background: var(--chart-1);"></span>Canceladas</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;"><span aria-hidden="true" style="width: 14px; height: 3px; border-radius: 2px; background: var(--chart-2);"></span>No asistió</span>
+            </div>
+          </div>
+          <svg viewBox="0 0 520 220" role="img" aria-label="Líneas semanales: canceladas bajan de 6,1 % a 4,5 %; no asistencias bajan de 3,2 % a 2,2 %." style="width: 100%; height: auto; display: block;">
+            <sc-for list="{{lineGrid}}" as="g" hint-placeholder-count="5">
+              <line x1="44" x2="440" y1="{{g.y}}" y2="{{g.y}}" style="stroke: var(--line); stroke-width: 1;"></line>
+              <text x="36" y="{{g.ty}}" text-anchor="end" style="fill: var(--ink-muted); font-size: 11px; font-family: var(--font-sans);">{{g.label}}</text>
+            </sc-for>
+            <sc-for list="{{weeks}}" as="w" hint-placeholder-count="8">
+              <text x="{{w.x}}" y="206" text-anchor="middle" style="fill: var(--ink-muted); font-size: 11px; font-family: var(--font-sans);">{{w.label}}</text>
+            </sc-for>
+            <polyline points="{{cancelPts}}" style="fill: none; stroke: var(--chart-1); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round;"></polyline>
+            <polyline points="{{noshowPts}}" style="fill: none; stroke: var(--chart-2); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round;"></polyline>
+            <sc-for list="{{cancelDots}}" as="p" hint-placeholder-count="8">
+              <circle cx="{{p.x}}" cy="{{p.y}}" r="4" style="fill: var(--chart-1); stroke: var(--surface); stroke-width: 2;"></circle>
+            </sc-for>
+            <sc-for list="{{noshowDots}}" as="p" hint-placeholder-count="8">
+              <circle cx="{{p.x}}" cy="{{p.y}}" r="4" style="fill: var(--chart-2); stroke: var(--surface); stroke-width: 2;"></circle>
+            </sc-for>
+            <text x="450" y="{{cancelEndY}}" style="fill: var(--ink); font-size: 12px; font-weight: 600; font-family: var(--font-sans);">4,5 % canceladas</text>
+            <text x="450" y="{{noshowEndY}}" style="fill: var(--ink); font-size: 12px; font-weight: 600; font-family: var(--font-sans);">2,2 % no asistió</text>
+          </svg>
+        </section>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; align-items: start;">
+        <section aria-labelledby="ls-next" style="border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); display: flex; flex-direction: column;">
+          <div style="padding: 20px 24px 12px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px;">
+            <h3 id="ls-next" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 600;">Próximas citas de hoy</h3>
+            <a href="Main.dc.html" style="font-size: 14px; line-height: 20px; font-weight: 600;">Ver agenda completa</a>
+          </div>
+          <sc-for list="{{next}}" as="n" hint-placeholder-count="6">
+            <div style="display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 24px; border-top: 1px solid var(--line);">
+              <span style="font-size: 14px; line-height: 20px; font-weight: 600; font-variant-numeric: tabular-nums;">{{n.time}}</span>
+              <span style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                <x-import component-from-global-scope="BSM.Avatar" name="{{n.barber}}" size="{{s32}}"></x-import>
+                <span style="display: flex; flex-direction: column; min-width: 0;">
+                  <strong style="font-size: 14px; line-height: 20px; font-weight: 600;">{{n.client}}</strong>
+                  <span style="font-size: 13px; line-height: 18px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{n.service}} · con {{n.barber}}</span>
+                </span>
+              </span>
+              <span style="display: flex; align-items: center; gap: 8px;">
+                <x-import component-from-global-scope="BSM.StatusBadge" status="{{n.status}}"></x-import>
+                <sc-if value="{{n.pending}}" hint-placeholder-val="{{no}}">
+                  <x-import component-from-global-scope="BSM.Button" size="sm" variant="secondary" icon="check">Confirmar</x-import>
+                </sc-if>
+              </span>
+            </div>
+          </sc-for>
+        </section>
+
+        <section aria-label="Calendario del mes" style="border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); padding: 16px 20px 20px; display: flex; justify-content: center;">
+          <x-import component-from-global-scope="BSM.Calendar" year="{{year}}" month="{{month}}" today="{{today}}" selected="{{today}}" disabled="{{isSunday}}" marks="{{marks}}" legend="• Días con más del 80 % de ocupación · Domingo: cerrado"></x-import>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"$preview":{"width":1440,"height":1600}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const H = 196, MAX = 2000000;
+    const raw = [['sáb', '24', 1640000], ['dom', '25', null], ['lun', '26', 820000], ['mar', '27', 910000], ['mié', '28', 1050000], ['jue', '29', 1180000], ['vie', '30', 1520000], ['sáb', '31', 1710000], ['dom', '1', null], ['lun', '2', 870000], ['mar', '3', 960000], ['mié', '4', 1090000], ['jue', '5', 1230000], ['vie', '6', 840000]];
+    const days = raw.map(([wd, n, v], i) => {
+      const last = i === raw.length - 1;
+      const px = v ? Math.round(v / MAX * H) : 0;
+      const base = 'width: 70%; max-width: 28px; border-radius: 4px 4px 0 0; box-sizing: border-box; height: ' + px + 'px;';
+      return {
+        x: v === null ? 'cerr.' : n,
+        label: v === 1710000 ? '$1,71 M' : (last ? '$0,84 M' : ''),
+        style: base + (last ? ' background: var(--brass-soft); border: 1.5px dashed var(--chart-1); border-bottom: 0;' : ' background: var(--chart-1);')
+      };
+    });
+    const grid = [0, 0.5, 1, 1.5, 2].map((m) => ({ pos: (24 + Math.round(m * 1000000 / MAX * H)) + 'px', label: m === 0 ? '$0' : '$' + String(m).replace('.', ',') + ' M' }));
+    const occ = [['Julián Restrepo', 82], ['Mateo Vélez', 64], ['Santiago Ochoa', 58], ['Sebastián Arango', 41]];
+    const srv = [['Corte + barba', 132], ['Corte clásico', 118], ['Perfilado de barba', 64], ['Afeitado con toalla caliente', 51], ['Tinte de barba', 27], ['Tratamiento capilar', 18]];
+    const cancel = [6.1, 5.4, 7.2, 4.8, 5.1, 4.2, 3.9, 4.5], noshow = [3.2, 2.8, 3.5, 2.1, 2.6, 2.4, 1.9, 2.2];
+    const X = (i) => Math.round(60 + i * (420 - 60) / 7), Y = (v) => Math.round(184 - v / 8 * 170);
+    const pts = (arr) => arr.map((v, i) => X(i) + ',' + Y(v)).join(' ');
+    const dots = (arr) => arr.map((v, i) => ({ x: X(i), y: Y(v) }));
+    const nx = (time, client, service, barber, status) => ({ time, client, service, barber, status, pending: status === 'Pendiente' });
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      yes: true, no: false, s24: 24, s32: 32, d15: 15, d42: 4.2,
+      user: { name: 'Camila Arango', role: 'Administrador' },
+      sections: [
+        { title: 'Principal', items: [{ icon: 'layout-dashboard', label: 'Dashboard' }] },
+        { title: 'Mi barbería', items: [{ icon: 'calendar-days', label: 'Agenda', count: 4 }, { icon: 'clock', label: 'Disponibilidad' }, { icon: 'users', label: 'Clientes' }, { icon: 'scissors', label: 'Barberos' }, { icon: 'clipboard-list', label: 'Servicios' }] },
+        { title: 'Administración', items: [{ icon: 'store', label: 'Mi negocio' }, { icon: 'user-cog', label: 'Usuarios' }] }
+      ],
+      days: days, grid: grid,
+      occupancy: occ.map(([name, p]) => ({ name, label: p + ' %', style: 'height: 100%; width: ' + p + '%; background: var(--chart-1); border-radius: 0 4px 4px 0;' })),
+      services: srv.map(([name, v]) => ({ name, value: v, style: 'height: 12px; width: ' + Math.round(v / 132 * 100) + '%; background: var(--chart-1); border-radius: 0 4px 4px 0;' })),
+      lineGrid: [0, 2, 4, 6, 8].map((v) => ({ y: Y(v), ty: Y(v) + 4, label: v + ' %' })),
+      weeks: ['14 sep', '21 sep', '28 sep', '5 oct', '12 oct', '19 oct', '26 oct', '2 nov'].map((label, i) => ({ label, x: X(i) })),
+      cancelPts: pts(cancel), noshowPts: pts(noshow), cancelDots: dots(cancel), noshowDots: dots(noshow),
+      cancelEndY: Y(4.5) + 4, noshowEndY: Y(2.2) + 4,
+      next: [
+        nx('11:30 a. m.', 'Juan Pablo Ríos', 'Corte + barba', 'Julián Restrepo', 'Confirmada'),
+        nx('11:30 a. m.', 'Hernán Torres', 'Corte clásico', 'Sebastián Arango', 'Confirmada'),
+        nx('12:00 p. m.', 'Martín López', 'Corte clásico', 'Mateo Vélez', 'Pendiente'),
+        nx('12:00 p. m.', 'Iván Correa', 'Corte + barba', 'Santiago Ochoa', 'Confirmada'),
+        nx('2:00 p. m.', 'Tomás Cardona', 'Corte clásico', 'Julián Restrepo', 'Confirmada'),
+        nx('2:00 p. m.', 'Ricardo Duque', 'Corte + barba', 'Sebastián Arango', 'Confirmada')
+      ],
+      year: 2026, month: 10, today: 6,
+      isSunday: (d) => new Date(2026, 10, d).getDay() === 0,
+      marks: { 6: 'few', 7: 'few', 13: 'few', 14: 'few', 20: 'any', 21: 'any' }
+    };
+  }
+}
+</script>
+</body>
+</html>

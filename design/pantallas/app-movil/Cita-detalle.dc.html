@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Detalle de la cita</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn,a.bsm-iconbtn{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 920px; position: relative; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--font-sans); display: flex; flex-direction: column;">
+  <header style="padding: 8px 16px 12px; display: flex; flex-direction: column; gap: 8px;">
+    <a href="Mis-citas.dc.html" class="bsm-iconbtn" aria-label="Volver a Mis citas" style="margin-left: -10px;">
+      <x-import component-from-global-scope="BSM.Icon" name="arrow-left" size="24"></x-import>
+    </a>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+      <h1 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 32px; line-height: 36px;">Tu cita</h1>
+      <x-import component-from-global-scope="BSM.StatusBadge" status="Confirmada"></x-import>
+    </div>
+  </header>
+
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 0 16px;">
+    <section style="border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); display: flex; flex-direction: column;">
+      <div style="padding: 16px; display: flex; gap: 14px; align-items: center; border-bottom: 1px solid var(--line);">
+        <span class="bsm-service-icon"><x-import component-from-global-scope="BSM.Icon" name="layers" size="24"></x-import></span>
+        <div style="flex: 1; display: flex; flex-direction: column;">
+          <span style="font-size: 17px; line-height: 24px; font-weight: 600;">Corte + barba</span>
+          <span style="font-size: 14px; line-height: 20px; color: var(--ink-muted); font-variant-numeric: tabular-nums;">50 min · $50.000 · Pago en el local</span>
+        </div>
+      </div>
+      <div style="padding: 12px 8px 12px 16px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid var(--line);">
+        <x-import component-from-global-scope="BSM.Avatar" name="Julián Restrepo" size="{{s48}}"></x-import>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 16px; line-height: 24px; font-weight: 600;">Julián Restrepo</span>
+          <x-import component-from-global-scope="BSM.Rating" value="{{r49}}" count="{{c212}}" compact="{{yes}}"></x-import>
+        </div>
+        <x-import component-from-global-scope="BSM.Button" variant="ghost" size="sm" icon-right="chevron-right">Ver perfil</x-import>
+      </div>
+      <div style="padding: 14px 16px; display: flex; gap: 14px; align-items: flex-start;">
+        <span style="color: var(--brass-ink); padding-top: 2px;"><x-import component-from-global-scope="BSM.Icon" name="calendar-days" size="20"></x-import></span>
+        <div style="display: flex; flex-direction: column;">
+          <span style="font-size: 16px; line-height: 24px; font-weight: 600;">Jueves 12 de noviembre</span>
+          <span style="font-size: 14px; line-height: 20px; color: var(--ink-muted); font-variant-numeric: tabular-nums;">3:00 p. m. – 3:50 p. m. · Te avisaremos 1 hora antes</span>
+        </div>
+      </div>
+    </section>
+
+    <section aria-label="Ubicación" style="border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); overflow: hidden;">
+      <div role="img" aria-label="Mapa de la ubicación de la barbería" style="height: 120px; background: var(--surface-sunken); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--ink-muted);">
+        <span style="color: var(--oxblood);"><x-import component-from-global-scope="BSM.Icon" name="map-pin" size="28"></x-import></span>
+        <span style="font-size: 12px; line-height: 16px;">[Mapa: ubicación de la barbería]</span>
+      </div>
+      <div style="padding: 12px 16px; display: flex; align-items: center; gap: 12px;">
+        <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+          <span class="bsm-overline">Ubicación</span>
+          <span style="font-size: 15px; line-height: 20px; font-weight: 600;">BarberShop Medellín</span>
+          <span style="font-size: 14px; line-height: 20px; color: var(--ink-muted);">El Poblado, Medellín</span>
+        </div>
+        <x-import component-from-global-scope="BSM.IconButton" icon="phone" label="Llamar a la barbería" variant="secondary"></x-import>
+        <x-import component-from-global-scope="BSM.Button" variant="secondary" icon="navigation">Cómo llegar</x-import>
+      </div>
+    </section>
+
+    <section style="padding: 12px 16px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); display: flex; flex-direction: column; gap: 4px;">
+      <span class="bsm-overline">Tu nota para el barbero</span>
+      <span style="font-size: 15px; line-height: 22px;">Degradado bajo, no tocar la barba.</span>
+    </section>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; padding: 12px 16px 28px; background: var(--surface); border-top: 1px solid var(--line);">
+    <a href="Reserva-3-Horario.dc.html" class="bsm-btn bsm-btn-secondary bsm-btn-lg" style="flex: 1;">
+      <x-import component-from-global-scope="BSM.Icon" name="calendar-clock" size="20"></x-import>
+      Reprogramar
+    </a>
+    <a href="Cita-cancelar.dc.html" class="bsm-btn bsm-btn-danger-ghost bsm-btn-lg" style="flex: 1;">Cancelar cita</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"$preview":{"width":390,"height":920}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: this.props.dark ? 'dark' : 'light', yes: true, s48: 48, r49: 4.9, c212: 212 };
+  }
+}
+</script>
+</body>
+</html>

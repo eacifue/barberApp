@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -129,9 +130,9 @@ class _AppShell extends ConsumerStatefulWidget {
   final Widget child;
 
   static const _tabs = [
-    ('/dashboard', Icons.dashboard_rounded, 'Dashboard'),
-    ('/reservar/servicio', Icons.event_available_rounded, 'Reservar'),
-    ('/appointments', Icons.content_cut_rounded, 'Mis citas'),
+    ('/dashboard', LucideIcons.layoutDashboard, 'Dashboard'),
+    ('/reservar/servicio', LucideIcons.calendarCheck, 'Reservar'),
+    ('/appointments', LucideIcons.scissors, 'Mis citas'),
   ];
 
   @override

@@ -272,8 +272,8 @@ export function BarberosList() {
                   dashedFallback
                 />
                 <div>
-                  <p className="text-sm text-color-strong">{row.nombre} {row.apellido}</p>
-                  <p className="text-xs text-[var(--gold-l)]">Rating {row.ratingPromedio.toFixed(1)}</p>
+                  <p className="text-sm text-ink">{row.nombre} {row.apellido}</p>
+                  <p className="text-xs text-brass-ink">Rating {row.ratingPromedio.toFixed(1)}</p>
                 </div>
               </div>
             ),
@@ -291,13 +291,13 @@ export function BarberosList() {
                   {visible.map((item) => (
                     <span
                       key={item}
-                      className="rounded-full bg-[rgba(184,134,11,.12)] px-2 py-0.5 text-xs text-[var(--gold-l)]"
+                      className="rounded-full bg-brass-soft px-2 py-0.5 text-xs text-brass-ink"
                     >
                       {item}
                     </span>
                   ))}
                   {hidden > 0 ? (
-                    <span className="rounded-full bg-[rgba(184,134,11,.12)] px-2 py-0.5 text-xs text-[var(--gold-l)]">
+                    <span className="rounded-full bg-brass-soft px-2 py-0.5 text-xs text-brass-ink">
                       +{hidden} mas
                     </span>
                   ) : null}
@@ -401,12 +401,12 @@ export function BarberosList() {
             />
 
             <div className="md:col-span-2">
-              <p className="mb-1.5 text-[10px] uppercase tracking-[0.08em] text-[var(--text-muted)]">
+              <p className="mb-1.5 text-[10px] uppercase tracking-[0.08em] text-[var(--text-ink-muted)]">
                 Servicios asociados *
               </p>
               <div className="rounded-md border border-[0.5px] border-[var(--border2)] bg-[var(--surface3)] px-2 py-2">
                 {servicios.length === 0 ? (
-                  <p className="text-xs text-color-muted">
+                  <p className="text-xs text-ink-muted">
                     No hay servicios activos para la barbería seleccionada.
                   </p>
                 ) : (
@@ -416,7 +416,7 @@ export function BarberosList() {
                       return (
                         <label
                           key={servicio.id}
-                          className="inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm text-color-base hover:bg-white/5"
+                          className="inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm text-ink hover:bg-surface-sunken"
                         >
                           <input
                             type="checkbox"
@@ -440,7 +440,7 @@ export function BarberosList() {
             </div>
 
             <div className="md:col-span-2">
-              <p className="mb-1.5 text-[10px] uppercase tracking-[0.08em] text-[var(--text-muted)]">Especialidades</p>
+              <p className="mb-1.5 text-[10px] uppercase tracking-[0.08em] text-[var(--text-ink-muted)]">Especialidades</p>
               <div className="rounded-md border border-[0.5px] border-[var(--border2)] bg-[var(--surface3)] px-2 py-2">
                 <div className="mb-2 flex flex-wrap gap-1.5">
                   {form.especialidades.map((item) => (
@@ -448,7 +448,7 @@ export function BarberosList() {
                       type="button"
                       key={item}
                       onClick={() => removeSpeciality(item)}
-                      className="rounded-full bg-[rgba(184,134,11,.12)] px-2 py-0.5 text-xs text-[var(--gold-l)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+                      className="rounded-full bg-brass-soft px-2 py-0.5 text-xs text-brass-ink focus-visible:outline-none focus-visible:shadow-focus"
                       title="Quitar"
                     >
                       {item} x
@@ -534,7 +534,7 @@ export function BarberosList() {
       >
         <div className="space-y-4">
           <div className="rounded-md border border-[0.5px] border-[var(--border2)] bg-[var(--surface3)] p-3">
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-[var(--text-muted)]">Horario semanal</p>
+            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-[var(--text-ink-muted)]">Horario semanal</p>
             <div className="space-y-2">
               {dayConfig.map((day) => {
                 const row = availabilityRows.find((x) => x.dayOfWeek === day.key)
@@ -542,8 +542,8 @@ export function BarberosList() {
 
                 return (
                   <div key={day.key} className="grid grid-cols-12 items-center gap-2 rounded-md bg-[var(--surface-hover)] p-2">
-                    <div className="col-span-3 text-sm text-color-base">{day.label}</div>
-                    <label className="col-span-2 inline-flex items-center gap-1 text-xs text-color-muted">
+                    <div className="col-span-3 text-sm text-ink">{day.label}</div>
+                    <label className="col-span-2 inline-flex items-center gap-1 text-xs text-ink-muted">
                       <input
                         type="checkbox"
                         checked={row.isActive}
@@ -602,7 +602,7 @@ export function BarberosList() {
           </div>
 
           <div className="rounded-md border border-[0.5px] border-[var(--border2)] bg-[var(--surface3)] p-3">
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-[var(--text-muted)]">Dias no disponibles</p>
+            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-[var(--text-ink-muted)]">Dias no disponibles</p>
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
               <FormInput label="Fecha" type="date" value={dayOffDate} onChange={(e) => setDayOffDate(e.target.value)} />
               <FormInput

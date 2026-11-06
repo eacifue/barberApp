@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Panel · Servicios</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn,a.bsm-iconbtn{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="min-height: 1120px; position: relative; display: flex; flex-wrap: wrap; align-items: stretch; background: var(--bg); color: var(--ink); font-family: var(--font-sans);">
+  <div style="flex: 0 0 264px; display: flex;">
+    <x-import component-from-global-scope="BSM.Sidebar" active="Servicios" sections="{{sections}}" user="{{user}}"></x-import>
+  </div>
+
+  <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column;">
+    <x-import component-from-global-scope="BSM.Topbar" title="Servicios" unread="{{yes}}" theme="{{theme}}"></x-import>
+
+    <div style="padding: 24px 32px 32px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <h2 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 24px; line-height: 30px;">Catálogo de servicios</h2>
+          <p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted);">Lo que los clientes pueden reservar en la app, con duración y precio general.</p>
+        </div>
+        <a href="Servicio-editar.dc.html" class="bsm-btn bsm-btn-primary bsm-btn-md" style="margin-left: auto;">
+          <x-import component-from-global-scope="BSM.Icon" name="plus" size="20"></x-import>
+          Nuevo servicio
+        </a>
+      </div>
+
+      <div role="group" aria-label="Filtrar por tipo" class="bsm-chip-row">
+        <x-import component-from-global-scope="BSM.Chip" selected="{{yes}}" count="{{n6}}">Todos</x-import>
+        <x-import component-from-global-scope="BSM.Chip" icon="scissors">Corte</x-import>
+        <x-import component-from-global-scope="BSM.Chip" icon="navaja">Afeitado</x-import>
+        <x-import component-from-global-scope="BSM.Chip" icon="barba">Barba</x-import>
+        <x-import component-from-global-scope="BSM.Chip" icon="droplets">Tinte</x-import>
+        <x-import component-from-global-scope="BSM.Chip" icon="sparkles">Tratamiento</x-import>
+        <x-import component-from-global-scope="BSM.Chip" icon="layers">Combo</x-import>
+      </div>
+
+      <div role="table" aria-label="Servicios" style="border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); overflow-x: auto;">
+        <div role="row" style="display: grid; grid-template-columns: minmax(300px, 2.4fr) 130px 100px 110px 110px 110px 96px; gap: 12px; padding: 10px 16px; background: var(--surface-sunken); min-width: 1040px; box-sizing: border-box; font-size: 12px; line-height: 16px; font-weight: 600; color: var(--ink-muted);">
+          <span role="columnheader" style="color: var(--ink);">Servicio ↓</span>
+          <span role="columnheader">Tipo</span>
+          <span role="columnheader" style="text-align: right;">Duración</span>
+          <span role="columnheader" style="text-align: right;">Precio</span>
+          <span role="columnheader" style="text-align: right;">Barberos</span>
+          <span role="columnheader">Estado</span>
+          <span role="columnheader"><span class="bsm-sr">Acciones</span></span>
+        </div>
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+          <div role="row" style="display: grid; grid-template-columns: minmax(300px, 2.4fr) 130px 100px 110px 110px 110px 96px; gap: 12px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); min-width: 1040px; box-sizing: border-box; font-size: 14px; line-height: 20px;">
+            <span role="cell" style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+              <span class="bsm-service-icon" style="width: 40px; height: 40px;"><x-import component-from-global-scope="BSM.Icon" name="{{r.icon}}" size="20"></x-import></span>
+              <span style="display: flex; flex-direction: column; min-width: 0;">
+                <strong style="font-weight: 600;">{{r.name}}</strong>
+                <span style="font-size: 13px; line-height: 18px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{r.desc}}</span>
+              </span>
+            </span>
+            <span role="cell" style="color: var(--ink-muted);">{{r.type}}</span>
+            <span role="cell" style="text-align: right; font-variant-numeric: tabular-nums;">{{r.duration}}</span>
+            <span role="cell" style="text-align: right; font-weight: 600; font-variant-numeric: tabular-nums;">{{r.price}}</span>
+            <span role="cell" style="text-align: right; color: var(--ink-muted); font-variant-numeric: tabular-nums;">{{r.barbers}}</span>
+            <span role="cell"><x-import component-from-global-scope="BSM.Badge" tone="success" icon="circle-check">Activo</x-import></span>
+            <span role="cell" style="display: flex; justify-content: flex-end; gap: 2px;">
+              <a href="Servicio-editar.dc.html" class="bsm-iconbtn bsm-iconbtn-sm" aria-label="Editar {{r.name}}"><x-import component-from-global-scope="BSM.Icon" name="pencil" size="18"></x-import></a>
+              <x-import component-from-global-scope="BSM.IconButton" icon="ellipsis" label="Más acciones para {{r.name}}" size="sm"></x-import>
+            </span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </main>
+
+  <sc-if value="{{isEditar}}" hint-placeholder-val="{{no}}">
+    <x-import component-from-global-scope="BSM.Modal" title="Editar servicio" subtitle="Corte + barba" footer="{{modalFooter}}">
+      <x-import component-from-global-scope="BSM.Input" label="Nombre" default-value="Corte + barba"></x-import>
+      <x-import component-from-global-scope="BSM.Input" label="Descripción" multiline="{{yes}}" default-value="Corte completo y perfilado de barba con toalla caliente." hint="Una o dos frases. Se ve en la tarjeta del servicio."></x-import>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px;">
+        <x-import component-from-global-scope="BSM.Select" label="Tipo" options="{{types}}" default-value="Combo"></x-import>
+        <x-import component-from-global-scope="BSM.Input" label="Duración (min)" type="number" default-value="50" hint="Entre 10 y 240."></x-import>
+        <x-import component-from-global-scope="BSM.Input" label="Precio general" default-value="$50.000" hint="Mayor a $0."></x-import>
+      </div>
+      <div class="bsm-field">
+        <span class="bsm-field-label">Foto <span class="bsm-field-opt">(opcional)</span></span>
+        <div style="display: flex; align-items: center; gap: 14px; padding: 14px; border: 1.5px dashed var(--line-strong); border-radius: var(--radius-md);">
+          <span class="bsm-service-icon"><x-import component-from-global-scope="BSM.Icon" name="image-plus" size="24"></x-import></span>
+          <span style="flex: 1; font-size: 14px; line-height: 20px; color: var(--ink-muted);">Arrastra una foto aquí o elígela. Sin foto se usa el ícono del tipo de servicio.</span>
+          <x-import component-from-global-scope="BSM.Button" variant="secondary" size="sm">Elegir foto</x-import>
+        </div>
+      </div>
+      <x-import component-from-global-scope="BSM.Switch" label="Servicio activo" hint="Los clientes pueden reservarlo en la app." default-checked="{{yes}}"></x-import>
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: var(--radius-md); background: var(--surface-sunken);">
+        <span class="bsm-overline">Así se ve en la app</span>
+        <x-import component-from-global-scope="BSM.ServiceCard" name="Corte + barba" type="Combo" description="Corte completo y perfilado de barba con toalla caliente." duration="{{d50}}" price="{{p50}}" tag="Popular"></x-import>
+      </div>
+    </x-import>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"panel":{"editor":"enum","options":["ninguno","editar"],"default":"ninguno","section":"Vista"},"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const icon = { Corte: 'scissors', Afeitado: 'navaja', Barba: 'barba', Tinte: 'droplets', Tratamiento: 'sparkles', Combo: 'layers', Otro: 'ellipsis' };
+    const row = (name, type, desc, duration, price, barbers) => ({ name, type, desc, duration, price, barbers, icon: icon[type] });
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      yes: true, no: false, n6: 6, d50: 50, p50: 50000,
+      isEditar: (this.props.panel ?? 'ninguno') === 'editar',
+      user: { name: 'Camila Arango', role: 'Administrador' },
+      sections: [
+        { title: 'Principal', items: [{ icon: 'layout-dashboard', label: 'Dashboard' }] },
+        { title: 'Mi barbería', items: [{ icon: 'calendar-days', label: 'Agenda', count: 4 }, { icon: 'clock', label: 'Disponibilidad' }, { icon: 'users', label: 'Clientes' }, { icon: 'scissors', label: 'Barberos' }, { icon: 'clipboard-list', label: 'Servicios' }] },
+        { title: 'Administración', items: [{ icon: 'store', label: 'Mi negocio' }, { icon: 'user-cog', label: 'Usuarios' }] }
+      ],
+      types: ['Corte', 'Afeitado', 'Barba', 'Tinte', 'Tratamiento', 'Combo', 'Otro'],
+      rows: [
+        row('Corte + barba', 'Combo', 'Corte completo y perfilado de barba con toalla caliente.', '50 min', '$50.000', '5 de 5'),
+        row('Corte clásico', 'Corte', 'Tijera y máquina, lavado y peinado.', '30 min', '$35.000', '5 de 5'),
+        row('Afeitado con toalla caliente', 'Afeitado', 'Navaja, toalla caliente y bálsamo.', '30 min', '$30.000', '4 de 5'),
+        row('Perfilado de barba', 'Barba', 'Contorno con navaja y máquina.', '20 min', '$20.000', '5 de 5'),
+        row('Tinte de barba', 'Tinte', 'Color uniforme para la barba.', '40 min', '$45.000', '3 de 5'),
+        row('Tratamiento capilar', 'Tratamiento', 'Hidratación y masaje del cuero cabelludo.', '45 min', '$60.000', '2 de 5')
+      ],
+      modalFooter: [{ label: 'Cancelar', variant: 'secondary', href: 'Servicios.dc.html' }, { label: 'Guardar cambios', variant: 'primary', icon: 'check', href: 'Servicios.dc.html' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -211,7 +212,7 @@ class _DetalleCitaScreenState extends ConsumerState<DetalleCitaScreen> {
                     cita.estado,
                     style: TextStyle(
                       color: cita.estadoColor,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w700, fontVariations: const [FontVariation('wght', 700.0)],
                     ),
                   ),
                 ),
@@ -245,7 +246,7 @@ class _DetalleCitaScreenState extends ConsumerState<DetalleCitaScreen> {
                         const SizedBox(height: 10),
                         OutlinedButton.icon(
                           onPressed: () => _abrirEnMapas(barbershop),
-                          icon: const Icon(Icons.directions_rounded),
+                          icon: const Icon(LucideIcons.navigation),
                           label: const Text('Cómo llegar'),
                         ),
                       ],
@@ -264,7 +265,7 @@ class _DetalleCitaScreenState extends ConsumerState<DetalleCitaScreen> {
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.event_repeat_rounded),
+                      : const Icon(LucideIcons.calendarSync),
                   label: const Text('Reprogramar'),
                 ),
                 const SizedBox(height: 10),

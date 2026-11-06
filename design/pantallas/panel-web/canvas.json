@@ -1,0 +1,76 @@
+{
+ "v": 3,
+ "createdOnFiles": {"v": 1, "at": "2026-11-06T13:52:00Z"},
+ "title": "BarberShop Medellín — Panel web",
+ "launch": {"view": "canvas"},
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {"x": 0, "y": 0, "w": 1440, "h": 1120, "title": "Agenda · Día", "expand": "fill", "is_interactive": true},
+  "Agenda-detalle.dc.html": {"x": 1520, "y": 0, "w": 1440, "h": 1120, "title": "Agenda · Detalle de cita", "expand": "fill", "is_interactive": true},
+  "Agenda-nueva-cita.dc.html": {"x": 3040, "y": 0, "w": 1440, "h": 1120, "title": "Agenda · Nueva cita", "expand": "fill", "is_interactive": true},
+
+  "Agenda-semana.dc.html": {"x": 0, "y": 1540, "w": 1440, "h": 1120, "title": "Agenda · Semana", "expand": "fill", "is_interactive": true},
+  "Agenda-historial.dc.html": {"x": 1520, "y": 1540, "w": 1440, "h": 1120, "title": "Agenda · Historial", "expand": "fill", "is_interactive": true},
+
+  "Dashboard.dc.html": {"x": 0, "y": 3080, "w": 1440, "h": 1600, "title": "Dashboard", "expand": "fill", "is_interactive": true},
+
+  "Agenda-movil.dc.html": {"x": 0, "y": 5100, "w": 390, "h": 844, "title": "Celular · Agenda"},
+  "Dashboard-movil.dc.html": {"x": 470, "y": 5100, "w": 390, "h": 844, "title": "Celular · Dashboard"},
+  "Oscuro-agenda-movil.dc.html": {"x": 940, "y": 5100, "w": 390, "h": 844, "title": "Celular · Agenda oscuro"},
+
+  "Oscuro-agenda.dc.html": {"x": 0, "y": 6364, "w": 1440, "h": 1120, "title": "Oscuro · Agenda", "expand": "fill"},
+  "Oscuro-dashboard.dc.html": {"x": 1520, "y": 6364, "w": 1440, "h": 1600, "title": "Oscuro · Dashboard", "expand": "fill"},
+
+  "Login-panel.dc.html": {"x": 0, "y": 8384, "w": 1440, "h": 900, "title": "Login del panel", "expand": "fill", "is_interactive": true},
+  "Login-panel-error.dc.html": {"x": 1520, "y": 8384, "w": 1440, "h": 900, "title": "Login del panel · Error", "expand": "fill"},
+  "Oscuro-login-panel.dc.html": {"x": 3040, "y": 8384, "w": 1440, "h": 900, "title": "Login del panel · Oscuro", "expand": "fill"},
+  "Login-panel-movil.dc.html": {"x": 4560, "y": 8384, "w": 390, "h": 844, "title": "Celular · Login del panel"},
+
+  "Barberos.dc.html": {"x": 0, "y": 9704, "w": 1440, "h": 1120, "title": "Barberos", "expand": "fill", "is_interactive": true},
+  "Barbero-editar.dc.html": {"x": 1520, "y": 9704, "w": 1440, "h": 1560, "title": "Barberos · Editar barbero", "expand": "fill", "is_interactive": true},
+  "Servicios.dc.html": {"x": 3040, "y": 9704, "w": 1440, "h": 1120, "title": "Servicios", "expand": "fill", "is_interactive": true},
+  "Servicio-editar.dc.html": {"x": 4560, "y": 9704, "w": 1440, "h": 1120, "title": "Servicios · Editar servicio", "expand": "fill", "is_interactive": true},
+
+  "Clientes.dc.html": {"x": 0, "y": 11684, "w": 1440, "h": 1120, "title": "Clientes", "expand": "fill", "is_interactive": true},
+  "Cliente-ficha.dc.html": {"x": 1520, "y": 11684, "w": 1440, "h": 1120, "title": "Clientes · Ficha del cliente", "expand": "fill", "is_interactive": true},
+  "Usuarios.dc.html": {"x": 3040, "y": 11684, "w": 1440, "h": 1120, "title": "Usuarios", "expand": "fill", "is_interactive": true},
+  "Usuario-nuevo.dc.html": {"x": 4560, "y": 11684, "w": 1440, "h": 1120, "title": "Usuarios · Nuevo usuario", "expand": "fill", "is_interactive": true},
+  "Clientes-movil.dc.html": {"x": 6080, "y": 11684, "w": 390, "h": 844, "title": "Celular · Clientes"},
+
+  "Mi-negocio.dc.html": {"x": 0, "y": 13224, "w": 1440, "h": 1400, "title": "Mi negocio", "expand": "fill"},
+  "Disponibilidad.dc.html": {"x": 1520, "y": 13224, "w": 1440, "h": 1120, "title": "Disponibilidad · Horarios del día", "expand": "fill", "is_interactive": true},
+  "Disponibilidad-reservas.dc.html": {"x": 3040, "y": 13224, "w": 1440, "h": 1120, "title": "Disponibilidad · Reservas en curso", "expand": "fill", "is_interactive": true},
+
+  "Oscuro-barberos.dc.html": {"x": 0, "y": 15044, "w": 1440, "h": 1120, "title": "Oscuro · Barberos", "expand": "fill"},
+  "Oscuro-mi-negocio.dc.html": {"x": 1520, "y": 15044, "w": 1440, "h": 1400, "title": "Oscuro · Mi negocio", "expand": "fill"}
+ },
+ "order": [
+  "Main.dc.html", "Agenda-detalle.dc.html", "Agenda-nueva-cita.dc.html",
+  "Agenda-semana.dc.html", "Agenda-historial.dc.html",
+  "Dashboard.dc.html",
+  "Agenda-movil.dc.html", "Dashboard-movil.dc.html", "Oscuro-agenda-movil.dc.html",
+  "Oscuro-agenda.dc.html", "Oscuro-dashboard.dc.html",
+  "Login-panel.dc.html", "Login-panel-error.dc.html", "Oscuro-login-panel.dc.html", "Login-panel-movil.dc.html",
+  "Barberos.dc.html", "Barbero-editar.dc.html", "Servicios.dc.html", "Servicio-editar.dc.html",
+  "Clientes.dc.html", "Cliente-ficha.dc.html", "Usuarios.dc.html", "Usuario-nuevo.dc.html", "Clientes-movil.dc.html",
+  "Mi-negocio.dc.html", "Disponibilidad.dc.html", "Disponibilidad-reservas.dc.html",
+  "Oscuro-barberos.dc.html", "Oscuro-mi-negocio.dc.html"
+ ],
+ "notes": {
+  "row1": {"x": 0, "y": -300, "text": "Agenda · vista Día por barbero", "kind": "title1", "maxW": 4480},
+  "agenda": {"x": 4560, "y": 0, "w": 420, "size": "m", "fill": "orange", "text": "Agenda (pantalla principal de Camila)\n\nUna columna por barbero, bloques a escala real y línea de ahora en granate.\n\nEstados sin depender del color: Pendiente = borde punteado, En progreso = borde doble, Cancelada / No asistió = rayado y nombre tachado.\n\nTocar un bloque abre el detalle a la derecha (no un modal: la agenda sigue visible). Tocar un hueco abre Nueva cita con barbero y hora precargados. Arrastrar un bloque propone reprogramar.\n\nPrototipo: Play → toca la cita de Juan Pablo Ríos (11:30) o «Nueva cita»; Día / Semana / Historial navegan."},
+  "row2": {"x": 0, "y": 1240, "text": "Agenda · Semana e Historial", "kind": "title1", "maxW": 2960},
+  "row3": {"x": 0, "y": 2780, "text": "Dashboard", "kind": "title1", "maxW": 1440},
+  "row4": {"x": 0, "y": 4800, "text": "Panel desde el celular", "kind": "title1", "maxW": 1330},
+  "row5": {"x": 0, "y": 6064, "text": "Tema oscuro", "kind": "title1", "maxW": 2960},
+  "row6": {"x": 0, "y": 8084, "text": "Acceso al panel", "kind": "title1", "maxW": 4950},
+  "row7": {"x": 0, "y": 9404, "text": "Gestión · Equipo y catálogo", "kind": "title1", "maxW": 6000},
+  "gestion": {"x": 6080, "y": 9704, "w": 420, "size": "m", "fill": "orange", "text": "Gestión\n\nTodas las listas usan el mismo patrón: buscador y filtros arriba, tabla con acciones al final de cada fila, «Nuevo …» como botón primario.\n\nEditar abre un modal (en celular, hoja inferior). Ver un cliente abre su ficha en un panel lateral, como el detalle de cita en la agenda.\n\nSe reemplazan los campos técnicos: foto por URL → subir foto; especialidades separadas por coma → chips; HH:mm en texto → selectores de hora; UUID de barbero → selector; latitud/longitud → buscar dirección y mover el pin."},
+  "row8": {"x": 0, "y": 11384, "text": "Gestión · Clientes y usuarios", "kind": "title1", "maxW": 6470},
+  "row9": {"x": 0, "y": 12924, "text": "Gestión · Mi negocio y disponibilidad", "kind": "title1", "maxW": 4480},
+  "row10": {"x": 0, "y": 14744, "text": "Gestión · Tema oscuro", "kind": "title1", "maxW": 2960}
+ },
+ "designSystems": [
+  {"title": "BarberShop Medellín", "namespace": "bsm", "artifact": "https://claude.ai/artifact/7JjuG41wCsxyV7GbAv9vXU", "version": "1793975674-f8b1", "copiedAt": "2026-11-06T14:34:50Z"}
+ ]
+}

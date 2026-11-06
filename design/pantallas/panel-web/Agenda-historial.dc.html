@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Panel · Agenda · Historial</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn,a.bsm-tab,a.bsm-iconbtn{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="min-height: 1120px; position: relative; display: flex; flex-wrap: wrap; align-items: stretch; background: var(--bg); color: var(--ink); font-family: var(--font-sans);">
+  <div style="flex: 0 0 264px; display: flex;">
+    <x-import component-from-global-scope="BSM.Sidebar" active="Agenda" sections="{{sections}}" user="{{user}}"></x-import>
+  </div>
+
+  <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column;">
+    <x-import component-from-global-scope="BSM.Topbar" title="Agenda" unread="{{yes}}" theme="{{theme}}"></x-import>
+
+    <div style="padding: 24px 32px 32px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+        <h2 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 24px; line-height: 30px;">Historial de citas</h2>
+        <div style="margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+          <nav class="bsm-tabs bsm-tabs-segmented" aria-label="Vista de la agenda">
+            <a class="bsm-tab" href="Main.dc.html">Día</a>
+            <a class="bsm-tab" href="Agenda-semana.dc.html">Semana</a>
+            <a class="bsm-tab is-active" aria-current="page" href="Agenda-historial.dc.html">Historial</a>
+          </nav>
+          <a href="Agenda-nueva-cita.dc.html" class="bsm-btn bsm-btn-primary bsm-btn-md">
+            <x-import component-from-global-scope="BSM.Icon" name="plus" size="20"></x-import>
+            Nueva cita
+          </a>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface);">
+        <x-import component-from-global-scope="BSM.Input" label="Desde" icon="calendar" default-value="1 oct 2026"></x-import>
+        <x-import component-from-global-scope="BSM.Input" label="Hasta" icon="calendar" default-value="6 nov 2026"></x-import>
+        <x-import component-from-global-scope="BSM.Select" label="Barbero" options="{{barberOpts}}"></x-import>
+        <x-import component-from-global-scope="BSM.Select" label="Estado" options="{{statusOpts}}"></x-import>
+        <x-import component-from-global-scope="BSM.Input" label="Cliente" icon="search" placeholder="Nombre o teléfono"></x-import>
+      </div>
+
+      <p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted); font-variant-numeric: tabular-nums;">312 citas en el periodo · $9.840.000 cobrados · 6 % canceladas · 3 % no asistieron</p>
+
+      <div role="table" aria-label="Historial de citas" style="border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); overflow-x: auto;">
+        <div role="row" style="display: grid; grid-template-columns: 112px 96px minmax(220px, 2fr) minmax(170px, 1.4fr) minmax(140px, 1fr) 136px 96px; gap: 12px; padding: 10px 16px; background: var(--surface-sunken); min-width: 1000px; box-sizing: border-box;">
+          <span role="columnheader" style="font-size: 12px; line-height: 16px; font-weight: 600; color: var(--ink);">Fecha ↓</span>
+          <span role="columnheader" style="font-size: 12px; line-height: 16px; font-weight: 600; color: var(--ink-muted);">Hora</span>
+          <span role="columnheader" style="font-size: 12px; line-height: 16px; font-weight: 600; color: var(--ink-muted);">Cliente</span>
+          <span role="columnheader" style="font-size: 12px; line-height: 16px; font-weight: 600; color: var(--ink-muted);">Servicio</span>
+          <span role="columnheader" style="font-size: 12px; line-height: 16px; font-weight: 600; color: var(--ink-muted);">Barbero</span>
+          <span role="columnheader" style="font-size: 12px; line-height: 16px; font-weight: 600; color: var(--ink-muted);">Estado</span>
+          <span role="columnheader" style="font-size: 12px; line-height: 16px; font-weight: 600; color: var(--ink-muted); text-align: right;">Precio</span>
+        </div>
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="12">
+          <div role="row" style="display: grid; grid-template-columns: 112px 96px minmax(220px, 2fr) minmax(170px, 1.4fr) minmax(140px, 1fr) 136px 96px; gap: 12px; align-items: center; padding: 10px 16px; border-top: 1px solid var(--line); min-width: 1000px; box-sizing: border-box; font-size: 14px; line-height: 20px;">
+            <span role="cell" style="font-variant-numeric: tabular-nums;">{{r.date}}</span>
+            <span role="cell" style="color: var(--ink-muted); font-variant-numeric: tabular-nums;">{{r.time}}</span>
+            <span role="cell" style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+              <x-import component-from-global-scope="BSM.Avatar" name="{{r.client}}" size="{{s32}}"></x-import>
+              <span style="display: flex; flex-direction: column; min-width: 0;"><strong style="font-weight: 600;">{{r.client}}</strong><span style="font-size: 13px; line-height: 18px; color: var(--ink-muted); font-variant-numeric: tabular-nums;">{{r.phone}}</span></span>
+            </span>
+            <span role="cell">{{r.service}}</span>
+            <span role="cell" style="color: var(--ink-muted);">{{r.barber}}</span>
+            <span role="cell"><x-import component-from-global-scope="BSM.StatusBadge" status="{{r.status}}"></x-import></span>
+            <span role="cell" style="text-align: right; font-weight: 600; font-variant-numeric: tabular-nums;">{{r.price}}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <x-import component-from-global-scope="BSM.Pagination" variant="more" shown="{{n25}}" total="{{n312}}"></x-import>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const r = (date, time, client, phone, service, barber, status, price) => ({ date, time, client, phone, service, barber, status, price });
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      yes: true, s32: 32, n25: 25, n312: 312,
+      user: { name: 'Camila Arango', role: 'Administrador' },
+      sections: [
+        { title: 'Principal', items: [{ icon: 'layout-dashboard', label: 'Dashboard' }] },
+        { title: 'Mi barbería', items: [{ icon: 'calendar-days', label: 'Agenda', count: 4 }, { icon: 'clock', label: 'Disponibilidad' }, { icon: 'users', label: 'Clientes' }, { icon: 'scissors', label: 'Barberos' }, { icon: 'clipboard-list', label: 'Servicios' }] },
+        { title: 'Administración', items: [{ icon: 'store', label: 'Mi negocio' }, { icon: 'user-cog', label: 'Usuarios' }] }
+      ],
+      barberOpts: ['Todos los barberos', 'Julián Restrepo', 'Mateo Vélez', 'Santiago Ochoa', 'Sebastián Arango'],
+      statusOpts: ['Todos los estados', 'Pendiente', 'Confirmada', 'En progreso', 'Completada', 'Cancelada', 'No asistió'],
+      rows: [
+        r('jue 5 nov', '6:00 p. m.', 'Simón Vélez', '320 111 2233', 'Corte + barba', 'Julián Restrepo', 'Completada', '$50.000'),
+        r('jue 5 nov', '4:00 p. m.', 'Ángel Duque', '301 456 7788', 'Corte clásico', 'Julián Restrepo', 'Completada', '$35.000'),
+        r('jue 5 nov', '2:30 p. m.', 'Iván Mesa', '315 222 9090', 'Corte + barba', 'Julián Restrepo', 'Cancelada', '—'),
+        r('jue 5 nov', '11:00 a. m.', 'Felipe Ochoa', '300 765 1122', 'Corte clásico', 'Julián Restrepo', 'Completada', '$35.000'),
+        r('jue 5 nov', '10:15 a. m.', 'Valentina Ríos', '312 908 3344', 'Tratamiento capilar', 'Mateo Vélez', 'Completada', '$60.000'),
+        r('jue 5 nov', '9:30 a. m.', 'Tomás Arias', '318 330 4455', 'Tinte de barba', 'Julián Restrepo', 'Completada', '$45.000'),
+        r('mié 4 nov', '6:00 p. m.', 'Emilio Rua', '304 777 1200', 'Corte clásico', 'Julián Restrepo', 'Completada', '$35.000'),
+        r('mié 4 nov', '5:30 p. m.', 'Cristian Patiño', '310 640 2299', 'Afeitado con toalla caliente', 'Santiago Ochoa', 'NoShow', '—'),
+        r('mié 4 nov', '3:30 p. m.', 'Luis Bedoya', '311 505 6677', 'Afeitado con toalla caliente', 'Julián Restrepo', 'Completada', '$30.000'),
+        r('mié 4 nov', '2:00 p. m.', 'Santiago Gil', '319 800 1414', 'Corte + barba', 'Julián Restrepo', 'Completada', '$50.000'),
+        r('mié 4 nov', '12:00 p. m.', 'Esteban Quintero', '302 118 9922', 'Perfilado de barba', 'Sebastián Arango', 'Completada', '$20.000'),
+        r('mié 4 nov', '11:30 a. m.', 'Julio Henao', '313 247 5566', 'Perfilado de barba', 'Julián Restrepo', 'Completada', '$20.000')
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

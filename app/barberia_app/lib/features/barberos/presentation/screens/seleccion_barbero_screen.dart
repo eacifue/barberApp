@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -31,7 +32,7 @@ class SeleccionBarberoScreen extends ConsumerWidget {
           title: const Text('Elige tu barbero'),
           leading: IconButton(
             onPressed: () => context.go('/reservar/servicio'),
-            icon: const Icon(Icons.arrow_back_rounded),
+            icon: const Icon(LucideIcons.arrowLeft),
           ),
         ),
         body: Center(
@@ -41,7 +42,7 @@ class SeleccionBarberoScreen extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(
-                  Icons.info_outline,
+                  LucideIcons.info,
                   color: AppColors.primary,
                   size: 44,
                 ),
@@ -70,7 +71,7 @@ class SeleccionBarberoScreen extends ConsumerWidget {
         title: const Text('Elige tu barbero'),
         leading: IconButton(
           onPressed: () => context.go('/reservar/servicio'),
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: const Icon(LucideIcons.arrowLeft),
         ),
       ),
       body: Center(
@@ -189,7 +190,7 @@ class _ReservaProgressStep2 extends StatelessWidget {
                     color: i == 1
                         ? AppColors.textPrimaryOf(context)
                         : AppColors.textMutedOf(context),
-                    fontWeight: i == 1 ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: i == 1 ? FontWeight.w700 : FontWeight.w500, fontVariations: [FontVariation('wght', i == 1 ? 700.0 : 500.0)],
                   ),
                 ),
               ),
@@ -227,7 +228,7 @@ class _ServicioContextCard extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.1),
             ),
             child: const Icon(
-              Icons.content_cut_rounded,
+              LucideIcons.scissors,
               color: AppColors.primary,
             ),
           ),
@@ -237,7 +238,7 @@ class _ServicioContextCard extends StatelessWidget {
               'Reservando: ${servicio.nombre} · ${servicio.duracionFormateada} · $precio',
               style: Theme.of(
                 context,
-              ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
+              ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700, fontVariations: const [FontVariation('wght', 700.0)]),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -273,7 +274,7 @@ class _EmptyBarberos extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              Icons.group_off_rounded,
+              LucideIcons.userX,
               size: 52,
               color: AppColors.primary,
             ),

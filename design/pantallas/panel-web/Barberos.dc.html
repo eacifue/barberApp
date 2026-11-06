@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Panel · Barberos</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn,a.bsm-iconbtn{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="min-height: 1120px; position: relative; display: flex; flex-wrap: wrap; align-items: stretch; background: var(--bg); color: var(--ink); font-family: var(--font-sans);">
+  <div style="flex: 0 0 264px; display: flex;">
+    <x-import component-from-global-scope="BSM.Sidebar" active="Barberos" sections="{{sections}}" user="{{user}}"></x-import>
+  </div>
+
+  <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column;">
+    <x-import component-from-global-scope="BSM.Topbar" title="Barberos" unread="{{yes}}" theme="{{theme}}"></x-import>
+
+    <div style="padding: 24px 32px 32px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <h2 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 24px; line-height: 30px;">Equipo</h2>
+          <p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted);">6 barberos · 4 trabajan hoy</p>
+        </div>
+        <div style="margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+          <div style="width: 260px;"><x-import component-from-global-scope="BSM.Input" icon="search" placeholder="Buscar barbero" aria-label="Buscar barbero"></x-import></div>
+          <div style="width: 200px;"><x-import component-from-global-scope="BSM.Select" aria-label="Filtrar por estado" options="{{statusOpts}}"></x-import></div>
+          <a href="Barbero-editar.dc.html" class="bsm-btn bsm-btn-primary bsm-btn-md">
+            <x-import component-from-global-scope="BSM.Icon" name="user-plus" size="20"></x-import>
+            Nuevo barbero
+          </a>
+        </div>
+      </div>
+
+      <div role="table" aria-label="Barberos" style="border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); overflow-x: auto;">
+        <div role="row" style="display: grid; grid-template-columns: minmax(240px, 2fr) minmax(220px, 1.6fr) 96px 200px 96px 96px; gap: 12px; padding: 10px 16px; background: var(--surface-sunken); min-width: 1000px; box-sizing: border-box; font-size: 12px; line-height: 16px; font-weight: 600; color: var(--ink-muted);">
+          <span role="columnheader" style="color: var(--ink);">Barbero ↓</span>
+          <span role="columnheader">Especialidades</span>
+          <span role="columnheader" style="text-align: right;">Servicios</span>
+          <span role="columnheader">Estado</span>
+          <span role="columnheader" style="text-align: right;">Citas hoy</span>
+          <span role="columnheader"><span class="bsm-sr">Acciones</span></span>
+        </div>
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+          <div role="row" style="display: grid; grid-template-columns: minmax(240px, 2fr) minmax(220px, 1.6fr) 96px 200px 96px 96px; gap: 12px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); min-width: 1000px; box-sizing: border-box; font-size: 14px; line-height: 20px;">
+            <span role="cell" style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+              <x-import component-from-global-scope="BSM.Avatar" name="{{r.name}}" size="{{s40}}" status="{{r.dot}}"></x-import>
+              <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+                <strong style="font-weight: 600;">{{r.name}}</strong>
+                <span style="display: flex; align-items: center; gap: 6px; font-size: 13px; line-height: 18px; color: var(--ink-muted);"><x-import component-from-global-scope="BSM.Rating" value="{{r.rating}}" count="{{r.reviews}}" compact="{{yes}}"></x-import> · {{r.years}}</span>
+              </span>
+            </span>
+            <span role="cell" class="bsm-chip-row">
+              <sc-for list="{{r.tags}}" as="t" hint-placeholder-count="2">
+                <x-import component-from-global-scope="BSM.Chip" as="tag">{{t}}</x-import>
+              </sc-for>
+            </span>
+            <span role="cell" style="text-align: right; font-variant-numeric: tabular-nums;">{{r.services}}</span>
+            <span role="cell" style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+              <x-import component-from-global-scope="BSM.Badge" tone="{{r.tone}}" icon="{{r.icon}}">{{r.status}}</x-import>
+              <span style="font-size: 12px; line-height: 16px; color: var(--ink-muted);">{{r.note}}</span>
+            </span>
+            <span role="cell" style="text-align: right; font-weight: 600; font-variant-numeric: tabular-nums;">{{r.today}}</span>
+            <span role="cell" style="display: flex; justify-content: flex-end; gap: 2px;">
+              <a href="Barbero-editar.dc.html" class="bsm-iconbtn bsm-iconbtn-sm" aria-label="Editar {{r.name}}"><x-import component-from-global-scope="BSM.Icon" name="pencil" size="18"></x-import></a>
+              <x-import component-from-global-scope="BSM.IconButton" icon="ellipsis" label="Más acciones para {{r.name}}" size="sm"></x-import>
+            </span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </main>
+
+  <sc-if value="{{isEditar}}" hint-placeholder-val="{{no}}">
+    <x-import component-from-global-scope="BSM.Modal" title="Editar barbero" subtitle="Julián Restrepo · lo que ven los clientes en la app" size="lg" footer="{{modalFooter}}">
+      <div style="display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 20px; align-items: start;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px 8px; border: 1.5px dashed var(--line-strong); border-radius: var(--radius-md); text-align: center;">
+          <x-import component-from-global-scope="BSM.Avatar" name="Julián Restrepo" size="{{s96}}"></x-import>
+          <x-import component-from-global-scope="BSM.Button" variant="secondary" size="sm" icon="camera">Cambiar foto</x-import>
+          <span style="font-size: 12px; line-height: 16px; color: var(--ink-muted);">Arrastra una imagen o elígela. JPG o PNG.</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;">
+          <x-import component-from-global-scope="BSM.Input" label="Nombre" default-value="Julián"></x-import>
+          <x-import component-from-global-scope="BSM.Input" label="Apellido" default-value="Restrepo"></x-import>
+          <x-import component-from-global-scope="BSM.Input" label="Correo electrónico" type="email" default-value="julian.restrepo@correo.co"></x-import>
+          <x-import component-from-global-scope="BSM.Input" label="Celular" type="tel" default-value="301 555 0144"></x-import>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 160px; gap: 14px;">
+        <x-import component-from-global-scope="BSM.Input" label="Biografía" multiline="{{yes}}" default-value="Barbero desde 2018. Me especializo en fades y barbas clásicas con navaja." hint="Se muestra en el perfil del barbero en la app."></x-import>
+        <x-import component-from-global-scope="BSM.Input" label="Años de experiencia" type="number" default-value="8"></x-import>
+      </div>
+
+      <div class="bsm-field">
+        <span class="bsm-field-label">Especialidades</span>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface);">
+          <x-import component-from-global-scope="BSM.Chip" on-remove="{{noop}}">Fade</x-import>
+          <x-import component-from-global-scope="BSM.Chip" on-remove="{{noop}}">Barba clásica</x-import>
+          <x-import component-from-global-scope="BSM.Chip" on-remove="{{noop}}">Diseños</x-import>
+          <input aria-label="Agregar especialidad" placeholder="Escribe y presiona Enter" style="flex: 1; min-width: 180px; height: 36px; border: 0; background: transparent; font: 400 16px/24px var(--font-sans); color: var(--ink); padding: 0 6px;">
+        </div>
+        <p class="bsm-field-msg">En la app se muestran las tres primeras.</p>
+      </div>
+
+      <section style="display: flex; flex-direction: column; gap: 4px;">
+        <h3 style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 600;">Servicios que presta</h3>
+        <p style="margin: 0 0 6px; font-size: 13px; line-height: 18px; color: var(--ink-muted);">Al menos uno. El precio especial reemplaza el precio general solo con este barbero.</p>
+        <sc-for list="{{services}}" as="s" hint-placeholder-count="6">
+          <div style="display: grid; grid-template-columns: minmax(0, 1fr) 180px; gap: 16px; align-items: center; padding: 4px 0; border-top: 1px solid var(--line);">
+            <x-import component-from-global-scope="BSM.Switch" label="{{s.name}}" hint="{{s.hint}}" default-checked="{{s.on}}"></x-import>
+            <x-import component-from-global-scope="BSM.Input" aria-label="Precio especial de {{s.name}}" placeholder="Precio especial" default-value="{{s.special}}" disabled="{{s.off}}"></x-import>
+          </div>
+        </sc-for>
+      </section>
+
+      <section style="display: flex; flex-direction: column; gap: 4px;">
+        <h3 style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 600;">Horario semanal</h3>
+        <p style="margin: 0 0 6px; font-size: 13px; line-height: 18px; color: var(--ink-muted);">Dentro del horario de la barbería (9:00 a. m. – 8:00 p. m.).</p>
+        <sc-for list="{{week}}" as="d" hint-placeholder-count="7">
+          <div style="display: grid; grid-template-columns: 96px 150px repeat(3, minmax(0, 1fr)); gap: 12px; align-items: center; padding: 4px 0; border-top: 1px solid var(--line);">
+            <strong style="font-size: 14px; line-height: 20px; font-weight: 600;">{{d.day}}</strong>
+            <x-import component-from-global-scope="BSM.Switch" label="Trabaja" default-checked="{{d.on}}"></x-import>
+            <x-import component-from-global-scope="BSM.Select" aria-label="Hora de inicio del {{d.day}}" options="{{times}}" default-value="{{d.start}}" disabled="{{d.off}}"></x-import>
+            <x-import component-from-global-scope="BSM.Select" aria-label="Hora de fin del {{d.day}}" options="{{times}}" default-value="{{d.end}}" disabled="{{d.off}}"></x-import>
+            <x-import component-from-global-scope="BSM.Select" aria-label="Duración de cada turno el {{d.day}}" options="{{intervals}}" default-value="Turnos de 30 min" disabled="{{d.off}}"></x-import>
+          </div>
+        </sc-for>
+      </section>
+
+      <section style="display: flex; flex-direction: column; gap: 8px;">
+        <h3 style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 600;">Días libres</h3>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--surface-sunken);">
+          <span style="color: var(--ink-muted);"><x-import component-from-global-scope="BSM.Icon" name="calendar-x" size="20"></x-import></span>
+          <span style="flex: 1; font-size: 14px; line-height: 20px;"><strong style="font-weight: 600;">Lun 23 – mié 25 nov</strong> · Vacaciones</span>
+          <x-import component-from-global-scope="BSM.IconButton" icon="trash-2" label="Quitar días libres del 23 al 25 de noviembre" size="sm"></x-import>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--surface-sunken);">
+          <span style="color: var(--ink-muted);"><x-import component-from-global-scope="BSM.Icon" name="calendar-x" size="20"></x-import></span>
+          <span style="flex: 1; font-size: 14px; line-height: 20px;"><strong style="font-weight: 600;">Vie 18 dic</strong> · Diligencia personal</span>
+          <x-import component-from-global-scope="BSM.IconButton" icon="trash-2" label="Quitar día libre del 18 de diciembre" size="sm"></x-import>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <x-import component-from-global-scope="BSM.Button" variant="secondary" size="sm" icon="plus">Agregar días libres</x-import>
+          <x-import component-from-global-scope="BSM.Button" variant="danger-ghost" size="sm" icon="ban">Desactivar barbero</x-import>
+        </div>
+      </section>
+    </x-import>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"panel":{"editor":"enum","options":["ninguno","editar"],"default":"ninguno","section":"Vista"},"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const row = (name, rating, reviews, years, tags, services, status, today, note) => {
+      const map = { 'Disponible': ['success', 'circle-check', 'on'], 'No disponible': ['warning', 'calendar-x', 'off'], 'Inactivo': ['neutral', 'ban', 'off'] };
+      return { name, rating, reviews, years, tags, services, status, today, note, tone: map[status][0], icon: map[status][1], dot: map[status][2] };
+    };
+    const times = [];
+    for (let h = 8; h <= 20; h++) times.push((h % 12 === 0 ? 12 : h % 12) + ':00 ' + (h < 12 ? 'a. m.' : 'p. m.'));
+    const day = (d, on, start, end) => ({ day: d, on, off: !on, start: start || '9:00 a. m.', end: end || '8:00 p. m.' });
+    const svc = (name, price, on, special) => ({ name, hint: 'Precio general ' + price, on, off: !on, special: special || '' });
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      yes: true, no: false, s40: 40, s96: 96, noop: () => {},
+      isEditar: (this.props.panel ?? 'ninguno') === 'editar',
+      user: { name: 'Camila Arango', role: 'Administrador' },
+      sections: [
+        { title: 'Principal', items: [{ icon: 'layout-dashboard', label: 'Dashboard' }] },
+        { title: 'Mi barbería', items: [{ icon: 'calendar-days', label: 'Agenda', count: 4 }, { icon: 'clock', label: 'Disponibilidad' }, { icon: 'users', label: 'Clientes' }, { icon: 'scissors', label: 'Barberos' }, { icon: 'clipboard-list', label: 'Servicios' }] },
+        { title: 'Administración', items: [{ icon: 'store', label: 'Mi negocio' }, { icon: 'user-cog', label: 'Usuarios' }] }
+      ],
+      statusOpts: ['Todos los estados', 'Disponible', 'No disponible', 'Inactivo'],
+      rows: [
+        row('Julián Restrepo', 4.9, 212, '8 años', ['Fade', 'Barba clásica', 'Diseños'], 5, 'Disponible', 8, ''),
+        row('Mateo Vélez', 4.7, 98, '4 años', ['Corte clásico', 'Tinte'], 6, 'Disponible', 6, ''),
+        row('Santiago Ochoa', 4.6, 51, '2 años', ['Afeitado'], 4, 'Disponible', 5, ''),
+        row('Sebastián Arango', 4.8, 77, '5 años', ['Fade', 'Diseños'], 5, 'Disponible', 4, 'Capacitación hasta las 11:00 a. m.'),
+        row('Alejandro Gil', 4.5, 34, '3 años', ['Barba clásica'], 4, 'No disponible', 0, 'Vacaciones hasta el 9 nov'),
+        row('Felipe Cano', 4.3, 12, '1 año', ['Corte clásico'], 2, 'Inactivo', 0, 'Desde el 30 sep')
+      ],
+      services: [
+        svc('Corte + barba · 50 min', '$50.000', true, '$55.000'),
+        svc('Corte clásico · 30 min', '$35.000', true),
+        svc('Afeitado con toalla caliente · 30 min', '$30.000', true),
+        svc('Perfilado de barba · 20 min', '$20.000', true),
+        svc('Tinte de barba · 40 min', '$45.000', true),
+        svc('Tratamiento capilar · 45 min', '$60.000', false)
+      ],
+      times: times,
+      intervals: ['Turnos de 15 min', 'Turnos de 20 min', 'Turnos de 30 min', 'Turnos de 45 min', 'Turnos de 60 min'],
+      week: [day('Lunes', true), day('Martes', true), day('Miércoles', true, '10:00 a. m.'), day('Jueves', true), day('Viernes', true), day('Sábado', true, '9:00 a. m.', '6:00 p. m.'), day('Domingo', false)],
+      modalFooter: [{ label: 'Cancelar', variant: 'secondary', href: 'Barberos.dc.html' }, { label: 'Guardar cambios', variant: 'primary', icon: 'check', href: 'Barberos.dc.html' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

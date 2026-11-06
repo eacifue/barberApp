@@ -49,7 +49,7 @@ export function BarberiasList() {
       <PageHeader title="Mi negocio" subtitle="Datos de tu barbería visibles para tus clientes en la app" />
 
       {barberiasQuery.isLoading ? (
-        <div className="surface-panel rounded-[28px] px-5 py-10 text-center text-sm text-[var(--text-muted)]">
+        <div className="surface-panel rounded-[28px] px-5 py-10 text-center text-sm text-[var(--text-ink-muted)]">
           Cargando…
         </div>
       ) : !barberia ? (

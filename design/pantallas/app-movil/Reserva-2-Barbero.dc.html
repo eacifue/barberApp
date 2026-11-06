@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Reserva · Paso 2 · Barbero</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn,a.bsm-iconbtn{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; position: relative; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--font-sans); display: flex; flex-direction: column;">
+  <header style="padding: 8px 16px 12px; display: flex; flex-direction: column; gap: 10px;">
+    <a href="Main.dc.html" class="bsm-iconbtn" aria-label="Volver a servicios" style="margin-left: -10px;">
+      <x-import component-from-global-scope="BSM.Icon" name="arrow-left" size="24"></x-import>
+    </a>
+    <x-import component-from-global-scope="BSM.Stepper" current="{{step}}"></x-import>
+    <h1 style="margin: 4px 0 0; font-family: var(--font-display); font-weight: 400; font-size: 32px; line-height: 36px;">Elige tu barbero</h1>
+  </header>
+
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 0 16px;">
+    <x-import component-from-global-scope="BSM.Banner" tone="brass" icon="layers" title="Corte + barba" action="Cambiar">50 min · $50.000</x-import>
+    <div role="radiogroup" aria-label="Barberos" style="display: flex; flex-direction: column; gap: 12px;">
+      <x-import component-from-global-scope="BSM.BarberCard" name="Julián Restrepo" rating="{{r49}}" reviews="{{c212}}" years="{{y8}}" specialties="{{spJulian}}" selected="{{yes}}" on-profile="{{noop}}"></x-import>
+      <x-import component-from-global-scope="BSM.BarberCard" name="Mateo Vélez" rating="{{r47}}" reviews="{{c98}}" years="{{y4}}" specialties="{{spMateo}}" on-profile="{{noop}}"></x-import>
+      <x-import component-from-global-scope="BSM.BarberCard" name="Santiago Ochoa" rating="{{r46}}" reviews="{{c51}}" years="{{y2}}" specialties="{{spSantiago}}" available="{{no}}" unavailable-label="Vuelve el lunes"></x-import>
+    </div>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 12px; padding: 12px 16px 28px; background: var(--surface); border-top: 1px solid var(--line); box-shadow: var(--shadow-sm);">
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+      <span style="font-size: 15px; line-height: 20px; font-weight: 600;">Julián Restrepo</span>
+      <span style="font-size: 13px; line-height: 18px; color: var(--ink-muted); font-variant-numeric: tabular-nums;">Corte + barba · $50.000</span>
+    </div>
+    <a href="Reserva-3-Horario.dc.html" class="bsm-btn bsm-btn-primary bsm-btn-lg">Continuar</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      step: 2, yes: true, no: false, noop: () => {},
+      r49: 4.9, r47: 4.7, r46: 4.6, c212: 212, c98: 98, c51: 51, y8: 8, y4: 4, y2: 2,
+      spJulian: ['Fade', 'Barba clásica', 'Diseños'],
+      spMateo: ['Corte clásico', 'Tinte'],
+      spSantiago: ['Afeitado']
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -51,7 +51,7 @@ dependencies:
   equatable: ^2.0.5
   freezed_annotation: ^2.4.1
   json_annotation: ^4.9.0
-  google_fonts: ^6.2.1
+  lucide_icons_flutter: ^3.1.25
 
 dev_dependencies:
   flutter_test:
@@ -66,15 +66,28 @@ dev_dependencies:
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
+# Íconos de app (design/assets/logos). Regenerar con: dart run flutter_launcher_icons
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icon/app_icon.png"
+  remove_alpha_ios: true
+  adaptive_icon_background: "#1C1814"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  adaptive_icon_monochrome: "assets/icon/app_icon_monochrome.png"
 
 # The following section is specific to Flutter packages.
 flutter:
   uses-material-design: true
   assets:
-    - assets/animations/
     - assets/icons/
     - assets/images/
+
+  # Fuentes empaquetadas del sistema de diseño (sin descarga en tiempo de ejecución).
+  fonts:
+    - family: Gloock
+      fonts:
+        - asset: assets/fonts/Gloock-Regular.ttf
+    - family: InstrumentSans
+      fonts:
+        - asset: assets/fonts/InstrumentSans-Variable.ttf

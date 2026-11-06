@@ -35,9 +35,9 @@ function SidebarItem({ item }: { item: NavItemConfig }) {
       onClick={() => navigate(item.to)}
       className={[
         'flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left text-[13px] font-medium transition duration-200',
-        'text-[var(--text-muted)] hover:-translate-y-0.5 hover:bg-[var(--surface-hover)] hover:text-[var(--text-strong)]',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]',
-        isActive ? 'bg-[var(--accent-soft)] text-[var(--accent)] shadow-[inset_0_0_0_1px_var(--border-subtle)]' : '',
+        'text-[var(--text-ink-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-strong)]',
+        'focus-visible:outline-none focus-visible:shadow-focus',
+        isActive ? 'bg-[var(--accent-soft)] text-brass-ink shadow-[inset_0_0_0_1px_var(--border-subtle)]' : '',
       ].join(' ')}
     >
       <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-overlay)] text-current">
@@ -126,7 +126,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
     <>
       <div
         className={[
-          'fixed inset-0 z-30 bg-black/45 backdrop-blur-sm transition duration-200 lg:hidden',
+          'fixed inset-0 z-30 bg-scrim transition duration-200 lg:hidden',
           open ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
         ].join(' ')}
         onClick={onClose}
@@ -140,16 +140,16 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       >
         <div className="flex items-start justify-between gap-3 rounded-[24px] border border-[var(--border-subtle)] bg-[var(--surface-overlay)] px-4 py-4">
           <div>
-            <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-brass-ink">
               <Home className="h-5 w-5" />
             </div>
             <p className="font-display text-[1.4rem] text-[var(--text-strong)]">Barber Admin</p>
-            <p className="mt-1 text-xs text-[var(--text-muted)]">Gestión elegante para operaciones diarias</p>
+            <p className="mt-1 text-xs text-[var(--text-ink-muted)]">Gestión elegante para operaciones diarias</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)] lg:hidden"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] text-[var(--text-ink-muted)] transition hover:border-brass-ink hover:text-brass-ink focus-visible:outline-none focus-visible:shadow-focus lg:hidden"
             aria-label="Cerrar navegación"
           >
             <X className="h-4 w-4" />
@@ -174,12 +174,12 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
         <div className="rounded-[24px] border border-[var(--border-subtle)] bg-[var(--surface-overlay)] p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent-soft)] text-sm font-semibold text-[var(--accent)]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent-soft)] text-sm font-semibold text-brass-ink">
               {initials}
             </div>
             <div>
               <p className="text-sm font-semibold text-[var(--text-strong)]">{usuario?.nombre ?? 'Usuario'}</p>
-              <p className="text-xs text-[var(--text-muted)]">{rolLabel[rol] ?? rol}</p>
+              <p className="text-xs text-[var(--text-ink-muted)]">{rolLabel[rol] ?? rol}</p>
             </div>
           </div>
         </div>
@@ -202,7 +202,7 @@ export function MobileBottomNav() {
           key={item.to}
           type="button"
           onClick={() => navigate(item.to)}
-          className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-semibold text-[var(--text-muted)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+          className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-2 text-[10px] font-semibold text-[var(--text-ink-muted)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--text-strong)] focus-visible:outline-none focus-visible:shadow-focus"
         >
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--surface-overlay)] text-current">
             {item.icon}

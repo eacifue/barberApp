@@ -80,7 +80,7 @@ export function LoginPage() {
         <button
           type="button"
           onClick={toggleTheme}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface-overlay)] text-[var(--text-base)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)]"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface-overlay)] text-[var(--text-base)] transition hover:border-brass-ink hover:text-brass-ink focus-visible:outline-none focus-visible:shadow-focus"
           aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
         >
           {theme === 'dark' ? <SunMedium className="h-4 w-4" /> : <MoonStar className="h-4 w-4" />}
@@ -89,9 +89,9 @@ export function LoginPage() {
 
       <div className="surface-panel relative w-full max-w-[420px] overflow-hidden rounded-[32px] px-6 py-8 md:px-10 md:py-10">
         <div className="mb-8 flex flex-col items-center text-center">
-          <img src="/logo-mark.svg" alt="BarberShop Medellín" className="mb-4 h-14 w-14" />
+          <img src={theme === 'dark' ? '/logo-mark-sobre-oscuro.svg' : '/logo-mark.svg'} alt="BarberShop Medellín" className="mb-4 h-14 w-14" />
           <p className="font-display text-2xl text-[var(--text-strong)]">BarberShop Medellín</p>
-          <p className="mt-1.5 text-sm text-[var(--text-muted)]">Ingresa con tu cuenta administrativa</p>
+          <p className="mt-1.5 text-sm text-[var(--text-ink-muted)]">Ingresa con tu cuenta administrativa</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -138,7 +138,7 @@ export function LoginPage() {
           </div>
 
           {error ? (
-            <p className="rounded-2xl border border-[rgba(180,79,70,0.18)] bg-[var(--danger-soft)] px-4 py-3 text-sm text-[var(--danger)]">
+            <p className="rounded-2xl border border-danger bg-[var(--danger-soft)] px-4 py-3 text-sm text-[var(--danger)]">
               {error}
             </p>
           ) : null}
@@ -146,7 +146,7 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 inline-flex h-12 w-full items-center justify-center rounded-full bg-[var(--accent)] text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-2 inline-flex h-12 w-full items-center justify-center rounded-full bg-brass text-sm font-semibold text-brass-on transition duration-200 hover:bg-brass-strong disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? 'Entrando…' : 'Entrar al panel'}
           </button>

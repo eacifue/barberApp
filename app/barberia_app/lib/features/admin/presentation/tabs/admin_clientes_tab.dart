@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/errors/exceptions.dart';
@@ -34,7 +35,7 @@ class AdminClientesTab extends ConsumerWidget {
                 alignment: Alignment.centerRight,
                 child: FilledButton.icon(
                   onPressed: () => _showClienteForm(context, ref),
-                  icon: const Icon(Icons.person_add_alt_1_rounded),
+                  icon: const Icon(LucideIcons.userPlus),
                   label: const Text('Nuevo cliente'),
                 ),
               ),
@@ -53,8 +54,8 @@ class AdminClientesTab extends ConsumerWidget {
                         children: [
                           Icon(
                             item.activo
-                                ? Icons.check_circle_outline
-                                : Icons.cancel_outlined,
+                                ? LucideIcons.circleCheck
+                                : LucideIcons.circleX,
                             color: item.activo
                                 ? Theme.of(context).colorScheme.tertiary
                                 : Theme.of(context).colorScheme.error,
@@ -63,7 +64,7 @@ class AdminClientesTab extends ConsumerWidget {
                             tooltip: 'Editar',
                             onPressed: () =>
                                 _showClienteForm(context, ref, cliente: item),
-                            icon: const Icon(Icons.edit_rounded),
+                            icon: const Icon(LucideIcons.pencil),
                           ),
                           IconButton(
                             tooltip: 'Desactivar',
@@ -124,7 +125,7 @@ class AdminClientesTab extends ConsumerWidget {
                                       }
                                     }
                                   },
-                            icon: const Icon(Icons.person_off_outlined),
+                            icon: const Icon(LucideIcons.userX),
                           ),
                         ],
                       ),
@@ -234,8 +235,8 @@ class AdminClientesTab extends ConsumerWidget {
                               : 'Ocultar contraseña',
                           icon: Icon(
                             obscurePassword
-                                ? Icons.visibility_rounded
-                                : Icons.visibility_off_rounded,
+                                ? LucideIcons.eye
+                                : LucideIcons.eyeOff,
                           ),
                           onPressed: () => setSheetState(
                             () => obscurePassword = !obscurePassword,

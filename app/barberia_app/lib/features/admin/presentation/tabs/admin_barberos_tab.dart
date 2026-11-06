@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/errors/exceptions.dart';
@@ -49,7 +50,7 @@ class AdminBarberosTab extends ConsumerWidget {
                           ref,
                           servicios: data.servicios,
                         ),
-                  icon: const Icon(Icons.add_rounded),
+                  icon: const Icon(LucideIcons.plus),
                   label: const Text('Nuevo barbero'),
                 ),
               ),
@@ -82,7 +83,7 @@ class AdminBarberosTab extends ConsumerWidget {
                               servicios: data.servicios,
                               barbero: item,
                             ),
-                            icon: const Icon(Icons.edit_rounded),
+                            icon: const Icon(LucideIcons.pencil),
                           ),
                           IconButton(
                             tooltip: 'Eliminar',
@@ -136,7 +137,7 @@ class AdminBarberosTab extends ConsumerWidget {
                                 }
                               }
                             },
-                            icon: const Icon(Icons.delete_outline_rounded),
+                            icon: const Icon(LucideIcons.trash2),
                           ),
                         ],
                       ),

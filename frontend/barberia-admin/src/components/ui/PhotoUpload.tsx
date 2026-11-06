@@ -12,8 +12,8 @@ export function PhotoUpload({ label = 'Foto', onFileChange }: PhotoUploadProps) 
   }
 
   return (
-    <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-6 text-center text-sm text-[var(--text-base)] transition-colors hover:border-[var(--accent)]">
-      <span className="font-semibold text-[var(--gold-l)]">{label}</span>
+    <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-6 text-center text-sm text-[var(--text-base)] transition-colors hover:border-brass-ink">
+      <span className="font-semibold text-brass-ink">{label}</span>
       <span>Subir imagen</span>
       <input type="file" accept="image/*" className="hidden" onChange={handleChange} />
     </label>

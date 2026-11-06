@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Panel · Disponibilidad</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn,a.bsm-iconbtn,a.bsm-tab{text-decoration:none}
+a.bsm-tab{flex:0 0 auto !important}
+.day{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface);font:inherit;color:inherit;text-align:left;cursor:pointer;min-width:0}
+.day.is-selected{border-color:var(--brass);box-shadow:0 0 0 1px var(--brass);background:var(--brass-soft)}
+.day.is-closed{background:var(--surface-sunken);cursor:default}
+.meter{height:6px;border-radius:3px;background:var(--surface-sunken);overflow:hidden}
+.day.is-selected .meter{background:var(--surface)}
+.meter > span{display:block;height:100%;border-radius:3px;background:var(--brass)}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="min-height: 1120px; position: relative; display: flex; flex-wrap: wrap; align-items: stretch; background: var(--bg); color: var(--ink); font-family: var(--font-sans);">
+  <div style="flex: 0 0 264px; display: flex;">
+    <x-import component-from-global-scope="BSM.Sidebar" active="Disponibilidad" sections="{{sections}}" user="{{user}}"></x-import>
+  </div>
+
+  <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column;">
+    <x-import component-from-global-scope="BSM.Topbar" title="Disponibilidad" unread="{{yes}}" theme="{{theme}}"></x-import>
+
+    <div style="padding: 24px 32px 32px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <h2 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 24px; line-height: 30px;">Disponibilidad</h2>
+        <p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted);">Qué horarios ven tus clientes en la app, quién está reservando ahora y qué está bloqueado.</p>
+      </div>
+
+      <div role="tablist" aria-label="Vista" class="bsm-tabs bsm-tabs-underline">
+        <a role="tab" href="Disponibilidad.dc.html" class="{{tabHorarios}}" aria-selected="{{selHorarios}}"><x-import component-from-global-scope="BSM.Icon" name="calendar-clock" size="18"></x-import>Horarios del día</a>
+        <a role="tab" href="Disponibilidad-reservas.dc.html" class="{{tabReservas}}" aria-selected="{{selReservas}}"><x-import component-from-global-scope="BSM.Icon" name="timer" size="18"></x-import>Reservas en curso<span class="bsm-tab-count">2</span></a>
+      </div>
+
+      <sc-if value="{{isHorarios}}" hint-placeholder-val="{{yes}}">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px;">
+            <div style="width: 240px;"><x-import component-from-global-scope="BSM.Select" label="Barbero" options="{{barbers}}" default-value="Julián Restrepo"></x-import></div>
+            <div style="width: 260px;"><x-import component-from-global-scope="BSM.Select" label="Servicio" options="{{services}}" default-value="Corte clásico · 30 min" hint="Los horarios cambian según la duración."></x-import></div>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 4px; padding-bottom: 22px;">
+              <x-import component-from-global-scope="BSM.IconButton" icon="chevron-left" label="Semana anterior" variant="secondary"></x-import>
+              <span style="min-width: 168px; text-align: center; font-size: 15px; line-height: 20px; font-weight: 600;">2 – 8 de noviembre</span>
+              <x-import component-from-global-scope="BSM.IconButton" icon="chevron-right" label="Semana siguiente" variant="secondary"></x-import>
+              <x-import component-from-global-scope="BSM.Button" variant="ghost" size="sm">Hoy</x-import>
+            </div>
+          </div>
+
+          <div role="group" aria-label="Días de la semana" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px;">
+            <sc-for list="{{week}}" as="d" hint-placeholder-count="7">
+              <button type="button" class="{{d.cls}}" aria-pressed="{{d.pressed}}" aria-label="{{d.aria}}">
+                <span style="display: flex; align-items: baseline; justify-content: space-between; gap: 6px;"><strong style="font-size: 14px; line-height: 20px; font-weight: 600;">{{d.label}}</strong><span style="font-size: 12px; line-height: 16px; color: var(--ink-muted);">{{d.tag}}</span></span>
+                <span class="meter" aria-hidden="true"><span style="width: {{d.pct}};"></span></span>
+                <span style="font-size: 12px; line-height: 16px; color: var(--ink-muted); font-variant-numeric: tabular-nums;">{{d.sub}}</span>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px;">
+            <section aria-labelledby="h-slots" style="flex: 1 1 600px; min-width: 0; padding: 20px 24px 24px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); display: flex; flex-direction: column; gap: 14px;">
+              <div style="display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px;">
+                <h3 id="h-slots" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 600;">Viernes 6 de noviembre · Julián</h3>
+                <span style="font-size: 13px; line-height: 18px; color: var(--ink-muted); font-variant-numeric: tabular-nums;">8 libres · 11 ocupados · 2 bloqueados · 1 reservando</span>
+              </div>
+              <x-import component-from-global-scope="BSM.SlotGrid" mode="admin" slots="{{slots}}"></x-import>
+              <a href="Disponibilidad-reservas.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--info-bg); color: var(--ink); text-decoration: none; font-size: 14px; line-height: 20px;">
+                <span style="color: var(--info); display: flex;"><x-import component-from-global-scope="BSM.Icon" name="timer" size="20"></x-import></span>
+                <span style="flex: 1;"><strong style="font-weight: 600;">Kevin Restrepo</strong> está reservando las 2:30 p. m. Se libera en <strong style="font-variant-numeric: tabular-nums;">3:12</strong> si no confirma.</span>
+                <span style="font-weight: 600; color: var(--brass-ink);">Ver reservas en curso</span>
+                <x-import component-from-global-scope="BSM.Icon" name="arrow-right" size="16"></x-import>
+              </a>
+            </section>
+
+            <aside aria-label="Bloqueos" style="flex: 0 1 340px; min-width: 300px; display: flex; flex-direction: column; gap: 16px;">
+              <section aria-labelledby="h-bloquear" style="padding: 20px 20px 22px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); display: flex; flex-direction: column; gap: 14px;">
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                  <h3 id="h-bloquear" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 600;">Bloquear un horario</h3>
+                  <span style="font-size: 13px; line-height: 18px; color: var(--ink-muted);">Deja de verse en la app. Las citas ya agendadas no cambian.</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+                  <x-import component-from-global-scope="BSM.Select" label="Desde" options="{{times}}" default-value="3:00 p. m."></x-import>
+                  <x-import component-from-global-scope="BSM.Select" label="Hasta" options="{{times}}" default-value="3:30 p. m."></x-import>
+                </div>
+                <x-import component-from-global-scope="BSM.Input" label="Motivo" optional="{{yes}}" placeholder="Ej.: Capacitación, diligencia"></x-import>
+                <x-import component-from-global-scope="BSM.Button" variant="secondary" icon="lock" block="{{yes}}">Bloquear horario</x-import>
+              </section>
+
+              <section aria-labelledby="h-bloqueos" style="padding: 16px 20px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); display: flex; flex-direction: column; gap: 4px;">
+                <h3 id="h-bloqueos" class="bsm-overline" style="margin: 0 0 6px;">Bloqueos de hoy</h3>
+                <div style="display: flex; align-items: center; gap: 12px; padding: 6px 0;">
+                  <span style="color: var(--warning); display: flex;"><x-import component-from-global-scope="BSM.Icon" name="lock" size="20"></x-import></span>
+                  <span style="flex: 1; display: flex; flex-direction: column;"><strong style="font-size: 14px; line-height: 20px; font-weight: 600;">Almuerzo</strong><span style="font-size: 13px; line-height: 18px; color: var(--ink-muted); font-variant-numeric: tabular-nums;">12:30 – 1:30 p. m.</span></span>
+                  <x-import component-from-global-scope="BSM.IconButton" icon="trash-2" label="Quitar bloqueo Almuerzo" size="sm"></x-import>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; padding: 6px 0; border-top: 1px solid var(--line);">
+                  <span style="color: var(--ink-muted); display: flex;"><x-import component-from-global-scope="BSM.Icon" name="calendar-x" size="20"></x-import></span>
+                  <span style="flex: 1; font-size: 13px; line-height: 18px; color: var(--ink-muted);">Días libres y vacaciones se configuran en la ficha del barbero. <a href="Barbero-editar.dc.html" style="font-weight: 600;">Ir a Julián</a></span>
+                </div>
+              </section>
+            </aside>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{isReservas}}" hint-placeholder-val="{{no}}">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <x-import component-from-global-scope="BSM.Banner" tone="info" icon="info" title="Cómo funciona">Cuando un cliente elige un horario en la app, se le aparta 5 minutos para que confirme. Si no confirma, el horario se libera solo.</x-import>
+
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+            <x-import component-from-global-scope="BSM.StatCard" label="Reservando ahora" value="2" icon="timer" hint="Clientes con un horario apartado"></x-import>
+            <x-import component-from-global-scope="BSM.StatCard" label="Por liberarse" value="1" icon="hourglass" hint="Les queda menos de 1 minuto"></x-import>
+            <x-import component-from-global-scope="BSM.StatCard" label="Liberados hoy" value="14" icon="rotate-ccw" hint="El cliente no confirmó a tiempo"></x-import>
+          </div>
+
+          <div role="table" aria-label="Reservas en curso" style="border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); overflow-x: auto;">
+            <div role="row" style="display: grid; grid-template-columns: minmax(220px, 1.6fr) 150px minmax(170px, 1.2fr) 140px 110px 150px 136px; gap: 12px; padding: 10px 16px; background: var(--surface-sunken); min-width: 1040px; box-sizing: border-box; font-size: 12px; line-height: 16px; font-weight: 600; color: var(--ink-muted);">
+              <span role="columnheader">Cliente</span>
+              <span role="columnheader">Barbero</span>
+              <span role="columnheader">Horario apartado</span>
+              <span role="columnheader">Servicio</span>
+              <span role="columnheader">Apartado a las</span>
+              <span role="columnheader" style="color: var(--ink);">Se libera en ↑</span>
+              <span role="columnheader"><span class="bsm-sr">Acciones</span></span>
+            </div>
+            <sc-for list="{{holds}}" as="r" hint-placeholder-count="2">
+              <div role="row" style="display: grid; grid-template-columns: minmax(220px, 1.6fr) 150px minmax(170px, 1.2fr) 140px 110px 150px 136px; gap: 12px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); min-width: 1040px; box-sizing: border-box; font-size: 14px; line-height: 20px;">
+                <span role="cell" style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                  <x-import component-from-global-scope="BSM.Avatar" name="{{r.client}}" size="{{s32}}"></x-import>
+                  <span style="display: flex; flex-direction: column; min-width: 0;"><strong style="font-weight: 600;">{{r.client}}</strong><span style="font-size: 13px; line-height: 18px; color: var(--ink-muted);">Desde la app</span></span>
+                </span>
+                <span role="cell">{{r.barber}}</span>
+                <span role="cell" style="font-variant-numeric: tabular-nums;">{{r.slot}}</span>
+                <span role="cell" style="color: var(--ink-muted);">{{r.service}}</span>
+                <span role="cell" style="color: var(--ink-muted); font-variant-numeric: tabular-nums;">{{r.at}}</span>
+                <span role="cell" style="display: flex; flex-direction: column; gap: 4px;">
+                  <span style="display: flex; align-items: center; gap: 6px; font-weight: 600; font-variant-numeric: tabular-nums; color: {{r.color}};"><x-import component-from-global-scope="BSM.Icon" name="{{r.icon}}" size="16"></x-import>{{r.left}}<span style="font-weight: 400; font-size: 12px; line-height: 16px;">{{r.note}}</span></span>
+                  <span class="meter" aria-hidden="true" style="width: 96px;"><span style="width: {{r.pct}}; background: {{r.bar}};"></span></span>
+                </span>
+                <span role="cell" style="display: flex; justify-content: flex-end;">
+                  <x-import component-from-global-scope="BSM.Button" variant="danger-ghost" size="sm" icon="refresh-cw">Liberar ahora</x-import>
+                </span>
+              </div>
+            </sc-for>
+          </div>
+          <span style="font-size: 13px; line-height: 18px; color: var(--ink-muted);">«Liberar ahora» devuelve el horario a la app al instante; el cliente ve el aviso «Tu horario se liberó» y puede elegir otro.</span>
+        </div>
+      </sc-if>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"vista":{"editor":"enum","options":["horarios","reservas"],"default":"horarios","section":"Vista"},"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const reservas = (this.props.vista ?? 'horarios') === 'reservas';
+    const times = [];
+    for (let h = 9; h < 20; h++) for (const m of ['00', '30']) times.push(h + ':' + m);
+    const fmt = (t) => { const [h, m] = t.split(':').map(Number); return (((h + 11) % 12) + 1) + ':' + String(m).padStart(2, '0') + (h < 12 ? ' a. m.' : ' p. m.'); };
+    const booked = { '9:00': 'Andrés G.', '9:30': 'Andrés G.', '10:00': 'Laura H.', '11:00': 'Felipe Z.', '11:30': 'Juan Pablo R.', '12:00': 'Juan Pablo R.', '14:00': 'Tomás C.', '15:30': 'Valentina R.', '16:00': 'Valentina R.', '17:00': 'Simón P.', '18:30': 'Esteban M.' };
+    const blocked = { '12:30': 'Almuerzo', '13:00': 'Almuerzo' };
+    const slots = times.map((t) => {
+      const time = t.padStart(5, '0');
+      if (booked[t]) return { time, state: 'booked', note: booked[t] };
+      if (blocked[t]) return { time, state: 'blocked', note: blocked[t] };
+      if (t === '14:30') return { time, state: 'hold', note: 'Reservando · 3:12' };
+      return { time, state: 'available' };
+    });
+    const day = (label, tag, taken, sel, closed) => ({
+      label, tag,
+      cls: 'day' + (sel ? ' is-selected' : '') + (closed ? ' is-closed' : ''),
+      pressed: sel ? 'true' : 'false',
+      pct: closed ? '0%' : Math.round(taken / 22 * 100) + '%',
+      sub: closed ? 'Cerrado' : taken + ' de 22 ocupados',
+      aria: label + (closed ? ', cerrado' : ', ' + taken + ' de 22 horarios ocupados')
+    });
+    const tab = (on) => 'bsm-tab' + (on ? ' is-active' : '');
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      yes: true, no: false, s32: 32,
+      isHorarios: !reservas, isReservas: reservas,
+      tabHorarios: tab(!reservas), tabReservas: tab(reservas),
+      selHorarios: reservas ? 'false' : 'true', selReservas: reservas ? 'true' : 'false',
+      user: { name: 'Camila Arango', role: 'Administrador' },
+      sections: [
+        { title: 'Principal', items: [{ icon: 'layout-dashboard', label: 'Dashboard' }] },
+        { title: 'Mi barbería', items: [{ icon: 'calendar-days', label: 'Agenda', count: 4 }, { icon: 'clock', label: 'Disponibilidad' }, { icon: 'users', label: 'Clientes' }, { icon: 'scissors', label: 'Barberos' }, { icon: 'clipboard-list', label: 'Servicios' }] },
+        { title: 'Administración', items: [{ icon: 'store', label: 'Mi negocio' }, { icon: 'user-cog', label: 'Usuarios' }] }
+      ],
+      barbers: ['Julián Restrepo', 'Mateo Vélez', 'Santiago Ochoa', 'Sebastián Arango', 'Alejandro Gil'],
+      services: ['Corte clásico · 30 min', 'Corte + barba · 50 min', 'Afeitado con toalla caliente · 30 min', 'Perfilado de barba · 20 min', 'Tinte de barba · 40 min', 'Tratamiento capilar · 45 min'],
+      times: times.concat(['20:00']).map(fmt),
+      slots,
+      week: [day('Lun 2', '', 15), day('Mar 3', '', 17), day('Mié 4', '', 13), day('Jue 5', '', 19), day('Vie 6', 'Hoy', 11, true), day('Sáb 7', '', 8), day('Dom 8', '', 0, false, true)],
+      holds: [
+        { client: 'Pablo Cano', barber: 'Mateo Vélez', slot: 'Sáb 7 nov · 10:00 a. m.', service: 'Corte + barba', at: '11:15 a. m.', left: '0:41', note: 'Por liberarse', icon: 'hourglass', color: 'var(--warning)', bar: 'var(--warning)', pct: '14%' },
+        { client: 'Kevin Restrepo', barber: 'Julián Restrepo', slot: 'Hoy · 2:30 p. m.', service: 'Corte clásico', at: '11:18 a. m.', left: '3:12', note: '', icon: 'timer', color: 'var(--ink)', bar: 'var(--info)', pct: '64%' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

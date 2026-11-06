@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Detalle · Cancelar cita</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 920px; position: relative; overflow: hidden;">
+  <dc-import name="Cita-detalle" hint-size="390px,920px"></dc-import>
+  <x-import component-from-global-scope="BSM.ConfirmDialog" tone="danger" title="¿Cancelar esta cita?" body="Se liberará el horario del jueves 12 de noviembre a las 3:00 p. m. con Julián. Esta acción no se puede deshacer." confirm-label="Sí, cancelar cita" cancel-label="Volver"></x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":920}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

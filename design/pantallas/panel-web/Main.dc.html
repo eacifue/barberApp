@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Panel · Agenda · Día</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn,a.bsm-tab,a.bsm-iconbtn,a.bsm-agenda-item{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="min-height: 1120px; position: relative; display: flex; flex-wrap: wrap; align-items: stretch; background: var(--bg); color: var(--ink); font-family: var(--font-sans);">
+  <div style="flex: 0 0 264px; display: flex;">
+    <x-import component-from-global-scope="BSM.Sidebar" active="Agenda" sections="{{sections}}" user="{{user}}"></x-import>
+  </div>
+
+  <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column;">
+    <x-import component-from-global-scope="BSM.Topbar" title="Agenda" unread="{{yes}}" theme="{{theme}}"></x-import>
+
+    <div style="padding: 24px 32px 32px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <x-import component-from-global-scope="BSM.IconButton" icon="chevron-left" label="Día anterior" variant="secondary" size="sm"></x-import>
+          <x-import component-from-global-scope="BSM.Button" variant="secondary" size="sm">Hoy</x-import>
+          <x-import component-from-global-scope="BSM.IconButton" icon="chevron-right" label="Día siguiente" variant="secondary" size="sm"></x-import>
+        </div>
+        <h2 style="margin: 0 0 0 4px; font-family: var(--font-display); font-weight: 400; font-size: 24px; line-height: 30px;">Viernes 6 de noviembre</h2>
+        <div style="margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+          <nav class="bsm-tabs bsm-tabs-segmented" aria-label="Vista de la agenda">
+            <a class="bsm-tab is-active" aria-current="page" href="Main.dc.html">Día</a>
+            <a class="bsm-tab" href="Agenda-semana.dc.html">Semana</a>
+            <a class="bsm-tab" href="Agenda-historial.dc.html">Historial</a>
+          </nav>
+          <a href="Agenda-nueva-cita.dc.html" class="bsm-btn bsm-btn-primary bsm-btn-md">
+            <x-import component-from-global-scope="BSM.Icon" name="plus" size="20"></x-import>
+            Nueva cita
+          </a>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+        <div style="width: 220px;">
+          <x-import component-from-global-scope="BSM.Select" aria-label="Filtrar por barbero" options="{{barberOpts}}"></x-import>
+        </div>
+        <div role="group" aria-label="Filtrar por estado" class="bsm-chip-row">
+          <x-import component-from-global-scope="BSM.Chip" selected="{{yes}}" count="{{n23}}">Todas</x-import>
+          <x-import component-from-global-scope="BSM.Chip" count="{{n4}}">Pendiente</x-import>
+          <x-import component-from-global-scope="BSM.Chip" count="{{n12}}">Confirmada</x-import>
+          <x-import component-from-global-scope="BSM.Chip" count="{{n2}}">En progreso</x-import>
+          <x-import component-from-global-scope="BSM.Chip" count="{{n3}}">Completada</x-import>
+          <x-import component-from-global-scope="BSM.Chip" count="{{n1}}">Cancelada</x-import>
+          <x-import component-from-global-scope="BSM.Chip" count="{{n1}}">No asistió</x-import>
+        </div>
+        <span style="margin-left: auto; font-size: 14px; line-height: 20px; color: var(--ink-muted); font-variant-numeric: tabular-nums;">23 citas · $840.000 estimado</span>
+      </div>
+
+      <x-import component-from-global-scope="BSM.Banner" tone="warning" icon="hourglass" title="4 citas pendientes por confirmar hoy" action="Revisar">Simón Patiño 3:00 p. m., Martín López 12:00 p. m., Jorge Salazar 4:00 p. m. y Óscar Rendón 3:30 p. m.</x-import>
+
+      <x-import component-from-global-scope="BSM.AgendaBoard" start="09:00" end="20:00" now="11:20" px-per-min="{{scale}}" barbers="{{barbers}}"></x-import>
+    </div>
+  </main>
+
+  <sc-if value="{{isDetalle}}" hint-placeholder-val="{{no}}">
+    <aside aria-label="Detalle de la cita" style="position: absolute; top: 64px; right: 0; bottom: 0; width: 400px; box-sizing: border-box; background: var(--surface-raised); border-left: 1px solid var(--line); box-shadow: var(--shadow-lg); display: flex; flex-direction: column;">
+      <header style="padding: 20px 20px 16px 24px; display: flex; align-items: flex-start; gap: 12px; border-bottom: 1px solid var(--line);">
+        <x-import component-from-global-scope="BSM.Avatar" name="Juan Pablo Ríos" size="{{s48}}"></x-import>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px;">
+          <h2 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 24px; line-height: 30px;">Juan Pablo Ríos</h2>
+          <x-import component-from-global-scope="BSM.StatusBadge" status="Confirmada"></x-import>
+        </div>
+        <a href="Main.dc.html" class="bsm-iconbtn" aria-label="Cerrar detalle">
+          <x-import component-from-global-scope="BSM.Icon" name="x" size="20"></x-import>
+        </a>
+      </header>
+
+      <div style="flex: 1; overflow: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 20px;">
+        <section style="display: flex; flex-direction: column; gap: 6px;">
+          <span class="bsm-overline">Cita</span>
+          <span style="font-size: 17px; line-height: 24px; font-weight: 600;">Corte + barba · 50 min</span>
+          <span style="font-size: 14px; line-height: 20px; font-variant-numeric: tabular-nums;">Hoy, viernes 6 de noviembre · 11:30 a. m. – 12:20 p. m.</span>
+          <span style="font-size: 14px; line-height: 20px; color: var(--ink-muted);">con Julián Restrepo · $50.000 · Pago en el local</span>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 8px;">
+          <span class="bsm-overline">Cliente</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="flex: 1; font-size: 14px; line-height: 20px; font-variant-numeric: tabular-nums;">310 555 0187</span>
+            <x-import component-from-global-scope="BSM.IconButton" icon="phone" label="Llamar a Juan Pablo" variant="secondary" size="sm"></x-import>
+            <x-import component-from-global-scope="BSM.IconButton" icon="message-circle" label="Escribir por WhatsApp a Juan Pablo" variant="secondary" size="sm"></x-import>
+          </div>
+          <span style="font-size: 14px; line-height: 20px; color: var(--ink-muted);">jp.rios@correo.co</span>
+          <span style="font-size: 14px; line-height: 20px; color: var(--ink-muted);">6 citas · última visita 9 oct · prefiere a Julián</span>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--surface-sunken);">
+          <span class="bsm-overline">Nota del cliente</span>
+          <span style="font-size: 14px; line-height: 20px;">Degradado medio, barba solo perfilada.</span>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 10px;">
+          <span class="bsm-overline">Historial</span>
+          <div style="display: flex; gap: 10px; font-size: 13px; line-height: 18px;"><span style="color: var(--success);"><x-import component-from-global-scope="BSM.Icon" name="circle-check" size="16"></x-import></span><span>Confirmada por Camila Arango<br><span style="color: var(--ink-muted);">mar 3 nov, 9:10 a. m.</span></span></div>
+          <div style="display: flex; gap: 10px; font-size: 13px; line-height: 18px;"><span style="color: var(--info);"><x-import component-from-global-scope="BSM.Icon" name="bell" size="16"></x-import></span><span>Recordatorio enviado al celular<br><span style="color: var(--ink-muted);">hoy, 10:30 a. m.</span></span></div>
+          <div style="display: flex; gap: 10px; font-size: 13px; line-height: 18px;"><span style="color: var(--ink-muted);"><x-import component-from-global-scope="BSM.Icon" name="calendar-plus" size="16"></x-import></span><span>Reservada desde la app<br><span style="color: var(--ink-muted);">lun 2 nov, 7:42 p. m.</span></span></div>
+        </section>
+      </div>
+
+      <footer style="padding: 16px 24px 20px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px;">
+        <x-import component-from-global-scope="BSM.Button" icon="scissors" block="{{yes}}" size="lg">Iniciar servicio</x-import>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+          <x-import component-from-global-scope="BSM.Button" variant="secondary" icon="calendar-clock">Reprogramar</x-import>
+          <x-import component-from-global-scope="BSM.Button" variant="secondary" icon="user-x">No asistió</x-import>
+        </div>
+        <x-import component-from-global-scope="BSM.Button" variant="danger-ghost" block="{{yes}}">Cancelar cita</x-import>
+      </footer>
+    </aside>
+  </sc-if>
+
+  <sc-if value="{{isNueva}}" hint-placeholder-val="{{no}}">
+    <x-import component-from-global-scope="BSM.Modal" title="Nueva cita" subtitle="Para clientes que llaman o llegan sin reserva." size="lg" footer="{{modalFooter}}">
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+        <x-import component-from-global-scope="BSM.Select" label="Barbero" options="{{barberChoices}}"></x-import>
+        <x-import component-from-global-scope="BSM.Select" label="Servicio" options="{{serviceChoices}}"></x-import>
+      </div>
+      <x-import component-from-global-scope="BSM.Input" label="Fecha" icon="calendar" default-value="Viernes, 6 de noviembre de 2026"></x-import>
+      <div class="bsm-field">
+        <span class="bsm-field-label">Hora de inicio · horarios libres de Julián</span>
+        <x-import component-from-global-scope="BSM.SlotGrid" slots="{{newSlots}}" selected="16:00" label="Hora de inicio"></x-import>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <x-import component-from-global-scope="BSM.Input" label="Cliente" icon="search" default-value="Andrés" placeholder="Busca por nombre, correo o teléfono"></x-import>
+        <div role="listbox" aria-label="Clientes encontrados" style="border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); display: flex; flex-direction: column; overflow: hidden;">
+          <div role="option" aria-selected="true" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--brass-soft);">
+            <x-import component-from-global-scope="BSM.Avatar" name="Andrés Gómez" size="{{s32}}"></x-import>
+            <span style="flex: 1; display: flex; flex-direction: column;"><strong style="font-size: 14px; line-height: 20px;">Andrés Gómez</strong><span style="font-size: 13px; line-height: 18px; color: var(--ink-muted);">andres.gomez@correo.co · 300 123 4567 · 14 citas</span></span>
+            <span style="color: var(--brass-ink);"><x-import component-from-global-scope="BSM.Icon" name="check" size="20"></x-import></span>
+          </div>
+          <div role="option" aria-selected="false" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-top: 1px solid var(--line);">
+            <x-import component-from-global-scope="BSM.Avatar" name="Andrés Felipe Mora" size="{{s32}}"></x-import>
+            <span style="flex: 1; display: flex; flex-direction: column;"><strong style="font-size: 14px; line-height: 20px;">Andrés Felipe Mora</strong><span style="font-size: 13px; line-height: 18px; color: var(--ink-muted);">311 222 0199 · 2 citas</span></span>
+          </div>
+          <div style="padding: 6px 4px; border-top: 1px solid var(--line);">
+            <x-import component-from-global-scope="BSM.Button" variant="ghost" size="sm" icon="user-plus">Crear cliente nuevo</x-import>
+          </div>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+        <x-import component-from-global-scope="BSM.Input" label="Precio final" default-value="$50.000" hint="Precio de Julián para este servicio. Puedes ajustarlo."></x-import>
+        <x-import component-from-global-scope="BSM.Input" label="Notas" optional="{{yes}}" placeholder="Ej.: llega 5 min tarde"></x-import>
+      </div>
+    </x-import>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"panel":{"editor":"enum","options":["ninguno","detalle","nueva-cita"],"default":"ninguno","section":"Vista"},"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const panel = this.props.panel ?? 'ninguno';
+    const d = 'Agenda-detalle.dc.html';
+    const c = (client, service, start, end, status, extra) => Object.assign({ client, service, start, end, status, href: d }, extra || {});
+    const b = (label, start, end) => ({ block: true, client: label, start, end });
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      yes: true, no: false, s32: 32, s48: 48, scale: 1.1,
+      n1: 1, n2: 2, n3: 3, n4: 4, n12: 12, n23: 23,
+      isDetalle: panel === 'detalle', isNueva: panel === 'nueva-cita',
+      user: { name: 'Camila Arango', role: 'Administrador' },
+      sections: [
+        { title: 'Principal', items: [{ icon: 'layout-dashboard', label: 'Dashboard' }] },
+        { title: 'Mi barbería', items: [{ icon: 'calendar-days', label: 'Agenda', count: 4 }, { icon: 'clock', label: 'Disponibilidad' }, { icon: 'users', label: 'Clientes' }, { icon: 'scissors', label: 'Barberos' }, { icon: 'clipboard-list', label: 'Servicios' }] },
+        { title: 'Administración', items: [{ icon: 'store', label: 'Mi negocio' }, { icon: 'user-cog', label: 'Usuarios' }] }
+      ],
+      barberOpts: ['Todos los barberos', 'Julián Restrepo', 'Mateo Vélez', 'Santiago Ochoa', 'Sebastián Arango'],
+      barbers: [
+        { name: 'Julián Restrepo', count: 8, items: [
+          c('Andrés Gómez', 'Corte + barba', '09:00', '09:50', 'Completada'),
+          c('Laura Henao', 'Corte clásico', '10:00', '10:30', 'NoShow'),
+          c('Felipe Zapata', 'Afeitado', '11:00', '11:30', 'EnProgreso'),
+          c('Juan Pablo Ríos', 'Corte + barba', '11:30', '12:20', 'Confirmada', { selected: panel === 'detalle' }),
+          b('Almuerzo', '12:30', '13:30'),
+          c('Tomás Cardona', 'Corte clásico', '14:00', '14:30', 'Confirmada'),
+          c('Simón Patiño', 'Corte + barba', '15:00', '15:50', 'Pendiente'),
+          c('Esteban Mesa', 'Corte clásico', '16:30', '17:00', 'Confirmada'),
+          c('Nicolás Álvarez', 'Perfilado de barba', '18:00', '18:20', 'Confirmada')] },
+        { name: 'Mateo Vélez', count: 6, items: [
+          c('Sebastián Mejía', 'Tinte de barba', '09:30', '10:10', 'Completada'),
+          c('Daniel Arias', 'Perfilado de barba', '11:10', '11:30', 'EnProgreso'),
+          c('Martín López', 'Corte clásico', '12:00', '12:30', 'Pendiente'),
+          c('Alejandro Ruiz', 'Tratamiento capilar', '13:00', '13:45', 'Cancelada'),
+          b('Almuerzo', '13:45', '14:45'),
+          c('Mauricio Gil', 'Afeitado', '15:00', '15:30', 'Confirmada'),
+          c('Camilo Restrepo', 'Corte + barba', '17:00', '17:50', 'Confirmada')] },
+        { name: 'Santiago Ochoa', count: 5, items: [
+          c('Pablo Vargas', 'Corte clásico', '10:00', '10:30', 'Completada'),
+          c('Iván Correa', 'Corte + barba', '12:00', '12:50', 'Confirmada'),
+          b('Almuerzo', '13:00', '14:00'),
+          c('David Montoya', 'Tratamiento capilar', '14:30', '15:15', 'Confirmada'),
+          c('Jorge Salazar', 'Corte clásico', '16:00', '16:30', 'Pendiente'),
+          c('Luis Ospina', 'Afeitado', '19:00', '19:30', 'Confirmada')] },
+        { name: 'Sebastián Arango', count: 4, items: [
+          b('Capacitación', '09:00', '11:00'),
+          c('Hernán Torres', 'Corte clásico', '11:30', '12:00', 'Confirmada'),
+          c('Ricardo Duque', 'Corte + barba', '14:00', '14:50', 'Confirmada'),
+          c('Óscar Rendón', 'Tinte de barba', '15:30', '16:10', 'Pendiente'),
+          c('Mario Echeverri', 'Corte + barba', '18:30', '19:20', 'Confirmada')] }
+      ],
+      barberChoices: ['Julián Restrepo', 'Mateo Vélez', 'Santiago Ochoa', 'Sebastián Arango'],
+      serviceChoices: ['Corte + barba · 50 min · $50.000', 'Corte clásico · 30 min · $35.000', 'Afeitado con toalla caliente · 30 min · $30.000', 'Perfilado de barba · 20 min · $20.000', 'Tinte de barba · 40 min · $45.000', 'Tratamiento capilar · 45 min · $60.000'],
+      newSlots: [['13:30', 0], ['14:00', 1], ['14:30', 0], ['15:00', 1], ['15:30', 1], ['16:00', 0], ['16:30', 1], ['17:00', 0], ['17:30', 0], ['18:00', 1], ['18:30', 0], ['19:00', 0]].map(([t, off]) => ({ time: t, state: off ? 'booked' : 'available' })),
+      modalFooter: [{ label: 'Cancelar', variant: 'secondary', href: 'Main.dc.html' }, { label: 'Crear cita', variant: 'primary', icon: 'check', href: 'Main.dc.html' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -95,10 +95,10 @@ class BarberiaApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'Barbería App',
+      title: 'BarberShop Medellín',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: buildTheme(Brightness.light),
+      darkTheme: buildTheme(Brightness.dark),
       themeMode: ThemeMode.system,
       locale: const Locale('es', 'CO'),
       supportedLocales: const [Locale('es', 'CO')],

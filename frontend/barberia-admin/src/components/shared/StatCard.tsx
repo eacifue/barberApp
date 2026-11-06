@@ -37,7 +37,7 @@ export function StatCard({
           )}
         </div>
         {icon ? (
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-brass-ink">
             {icon}
           </span>
         ) : null}
@@ -52,7 +52,7 @@ export function StatCard({
           {trend.symbol} {trend.text}
         </p>
       ) : null}
-      {caption ? <p className="mt-2 text-sm text-[var(--text-muted)]">{caption}</p> : null}
+      {caption ? <p className="mt-2 text-sm text-[var(--text-ink-muted)]">{caption}</p> : null}
     </article>
   )
 }

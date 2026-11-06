@@ -106,16 +106,16 @@ export function SlotsRedisPage() {
 
       <div className="mb-4 grid gap-3 md:grid-cols-3">
         <div className="rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-3">
-          <p className="text-[10px] uppercase text-color-muted">Total activos</p>
-          <p className="mt-1 font-display text-2xl text-color-strong">{counters.active}</p>
+          <p className="text-[10px] uppercase text-ink-muted">Total activos</p>
+          <p className="mt-1 font-display text-2xl text-ink">{counters.active}</p>
         </div>
         <div className="rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-3">
-          <p className="text-[10px] uppercase text-color-muted">Proximos a expirar (&lt;1min)</p>
+          <p className="text-[10px] uppercase text-ink-muted">Proximos a expirar (&lt;1min)</p>
           <p className="mt-1 font-display text-2xl text-[var(--danger)]">{counters.nearExpire}</p>
         </div>
         <div className="rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-3">
-          <p className="text-[10px] uppercase text-color-muted">Expirados hoy</p>
-          <p className="mt-1 font-display text-2xl text-color-base">{counters.expiredToday}</p>
+          <p className="text-[10px] uppercase text-ink-muted">Expirados hoy</p>
+          <p className="mt-1 font-display text-2xl text-ink">{counters.expiredToday}</p>
         </div>
       </div>
 
@@ -125,7 +125,7 @@ export function SlotsRedisPage() {
             <Badge variant={slotsQuery.isError ? 'danger' : 'success'} dot>
               ● Redis {slotsQuery.isError ? 'desconectado' : 'conectado'}
             </Badge>
-            <span className="text-sm text-color-base">
+            <span className="text-sm text-ink">
               {redisHostPort} · {counters.active} keys activas
             </span>
             {slotsQuery.isFetching ? <Badge variant="info">Actualizando...</Badge> : null}
@@ -143,7 +143,7 @@ export function SlotsRedisPage() {
           </div>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
-            <div className="grid min-w-[780px] grid-cols-[2fr_1fr_1fr_1fr_1.2fr] bg-[var(--ink2)] px-3 py-2 text-[10px] uppercase tracking-[0.08em] text-color-muted">
+            <div className="grid min-w-[780px] grid-cols-[2fr_1fr_1fr_1fr_1.2fr] bg-[var(--ink2)] px-3 py-2 text-[10px] uppercase tracking-[0.08em] text-ink-muted">
               <div>Key Redis</div>
               <div>Cliente</div>
               <div>Bloqueado en</div>
@@ -152,7 +152,7 @@ export function SlotsRedisPage() {
             </div>
 
             {slots.length === 0 ? (
-              <div className="px-3 py-8 text-center text-sm text-color-muted">No hay bloqueos activos.</div>
+              <div className="px-3 py-8 text-center text-sm text-ink-muted">No hay bloqueos activos.</div>
             ) : (
               slots.map((slot) => {
                 const remainingMs = computeRemainingMs(slot.expiraEn, nowMs)
@@ -166,8 +166,8 @@ export function SlotsRedisPage() {
                     className="grid min-w-[780px] grid-cols-[2fr_1fr_1fr_1fr_1.2fr] items-center border-t border-[var(--border)] px-3 py-2 text-sm"
                   >
                     <div className="font-mono text-xs text-[var(--info)]">{slot.keyRedis}</div>
-                    <div className="text-color-base">{slot.cliente}</div>
-                    <div className="text-color-muted">{formatDateTime(slot.bloqueadoEn)}</div>
+                    <div className="text-ink">{slot.cliente}</div>
+                    <div className="text-ink-muted">{formatDateTime(slot.bloqueadoEn)}</div>
                     <div>
                       {isExpired ? (
                         <Badge variant="muted">Expirado</Badge>
@@ -175,7 +175,7 @@ export function SlotsRedisPage() {
                         <span
                           className={[
                             'font-semibold',
-                            isUrgent ? 'text-[var(--danger)]' : isGold ? 'text-[var(--gold-l)]' : 'text-color-base',
+                            isUrgent ? 'text-[var(--danger)]' : isGold ? 'text-brass-ink' : 'text-ink',
                           ].join(' ')}
                         >
                           {formatRemaining(remainingMs)}

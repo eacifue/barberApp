@@ -1,0 +1,9 @@
+# pubspec.yaml — fuentes empaquetadas (sin descarga en tiempo de ejecución)
+flutter:
+  fonts:
+    - family: Gloock
+      fonts:
+        - asset: assets/fonts/Gloock-Regular.ttf
+    - family: InstrumentSans
+      fonts:
+        - asset: assets/fonts/InstrumentSans-Variable.ttf

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Panel · Agenda · Semana</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn,a.bsm-tab,a.bsm-iconbtn,a.bsm-agenda-item{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="min-height: 1120px; position: relative; display: flex; flex-wrap: wrap; align-items: stretch; background: var(--bg); color: var(--ink); font-family: var(--font-sans);">
+  <div style="flex: 0 0 264px; display: flex;">
+    <x-import component-from-global-scope="BSM.Sidebar" active="Agenda" sections="{{sections}}" user="{{user}}"></x-import>
+  </div>
+
+  <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column;">
+    <x-import component-from-global-scope="BSM.Topbar" title="Agenda" unread="{{yes}}" theme="{{theme}}"></x-import>
+
+    <div style="padding: 24px 24px 32px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <x-import component-from-global-scope="BSM.IconButton" icon="chevron-left" label="Semana anterior" variant="secondary" size="sm"></x-import>
+          <x-import component-from-global-scope="BSM.Button" variant="secondary" size="sm">Esta semana</x-import>
+          <x-import component-from-global-scope="BSM.IconButton" icon="chevron-right" label="Semana siguiente" variant="secondary" size="sm"></x-import>
+        </div>
+        <h2 style="margin: 0 0 0 4px; font-family: var(--font-display); font-weight: 400; font-size: 24px; line-height: 30px;">2 – 8 de noviembre</h2>
+        <div style="margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+          <nav class="bsm-tabs bsm-tabs-segmented" aria-label="Vista de la agenda">
+            <a class="bsm-tab" href="Main.dc.html">Día</a>
+            <a class="bsm-tab is-active" aria-current="page" href="Agenda-semana.dc.html">Semana</a>
+            <a class="bsm-tab" href="Agenda-historial.dc.html">Historial</a>
+          </nav>
+          <a href="Agenda-nueva-cita.dc.html" class="bsm-btn bsm-btn-primary bsm-btn-md">
+            <x-import component-from-global-scope="BSM.Icon" name="plus" size="20"></x-import>
+            Nueva cita
+          </a>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+        <div style="width: 240px;">
+          <x-import component-from-global-scope="BSM.Select" aria-label="Barbero de la semana" options="{{barberOpts}}"></x-import>
+        </div>
+        <span style="font-size: 14px; line-height: 20px; color: var(--ink-muted);">La vista Semana muestra un barbero a la vez.</span>
+        <span style="margin-left: auto; font-size: 14px; line-height: 20px; color: var(--ink-muted); font-variant-numeric: tabular-nums;">35 citas esta semana · 2 canceladas · 2 no asistieron</span>
+      </div>
+
+      <x-import component-from-global-scope="BSM.AgendaBoard" start="09:00" end="20:00" now="11:20" px-per-min="{{scale}}" barbers="{{days}}"></x-import>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const d = 'Agenda-detalle.dc.html';
+    const c = (client, service, start, end, status) => ({ client, service, start, end, status, href: d });
+    const lunch = { block: true, client: 'Almuerzo', start: '12:30', end: '13:30' };
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      yes: true, scale: 1.1,
+      user: { name: 'Camila Arango', role: 'Administrador' },
+      sections: [
+        { title: 'Principal', items: [{ icon: 'layout-dashboard', label: 'Dashboard' }] },
+        { title: 'Mi barbería', items: [{ icon: 'calendar-days', label: 'Agenda', count: 4 }, { icon: 'clock', label: 'Disponibilidad' }, { icon: 'users', label: 'Clientes' }, { icon: 'scissors', label: 'Barberos' }, { icon: 'clipboard-list', label: 'Servicios' }] },
+        { title: 'Administración', items: [{ icon: 'store', label: 'Mi negocio' }, { icon: 'user-cog', label: 'Usuarios' }] }
+      ],
+      barberOpts: ['Julián Restrepo', 'Mateo Vélez', 'Santiago Ochoa', 'Sebastián Arango'],
+      days: [
+        { name: 'Lun 2', sub: '5 citas', avatar: false, items: [
+          c('Pedro Gaviria', 'Corte clásico', '09:00', '09:30', 'Completada'),
+          c('Carlos Uribe', 'Corte + barba', '10:00', '10:50', 'Completada'),
+          c('Mateo Jaramillo', 'Perfilado', '11:00', '11:20', 'Completada'), lunch,
+          c('Felipe Arango', 'Afeitado', '15:00', '15:30', 'NoShow'),
+          c('Juan D. Mejía', 'Corte + barba', '17:00', '17:50', 'Completada')] },
+        { name: 'Mar 3', sub: '4 citas', avatar: false, items: [
+          c('Samuel Ortiz', 'Corte clásico', '09:30', '10:00', 'Completada'),
+          c('Diego Castaño', 'Corte + barba', '11:00', '11:50', 'Completada'), lunch,
+          c('Gabriel Rojas', 'Tratamiento', '14:00', '14:45', 'Cancelada'),
+          c('Andrés Vélez', 'Corte clásico', '16:00', '16:30', 'Completada')] },
+        { name: 'Mié 4', sub: '6 citas', avatar: false, items: [
+          c('Kevin Restrepo', 'Corte + barba', '09:00', '09:50', 'Completada'),
+          c('Mateo Sierra', 'Corte clásico', '10:00', '10:30', 'Completada'),
+          c('Julio Henao', 'Perfilado', '11:30', '11:50', 'Completada'), lunch,
+          c('Santiago Gil', 'Corte + barba', '14:00', '14:50', 'Completada'),
+          c('Luis Bedoya', 'Afeitado', '15:30', '16:00', 'Completada'),
+          c('Emilio Rua', 'Corte clásico', '18:00', '18:30', 'Completada')] },
+        { name: 'Jue 5', sub: '5 citas', avatar: false, items: [
+          c('Tomás Arias', 'Tinte de barba', '09:30', '10:10', 'Completada'),
+          c('Felipe Ochoa', 'Corte clásico', '11:00', '11:30', 'Completada'), lunch,
+          c('Iván Mesa', 'Corte + barba', '14:30', '15:20', 'Cancelada'),
+          c('Ángel Duque', 'Corte clásico', '16:00', '16:30', 'Completada'),
+          c('Simón Vélez', 'Corte + barba', '18:00', '18:50', 'Completada')] },
+        { name: 'Vie 6', sub: 'Hoy · 8 citas', avatar: false, current: true, items: [
+          c('Andrés Gómez', 'Corte + barba', '09:00', '09:50', 'Completada'),
+          c('Laura Henao', 'Corte clásico', '10:00', '10:30', 'NoShow'),
+          c('Felipe Zapata', 'Afeitado', '11:00', '11:30', 'EnProgreso'),
+          c('Juan Pablo Ríos', 'Corte + barba', '11:30', '12:20', 'Confirmada'), lunch,
+          c('Tomás Cardona', 'Corte clásico', '14:00', '14:30', 'Confirmada'),
+          c('Simón Patiño', 'Corte + barba', '15:00', '15:50', 'Pendiente'),
+          c('Esteban Mesa', 'Corte clásico', '16:30', '17:00', 'Confirmada'),
+          c('Nicolás Álvarez', 'Perfilado', '18:00', '18:20', 'Confirmada')] },
+        { name: 'Sáb 7', sub: '7 citas', avatar: false, items: [
+          c('Daniel Mora', 'Corte + barba', '09:00', '09:50', 'Confirmada'),
+          c('Pablo Cano', 'Corte clásico', '10:00', '10:30', 'Confirmada'),
+          c('Martín Gil', 'Corte clásico', '10:30', '11:00', 'Pendiente'),
+          c('Andrés Ruiz', 'Corte + barba', '11:00', '11:50', 'Confirmada'), lunch,
+          c('Héctor Paz', 'Tinte de barba', '14:00', '14:40', 'Confirmada'),
+          c('Luis Restrepo', 'Corte + barba', '15:00', '15:50', 'Confirmada'),
+          c('Jaime Toro', 'Afeitado', '17:00', '17:30', 'Pendiente')] },
+        { name: 'Dom 8', sub: 'Cerrado', avatar: false, items: [
+          { block: true, client: 'La barbería descansa', start: '09:00', end: '20:00' }] }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

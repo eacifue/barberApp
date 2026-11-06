@@ -33,7 +33,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-3 sm:items-center sm:p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-[var(--modal-backdrop)] backdrop-blur-md" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 bg-[var(--modal-backdrop)]" onClick={onClose} aria-hidden="true" />
 
       <div
         ref={dialogRef}
@@ -46,7 +46,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
       >
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--border-subtle)] px-6 py-5">
           <div className="flex items-center gap-2.5">
-            <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
+            <span className="h-2 w-2 rounded-full bg-brass" />
             <h3 id={titleId} className="font-display text-xl text-[var(--text-strong)]">
               {title}
             </h3>

@@ -64,7 +64,7 @@ class CitaCard extends StatelessWidget {
                             style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w800, fontVariations: const [FontVariation('wght', 700.0)],
                                 ),
                           ),
                         ),
@@ -124,7 +124,7 @@ class _EstadoBadge extends StatelessWidget {
         estado,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
           color: color,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w700, fontVariations: const [FontVariation('wght', 700.0)],
         ),
       ),
     );
