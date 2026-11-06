@@ -8,7 +8,7 @@ import { BarberiasList } from './features/barberias/BarberiasList'
 import { BarberosList } from './features/barberos/BarberosList'
 import { ServiciosList } from './features/servicios/ServiciosList'
 import { ClientesList } from './features/clientes/ClientesList'
-import { AppointmentsScheduler } from './features/citas/AppointmentsScheduler'
+import { AgendaPage } from './features/citas/AgendaPage'
 import { DisponibilidadPage } from './features/disponibilidad/DisponibilidadPage'
 import { SlotsRedisPage } from './features/slots/SlotsRedisPage'
 import { UsersPage } from './features/users/UsersPage'
@@ -54,7 +54,7 @@ export const router = createBrowserRouter([
           { path: 'barberos', element: <BarberosList /> },
           { path: 'servicios', element: <ServiciosList /> },
           { path: 'clientes', element: <ClientesList /> },
-          { path: 'citas', element: <AppointmentsScheduler /> },
+          { path: 'citas', element: <AgendaPage /> },
           { path: 'disponibilidad', element: <DisponibilidadPage /> },
           { path: 'slots', element: <SlotsRedisPage /> },
           {

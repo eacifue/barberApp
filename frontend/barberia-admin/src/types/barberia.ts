@@ -12,6 +12,7 @@ export interface Barberia {
   longitud: number
   horaApertura: string
   horaCierre: string
+  /** Días de `Date.getDay()` (0 = domingo); barberiaService convierte desde `DiaSemana`. */
   diasDescanso: number[]
   activa: boolean
   totalBarberos?: number
