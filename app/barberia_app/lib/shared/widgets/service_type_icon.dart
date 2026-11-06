@@ -43,10 +43,13 @@ class ServiceTypeIcon extends StatelessWidget {
 
 /// Cuadro de 48 px en `brass-soft` con el ícono del tipo en `brass-ink`.
 class ServiceTypeBadge extends StatelessWidget {
-  const ServiceTypeBadge({super.key, required this.tipo, this.size = 48});
+  const ServiceTypeBadge({super.key, required this.tipo, this.size = 48, this.background});
 
   final String tipo;
   final double size;
+
+  /// Por defecto `brass-soft`; sobre una tarjeta seleccionada, `surface`.
+  final Color? background;
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +58,7 @@ class ServiceTypeBadge extends StatelessWidget {
       width: size,
       height: size,
       alignment: Alignment.center,
-      decoration: BoxDecoration(color: p.brassSoft, borderRadius: BorderRadius.circular(AppRadius.sm)),
+      decoration: BoxDecoration(color: background ?? p.brassSoft, borderRadius: BorderRadius.circular(AppRadius.sm)),
       child: ServiceTypeIcon(tipo: tipo, size: size / 2),
     );
   }

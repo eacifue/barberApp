@@ -7,6 +7,7 @@ import { router } from './router'
 import { ThemeProvider } from './components/theme/ThemeProvider'
 import { ToastContainer } from './components/ui/ToastContainer'
 import './globals.css'
+import './components/bsm/bsm.css'
 
 const queryClient = new QueryClient({
   defaultOptions: {

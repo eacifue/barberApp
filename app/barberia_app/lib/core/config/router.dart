@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +16,7 @@ import '../../features/citas/presentation/screens/detalle_cita_screen.dart';
 import '../../features/citas/presentation/screens/mis_citas_screen.dart';
 import '../../features/citas/domain/models/cita_model.dart';
 import '../../features/admin/presentation/screens/admin_screen.dart';
+import '../../features/dev/componentes_screen.dart';
 import '../../features/horarios/presentation/screens/seleccion_horario_screen.dart';
 import '../../features/servicios/presentation/screens/home_screen.dart';
 import '../../features/servicios/presentation/screens/seleccion_servicio_screen.dart';
@@ -29,6 +31,9 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) async {
+      // Galería de componentes: solo en modo debug y sin sesión.
+      if (kDebugMode && state.matchedLocation == '/_componentes') return null;
+
       final token = await storage.getToken();
       final isLoggedIn = token != null && token.isNotEmpty;
       final isAuthRoute =
@@ -120,6 +125,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(path: '/admin', builder: (context, state) => const AdminScreen()),
+      if (kDebugMode)
+        GoRoute(path: '/_componentes', builder: (context, state) => const ComponentesScreen()),
     ],
   );
 });
