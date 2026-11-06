@@ -123,18 +123,18 @@ function AppointmentCard({
   const canCancel = cita.estado === 'Pendiente' || cita.estado === 'Confirmada'
 
   return (
-    <article className="rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-3 transition hover:border-[rgba(212,160,23,.45)]">
+    <article className="rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-3 transition hover:border-brass-ink">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="truncate font-mono text-xs text-color-base">
+        <p className="truncate font-mono text-xs text-ink">
           {normalizeHour(cita.horaInicio)}–{normalizeHour(cita.horaFin)}
         </p>
         <Badge variant={getEstadoVariant(cita.estado)}>{cita.estado}</Badge>
       </div>
-      <p className="truncate text-sm font-medium text-color-strong">
+      <p className="truncate text-sm font-medium text-ink">
         {cita.cliente.nombre} {cita.cliente.apellido}
       </p>
-      <p className="mt-1 truncate text-xs text-color-muted">Barbero: {cita.barbero.nombre} {cita.barbero.apellido}</p>
-      <p className="truncate text-xs text-color-muted">Servicio: {cita.servicio.nombre}</p>
+      <p className="mt-1 truncate text-xs text-ink-muted">Barbero: {cita.barbero.nombre} {cita.barbero.apellido}</p>
+      <p className="truncate text-xs text-ink-muted">Servicio: {cita.servicio.nombre}</p>
       <div className="mt-3 flex items-center gap-1.5">
         {canConfirm ? (
           <Button size="sm" variant="gold" className="h-7 flex-1 px-2 text-[11px]" onClick={() => onConfirm(cita.id)} loading={loading}>
@@ -434,9 +434,9 @@ export function AppointmentsScheduler() {
 
       {view === 'day' ? (
         <div className="grid gap-3">
-          {schedulerQuery.isLoading ? <p className="text-sm text-color-muted">Cargando agenda del día...</p> : null}
+          {schedulerQuery.isLoading ? <p className="text-sm text-ink-muted">Cargando agenda del día...</p> : null}
           {!schedulerQuery.isLoading && dayCitas.length === 0 ? (
-            <p className="rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-4 text-sm text-color-muted">
+            <p className="rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-4 text-sm text-ink-muted">
               No hay citas para el día seleccionado.
             </p>
           ) : null}
@@ -460,7 +460,7 @@ export function AppointmentsScheduler() {
             {weekDates.map((date) => (
               <div key={date} className="rounded-lg border border-[var(--border)] bg-[var(--ink2)] p-2">
                 <div className="mb-2 border-b border-[var(--border)] pb-2">
-                  <p className="text-xs uppercase tracking-[0.08em] text-color-muted">{date}</p>
+                  <p className="text-xs uppercase tracking-[0.08em] text-ink-muted">{date}</p>
                 </div>
                 <div className="max-h-[520px] space-y-2 overflow-y-auto pr-1">
                   {(weekMap.get(date) ?? []).map((cita) => (
@@ -475,7 +475,7 @@ export function AppointmentsScheduler() {
                     />
                   ))}
                   {(weekMap.get(date)?.length ?? 0) === 0 ? (
-                    <p className="text-xs text-color-faint">Sin citas</p>
+                    <p className="text-xs text-ink-muted">Sin citas</p>
                   ) : null}
                 </div>
               </div>
@@ -486,9 +486,9 @@ export function AppointmentsScheduler() {
 
       {view === 'history' ? (
         <div className="space-y-3">
-          {historyQuery.isLoading ? <p className="text-sm text-color-muted">Cargando historial...</p> : null}
+          {historyQuery.isLoading ? <p className="text-sm text-ink-muted">Cargando historial...</p> : null}
           {!historyQuery.isLoading && historyCitas.length === 0 ? (
-            <p className="rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-4 text-sm text-color-muted">
+            <p className="rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-4 text-sm text-ink-muted">
               No hay citas en el historial para los filtros seleccionados.
             </p>
           ) : null}
@@ -520,7 +520,7 @@ export function AppointmentsScheduler() {
 
       <Modal open={Boolean(detailCita)} onClose={() => setDetailCita(null)} title="Detalle de cita" size="md">
         {detailCita ? (
-          <div className="space-y-2 text-sm text-color-base">
+          <div className="space-y-2 text-sm text-ink">
             <p><strong>Cliente:</strong> {detailCita.cliente.nombre} {detailCita.cliente.apellido}</p>
             <p><strong>Barbero:</strong> {detailCita.barbero.nombre} {detailCita.barbero.apellido}</p>
             <p><strong>Servicio:</strong> {detailCita.servicio.nombre}</p>

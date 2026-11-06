@@ -1,0 +1,186 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* BarberShop Medellín — tokens del sistema de diseño (claro y oscuro).
+   Copiar a frontend/barberia-admin/src/globals.css. Fuentes en public/fonts/. */
+:root, [data-theme="light"] {
+  --bg: #F6F2EA;
+  --surface: #FFFDF8;
+  --surface-raised: #FFFFFF;
+  --surface-sunken: #EEE8DC;
+  --line: #E3DACB;
+  --line-strong: #8C8172;
+  --scrim: #14110E8F;
+  --ink: #1C1814;
+  --ink-muted: #675D52;
+  --ink-disabled: #A99F92;
+  --brass: #C6A15B;
+  --brass-strong: #B08A45;
+  --on-brass: #1C1814;
+  --brass-ink: #7A5C24;
+  --brass-soft: #F2E7D0;
+  --oxblood: #7B2D26;
+  --oxblood-soft: #F4E3E0;
+  --carbon: #1C1814;
+  --ivory: #F6F2EA;
+  --inverse: #1C1814;
+  --on-inverse: #F4EEE4;
+  --inverse-action: #C6A15B;
+  --success: #1A6E44;
+  --success-bg: #E2F2E8;
+  --warning: #A8460B;
+  --warning-bg: #FCEBDD;
+  --danger: #B42318;
+  --danger-bg: #FCE7E5;
+  --on-danger: #FFFFFF;
+  --info: #1F5FAD;
+  --info-bg: #E3EDF9;
+  --neutral: #675D52;
+  --neutral-bg: #ECE6DA;
+  --status-pendiente: var(--warning);
+  --status-pendiente-bg: var(--warning-bg);
+  --status-confirmada: var(--success);
+  --status-confirmada-bg: var(--success-bg);
+  --status-enprogreso: var(--info);
+  --status-enprogreso-bg: var(--info-bg);
+  --status-completada: var(--brass-ink);
+  --status-completada-bg: var(--brass-soft);
+  --status-cancelada: var(--danger);
+  --status-cancelada-bg: var(--danger-bg);
+  --status-noshow: var(--neutral);
+  --status-noshow-bg: var(--neutral-bg);
+  --slot-available: var(--success);
+  --slot-booked: var(--neutral);
+  --slot-blocked: var(--warning);
+  --slot-hold: var(--info);
+  --focus: var(--brass-ink);
+  --now-line: var(--oxblood);
+  --chart-1: #A87A24;
+  --chart-2: #3A6FB8;
+  --chart-3: #B5503C;
+  --chart-4: #8A5BB0;
+  --chart-5: #2F8A5A;
+  --shadow-sm: 0 1px 2px #1C18140F;
+  --shadow-md: 0 4px 12px #1C181414, 0 1px 3px #1C18140F;
+  --shadow-lg: 0 12px 32px #1C18141F, 0 2px 6px #1C181414;
+  --focus-ring: 0 0 0 2px #F6F2EA, 0 0 0 4px #7A5C24;
+}
+[data-theme="dark"] {
+  --bg: #14110E;
+  --surface: #1D1915;
+  --surface-raised: #27221C;
+  --surface-sunken: #0F0D0B;
+  --line: #352E27;
+  --line-strong: #7F7465;
+  --scrim: #000000A3;
+  --ink: #F4EEE4;
+  --ink-muted: #ADA394;
+  --ink-disabled: #5E554B;
+  --brass: #C6A15B;
+  --brass-strong: #D6B677;
+  --on-brass: #1C1814;
+  --brass-ink: #D9BA7C;
+  --brass-soft: #2F2718;
+  --oxblood: #D27A6A;
+  --oxblood-soft: #2E1515;
+  --carbon: #1C1814;
+  --ivory: #F6F2EA;
+  --inverse: #F4EEE4;
+  --on-inverse: #1C1814;
+  --inverse-action: #7A5C24;
+  --success: #5DC28E;
+  --success-bg: #15281D;
+  --warning: #F2995A;
+  --warning-bg: #33200F;
+  --danger: #F47C70;
+  --danger-bg: #3A1714;
+  --on-danger: #1C1814;
+  --info: #7DB0EE;
+  --info-bg: #13233A;
+  --neutral: #ADA394;
+  --neutral-bg: #2A251F;
+  --status-pendiente: var(--warning);
+  --status-pendiente-bg: var(--warning-bg);
+  --status-confirmada: var(--success);
+  --status-confirmada-bg: var(--success-bg);
+  --status-enprogreso: var(--info);
+  --status-enprogreso-bg: var(--info-bg);
+  --status-completada: var(--brass-ink);
+  --status-completada-bg: var(--brass-soft);
+  --status-cancelada: var(--danger);
+  --status-cancelada-bg: var(--danger-bg);
+  --status-noshow: var(--neutral);
+  --status-noshow-bg: var(--neutral-bg);
+  --slot-available: var(--success);
+  --slot-booked: var(--neutral);
+  --slot-blocked: var(--warning);
+  --slot-hold: var(--info);
+  --focus: var(--brass-ink);
+  --now-line: var(--oxblood);
+  --chart-1: #B48C3C;
+  --chart-2: #5F94D6;
+  --chart-3: #C9644F;
+  --chart-4: #9B79CB;
+  --chart-5: #3F9E6E;
+  --shadow-sm: 0 1px 2px #00000066;
+  --shadow-md: 0 4px 12px #00000080;
+  --shadow-lg: 0 12px 32px #000000A6;
+  --focus-ring: 0 0 0 2px #14110E, 0 0 0 4px #D9BA7C;
+}
+:root {
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+  --touch-min: 44px;
+  --control-sm: 36px;
+  --control-md: 44px;
+  --control-lg: 52px;
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+  --avatar-sm: 32px;
+  --avatar-md: 48px;
+  --avatar-lg: 64px;
+  --sidebar-width: 264px;
+  --topbar-height: 64px;
+  --bottomnav-height: 72px;
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
+  --duration-celebrate: 900ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-exit: cubic-bezier(0.3, 0, 0.8, 0.15);
+  --bp-sm: 390px;
+  --bp-md: 768px;
+  --bp-lg: 1280px;
+  --bp-xl: 1440px;
+  --font-display: "Gloock", "Iowan Old Style", Palatino, Georgia, serif;
+  --font-sans: "Instrument Sans", "Segoe UI", Roboto, system-ui, sans-serif;
+}
+@font-face { font-family: "Gloock"; src: url("/fonts/Gloock-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Instrument Sans"; src: url("/fonts/InstrumentSans-Variable.woff2") format("woff2"); font-weight: 400 700; font-style: normal; font-display: swap; }
+
+@layer base {
+  html { color-scheme: light; }
+  html[data-theme="dark"] { color-scheme: dark; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--brass-ink); }
+  a:hover { color: var(--ink); }
+  :focus-visible { outline: none; box-shadow: var(--focus-ring); }
+}

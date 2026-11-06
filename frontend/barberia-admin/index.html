@@ -1,10 +1,28 @@
 <!doctype html>
-<html lang="en">
+<html lang="es-CO">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>barberia-admin</title>
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#F6F2EA" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#14110E" media="(prefers-color-scheme: dark)" />
+    <title>Panel · BarberShop Medellín</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180.png" />
+    <link rel="preload" href="/fonts/InstrumentSans-Variable.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/Gloock-Regular.woff2" as="font" type="font/woff2" crossorigin />
+    <script>
+      // Aplica el tema antes de pintar para evitar el destello del tema equivocado.
+      (function () {
+        var choice = 'sistema'
+        try {
+          choice = localStorage.getItem('bsm-theme') || ({ light: 'claro', dark: 'oscuro' })[localStorage.getItem('barberia-admin-theme')] || 'sistema'
+        } catch (e) {}
+        var dark = choice === 'oscuro' || (choice === 'sistema' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

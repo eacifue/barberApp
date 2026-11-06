@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Panel · Iniciar sesión</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="min-height: 900px; display: flex; flex-wrap: wrap; align-items: stretch; background: var(--bg); color: var(--ink); font-family: var(--font-sans);">
+  <section data-theme="dark" aria-label="BarberShop Medellín" style="flex: 1 1 480px; min-height: 240px; box-sizing: border-box; padding: 48px 56px; background: var(--carbon); color: var(--ink); display: flex; flex-direction: column; justify-content: space-between; gap: 32px;">
+    <x-import component-from-global-scope="BSM.Logo" variant="horizontal" surface="dark" height="{{logoH}}"></x-import>
+    <div style="display: flex; flex-direction: column; gap: 16px; max-width: 520px;">
+      <h2 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 48px; line-height: 52px; letter-spacing: -0.01em;">Agenda, clientes y equipo en un solo lugar.</h2>
+      <p style="margin: 0; font-size: 16px; line-height: 24px; color: var(--ink-muted);">Confirma citas, atiende a quien llama y mira cómo va el día desde recepción o desde el celular.</p>
+    </div>
+    <p style="margin: 0; font-size: 13px; line-height: 18px; color: var(--ink-muted);">El Poblado, Medellín</p>
+  </section>
+
+  <section style="flex: 1 1 480px; box-sizing: border-box; padding: 24px 32px 40px; display: flex; flex-direction: column;">
+    <div style="display: flex; justify-content: flex-end;">
+      <x-import component-from-global-scope="BSM.Tabs" variant="segmented" label="Tema" value="{{theme}}" items="{{themeItems}}"></x-import>
+    </div>
+    <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px 0;">
+      <form style="width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;">
+          <h1 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 32px; line-height: 36px;">Panel de BarberShop Medellín</h1>
+          <p style="margin: 0; font-size: 16px; line-height: 24px; color: var(--ink-muted);">Ingresa con tu cuenta administrativa.</p>
+        </div>
+        <sc-if value="{{isError}}" hint-placeholder-val="{{no}}">
+          <x-import component-from-global-scope="BSM.Banner" tone="danger" title="Credenciales incorrectas">Revisa tu correo y tu contraseña e inténtalo de nuevo.</x-import>
+        </sc-if>
+        <x-import component-from-global-scope="BSM.Input" label="Correo electrónico" type="email" icon="mail" default-value="camila.arango@correo.co" autocomplete="username"></x-import>
+        <x-import component-from-global-scope="BSM.Input" label="Contraseña" revealable="{{yes}}" default-value="recepcion2026" autocomplete="current-password"></x-import>
+        <a href="#recuperar" style="align-self: flex-end; font-size: 14px; line-height: 20px; font-weight: 600;">¿Olvidaste tu contraseña?</a>
+        <a href="Dashboard.dc.html" class="bsm-btn bsm-btn-primary bsm-btn-lg bsm-btn-block">Entrar al panel</a>
+        <p style="margin: 8px 0 0; text-align: center; font-size: 14px; line-height: 20px; color: var(--ink-muted);">¿Eres cliente? Reserva desde la app BarberShop Medellín.</p>
+      </form>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"estado":{"editor":"enum","options":["normal","error"],"default":"normal","section":"Vista"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      yes: true, no: false, logoH: 44,
+      isError: (this.props.estado ?? 'normal') === 'error',
+      themeItems: [{ value: 'light', label: 'Claro', icon: 'sun' }, { value: 'dark', label: 'Oscuro', icon: 'moon' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

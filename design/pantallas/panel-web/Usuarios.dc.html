@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Panel · Usuarios</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn,a.bsm-iconbtn{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="min-height: 1120px; position: relative; display: flex; flex-wrap: wrap; align-items: stretch; background: var(--bg); color: var(--ink); font-family: var(--font-sans);">
+  <div style="flex: 0 0 264px; display: flex;">
+    <x-import component-from-global-scope="BSM.Sidebar" active="Usuarios" sections="{{sections}}" user="{{user}}"></x-import>
+  </div>
+
+  <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column;">
+    <x-import component-from-global-scope="BSM.Topbar" title="Usuarios" unread="{{yes}}" theme="{{theme}}"></x-import>
+
+    <div style="padding: 24px 32px 32px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <h2 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 24px; line-height: 30px;">Cuentas del equipo</h2>
+          <p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted);">Quién entra al panel y con qué rol. Los clientes se gestionan en <a href="Clientes.dc.html" style="font-weight: 600;">Clientes</a>.</p>
+        </div>
+        <a href="Usuario-nuevo.dc.html" class="bsm-btn bsm-btn-primary bsm-btn-md" style="margin-left: auto;">
+          <x-import component-from-global-scope="BSM.Icon" name="user-plus" size="20"></x-import>
+          Nuevo usuario
+        </a>
+      </div>
+
+      <div role="group" aria-label="Filtrar por rol" class="bsm-chip-row">
+        <x-import component-from-global-scope="BSM.Chip" selected="{{yes}}" count="{{n6}}">Todos</x-import>
+        <x-import component-from-global-scope="BSM.Chip" count="{{n1}}">Administrador</x-import>
+        <x-import component-from-global-scope="BSM.Chip" count="{{n1}}">Admin Barbería</x-import>
+        <x-import component-from-global-scope="BSM.Chip" count="{{n4}}">Barbero</x-import>
+      </div>
+
+      <div role="table" aria-label="Usuarios" style="border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); overflow-x: auto;">
+        <div role="row" style="display: grid; grid-template-columns: minmax(280px, 2fr) 180px minmax(180px, 1.2fr) 120px 88px; gap: 12px; padding: 10px 16px; background: var(--surface-sunken); min-width: 900px; box-sizing: border-box; font-size: 12px; line-height: 16px; font-weight: 600; color: var(--ink-muted);">
+          <span role="columnheader" style="color: var(--ink);">Usuario ↓</span>
+          <span role="columnheader">Rol</span>
+          <span role="columnheader">Barbero vinculado</span>
+          <span role="columnheader">Estado</span>
+          <span role="columnheader"><span class="bsm-sr">Acciones</span></span>
+        </div>
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+          <div role="row" style="display: grid; grid-template-columns: minmax(280px, 2fr) 180px minmax(180px, 1.2fr) 120px 88px; gap: 12px; align-items: center; padding: 10px 16px; border-top: 1px solid var(--line); min-width: 900px; box-sizing: border-box; font-size: 14px; line-height: 20px;">
+            <span role="cell" style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+              <x-import component-from-global-scope="BSM.Avatar" name="{{r.name}}" size="{{s32}}"></x-import>
+              <span style="display: flex; flex-direction: column; min-width: 0;"><strong style="font-weight: 600;">{{r.name}}</strong><span style="font-size: 13px; line-height: 18px; color: var(--ink-muted);">{{r.email}}</span></span>
+            </span>
+            <span role="cell"><x-import component-from-global-scope="BSM.Badge" tone="brass" icon="{{r.roleIcon}}">{{r.role}}</x-import></span>
+            <span role="cell" style="color: var(--ink-muted);">{{r.linked}}</span>
+            <span role="cell">
+              <sc-if value="{{r.active}}" hint-placeholder-val="{{yes}}"><x-import component-from-global-scope="BSM.Badge" tone="success" icon="circle-check">Activo</x-import></sc-if>
+              <sc-if value="{{r.inactive}}" hint-placeholder-val="{{no}}"><x-import component-from-global-scope="BSM.Badge" tone="neutral" icon="ban">Inactivo</x-import></sc-if>
+            </span>
+            <span role="cell" style="display: flex; justify-content: flex-end; gap: 2px;">
+              <x-import component-from-global-scope="BSM.IconButton" icon="pencil" label="Editar a {{r.name}}" size="sm"></x-import>
+              <x-import component-from-global-scope="BSM.IconButton" icon="{{r.toggleIcon}}" label="{{r.toggleLabel}}" size="sm"></x-import>
+            </span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </main>
+
+  <sc-if value="{{isNuevo}}" hint-placeholder-val="{{no}}">
+    <x-import component-from-global-scope="BSM.Modal" title="Nuevo usuario" subtitle="Una cuenta para entrar al panel." footer="{{modalFooter}}">
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;">
+        <x-import component-from-global-scope="BSM.Input" label="Nombre" default-value="Sebastián"></x-import>
+        <x-import component-from-global-scope="BSM.Input" label="Apellido" default-value="Arango"></x-import>
+        <x-import component-from-global-scope="BSM.Input" label="Correo electrónico" type="email" default-value="sebastian.arango@correo.co"></x-import>
+        <x-import component-from-global-scope="BSM.Input" label="Celular" type="tel" default-value="304 555 0123"></x-import>
+      </div>
+      <x-import component-from-global-scope="BSM.Input" label="Contraseña" revealable="{{yes}}" default-value="barberos26" hint="Mínimo 6 caracteres. Compártela con la persona por un canal privado." autocomplete="new-password"></x-import>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;">
+        <x-import component-from-global-scope="BSM.Select" label="Rol" options="{{roles}}" default-value="Barbero"></x-import>
+        <x-import component-from-global-scope="BSM.Select" label="Barbero vinculado" options="{{unlinked}}" default-value="Sebastián Arango" hint="Solo aparecen los barberos que aún no tienen cuenta."></x-import>
+      </div>
+      <x-import component-from-global-scope="BSM.Banner" tone="info" icon="shield-check" title="Qué ve un barbero">Solo su agenda en «Mis citas». No ve ingresos, clientes ni la configuración del negocio.</x-import>
+    </x-import>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"panel":{"editor":"enum","options":["ninguno","nuevo"],"default":"ninguno","section":"Vista"},"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const icons = { 'Administrador': 'shield-check', 'Admin Barbería': 'store', 'Barbero': 'scissors' };
+    const row = (name, email, role, linked, active) => ({
+      name, email, role, linked, active, inactive: !active, roleIcon: icons[role],
+      toggleIcon: active ? 'ban' : 'rotate-ccw', toggleLabel: (active ? 'Desactivar a ' : 'Activar a ') + name
+    });
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      yes: true, no: false, s32: 32, n1: 1, n4: 4, n6: 6,
+      isNuevo: (this.props.panel ?? 'ninguno') === 'nuevo',
+      user: { name: 'Camila Arango', role: 'Administrador' },
+      sections: [
+        { title: 'Principal', items: [{ icon: 'layout-dashboard', label: 'Dashboard' }] },
+        { title: 'Mi barbería', items: [{ icon: 'calendar-days', label: 'Agenda', count: 4 }, { icon: 'clock', label: 'Disponibilidad' }, { icon: 'users', label: 'Clientes' }, { icon: 'scissors', label: 'Barberos' }, { icon: 'clipboard-list', label: 'Servicios' }] },
+        { title: 'Administración', items: [{ icon: 'store', label: 'Mi negocio' }, { icon: 'user-cog', label: 'Usuarios' }] }
+      ],
+      rows: [
+        row('Camila Arango', 'camila.arango@correo.co', 'Administrador', '—', true),
+        row('Daniela Rojas', 'daniela.rojas@correo.co', 'Admin Barbería', '—', true),
+        row('Felipe Cano', 'felipe.cano@correo.co', 'Barbero', 'Felipe Cano', false),
+        row('Julián Restrepo', 'julian.restrepo@correo.co', 'Barbero', 'Julián Restrepo', true),
+        row('Mateo Vélez', 'mateo.velez@correo.co', 'Barbero', 'Mateo Vélez', true),
+        row('Santiago Ochoa', 'santiago.ochoa@correo.co', 'Barbero', 'Santiago Ochoa', true)
+      ],
+      roles: ['Administrador', 'Admin Barbería', 'Barbero'],
+      unlinked: ['Sebastián Arango', 'Alejandro Gil'],
+      modalFooter: [{ label: 'Cancelar', variant: 'secondary', href: 'Usuarios.dc.html' }, { label: 'Crear usuario', variant: 'primary', icon: 'check', href: 'Usuarios.dc.html' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

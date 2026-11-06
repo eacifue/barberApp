@@ -11,7 +11,7 @@ export function SkeletonRow({ templateColumns, columnCount, minWidth }: Skeleton
       style={{ gridTemplateColumns: templateColumns, minWidth }}
     >
       {Array.from({ length: columnCount }).map((_, idx) => (
-        <div key={idx} className="h-2.5 rounded bg-white/10" />
+        <div key={idx} className="h-2.5 rounded bg-surface-sunken" />
       ))}
     </div>
   )

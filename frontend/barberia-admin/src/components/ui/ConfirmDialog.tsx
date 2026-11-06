@@ -52,7 +52,7 @@ const variantConfig: Record<
     iconColor: 'text-[var(--danger)]',
     accent: 'border-[var(--danger)]/30',
     confirmClass:
-      'bg-[var(--danger)] text-white hover:opacity-90 focus-visible:ring-[var(--danger)]/40',
+      'bg-[var(--danger)] text-danger-on hover:opacity-90',
   },
   warning: {
     icon: WarningIcon,
@@ -60,7 +60,7 @@ const variantConfig: Record<
     iconColor: 'text-[var(--warning)]',
     accent: 'border-[var(--warning)]/30',
     confirmClass:
-      'bg-[var(--warning)] text-black hover:opacity-90 focus-visible:ring-[var(--warning)]/40',
+      'bg-[var(--warning)] text-inverse-on hover:opacity-90',
   },
   info: {
     icon: InfoIcon,
@@ -68,7 +68,7 @@ const variantConfig: Record<
     iconColor: 'text-[var(--info)]',
     accent: 'border-[var(--info)]/30',
     confirmClass:
-      'bg-[var(--info)] text-white hover:opacity-90 focus-visible:ring-[var(--info)]/40',
+      'bg-[var(--info)] text-inverse-on hover:opacity-90',
   },
 }
 
@@ -98,7 +98,7 @@ export function ConfirmDialog({
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-[var(--modal-backdrop)] backdrop-blur-sm"
+        className="absolute inset-0 bg-[var(--modal-backdrop)]"
         onClick={handleClose}
         aria-hidden="true"
       />
@@ -131,7 +131,7 @@ export function ConfirmDialog({
             <h4 id={titleId} className="font-display text-base font-semibold text-[var(--text-strong)]">
               {title}
             </h4>
-            <p className="mt-1.5 text-sm leading-relaxed text-[var(--text-muted)]">{message}</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-[var(--text-ink-muted)]">{message}</p>
           </div>
         </div>
 
@@ -150,7 +150,7 @@ export function ConfirmDialog({
             disabled={loading}
             className={[
               'inline-flex h-9 items-center gap-2 rounded-lg px-4 text-sm font-medium transition',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-elevated)]',
+              'focus-visible:outline-none',
               'disabled:cursor-not-allowed disabled:opacity-50',
               cfg.confirmClass,
             ].join(' ')}

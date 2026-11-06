@@ -27,12 +27,12 @@ export function Button({
       type="button"
       disabled={isDisabled}
       className={clsx(
-        'inline-flex items-center justify-center gap-2 rounded-full font-semibold transition duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] disabled:cursor-not-allowed disabled:opacity-60',
+        'inline-flex items-center justify-center gap-2 rounded-full font-semibold transition duration-200 focus-visible:outline-none focus-visible:shadow-focus disabled:cursor-not-allowed disabled:opacity-60',
         {
-          'bg-[var(--accent)] text-white shadow-[var(--accent-button-shadow)] hover:-translate-y-0.5 hover:bg-[var(--accent-strong)]': variant === 'gold',
-          'border border-[var(--border-strong)] bg-[var(--surface-overlay)] text-[var(--text-base)] hover:-translate-y-0.5 hover:bg-[var(--surface-hover)]':
+          'bg-brass text-brass-on hover:bg-brass-strong': variant === 'gold',
+          'border border-[var(--border-strong)] bg-[var(--surface-overlay)] text-[var(--text-base)] hover:bg-[var(--surface-hover)]':
             variant === 'ghost',
-          'border border-[rgba(180,79,70,.28)] bg-[var(--danger-soft)] text-[var(--danger)] hover:-translate-y-0.5 hover:bg-[rgba(180,79,70,.22)]':
+          'border border-danger bg-[var(--danger-soft)] text-[var(--danger)] hover:bg-surface-sunken':
             variant === 'danger',
         },
         {

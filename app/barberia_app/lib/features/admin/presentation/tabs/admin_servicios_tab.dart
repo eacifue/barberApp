@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/errors/exceptions.dart';
@@ -42,7 +43,7 @@ class AdminServiciosTab extends ConsumerWidget {
                 alignment: Alignment.centerRight,
                 child: FilledButton.icon(
                   onPressed: () => _showServicioForm(context, ref),
-                  icon: const Icon(Icons.add_rounded),
+                  icon: const Icon(LucideIcons.plus),
                   label: const Text('Nuevo servicio'),
                 ),
               ),
@@ -67,7 +68,7 @@ class AdminServiciosTab extends ConsumerWidget {
                             tooltip: 'Editar',
                             onPressed: () =>
                                 _showServicioForm(context, ref, servicio: item),
-                            icon: const Icon(Icons.edit_rounded),
+                            icon: const Icon(LucideIcons.pencil),
                           ),
                           IconButton(
                             tooltip: 'Eliminar',
@@ -119,7 +120,7 @@ class AdminServiciosTab extends ConsumerWidget {
                                 }
                               }
                             },
-                            icon: const Icon(Icons.delete_outline_rounded),
+                            icon: const Icon(LucideIcons.trash2),
                           ),
                         ],
                       ),

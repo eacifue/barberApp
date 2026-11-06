@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class AppInput extends StatefulWidget {
   const AppInput({
@@ -55,8 +56,8 @@ class _AppInputState extends State<AppInput> {
                 tooltip: _obscured ? 'Mostrar contraseña' : 'Ocultar contraseña',
                 icon: Icon(
                   _obscured
-                      ? Icons.visibility_rounded
-                      : Icons.visibility_off_rounded,
+                      ? LucideIcons.eye
+                      : LucideIcons.eyeOff,
                 ),
                 onPressed: () => setState(() => _obscured = !_obscured),
               )

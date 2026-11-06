@@ -158,7 +158,7 @@ export function UsersPage() {
         key: 'correo',
         header: 'Correo',
         width: '1.1fr',
-        render: (row: UserDto) => <span className="text-[var(--text-muted)]">{row.correo}</span>,
+        render: (row: UserDto) => <span className="text-[var(--text-ink-muted)]">{row.correo}</span>,
       },
       {
         key: 'rol',
@@ -203,7 +203,7 @@ export function UsersPage() {
       />
 
       {isLoading ? (
-        <div className="surface-panel rounded-[28px] px-5 py-10 text-center text-sm text-[var(--text-muted)]">Cargando usuarios…</div>
+        <div className="surface-panel rounded-[28px] px-5 py-10 text-center text-sm text-[var(--text-ink-muted)]">Cargando usuarios…</div>
       ) : (
         <DataTable columns={columns} data={users} emptyMessage="No hay usuarios creados todavía." />
       )}

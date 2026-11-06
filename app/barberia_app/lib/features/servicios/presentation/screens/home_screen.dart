@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -61,7 +62,7 @@ class HomeScreen extends ConsumerWidget {
                 IconButton(
                   tooltip: 'Administración',
                   onPressed: () => context.go('/admin'),
-                  icon: const Icon(Icons.admin_panel_settings_rounded),
+                  icon: const Icon(LucideIcons.shieldCheck),
                 ),
               const LogoutButton(),
             ],
@@ -94,7 +95,7 @@ class HomeScreen extends ConsumerWidget {
                       title: 'Servicios activos',
                       subtitle:
                           '${serviciosActivos.length} disponibles para reserva',
-                      icon: Icons.content_cut_rounded,
+                      icon: LucideIcons.scissors,
                     ),
                   );
                 },
@@ -121,7 +122,7 @@ class HomeScreen extends ConsumerWidget {
                       subtitle: proximas.isEmpty
                           ? 'No tienes citas próximas en esta barbería.'
                           : '${proximas.length} por atender',
-                      icon: Icons.event_available_rounded,
+                      icon: LucideIcons.calendarCheck,
                     ),
                   );
                 },
@@ -134,19 +135,19 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 _AdminOptionTile(
-                  icon: Icons.store,
+                  icon: LucideIcons.store,
                   title: 'Gestionar barberías',
                   onTap: () => context.go('/admin'),
                 ),
                 const SizedBox(height: 12),
                 _AdminOptionTile(
-                  icon: Icons.content_cut,
+                  icon: LucideIcons.scissors,
                   title: 'Gestionar barberos',
                   onTap: () => context.go('/admin'),
                 ),
                 const SizedBox(height: 12),
                 _AdminOptionTile(
-                  icon: Icons.miscellaneous_services,
+                  icon: LucideIcons.scissors,
                   title: 'Gestionar servicios',
                   onTap: () => context.go('/admin'),
                 ),
@@ -184,7 +185,7 @@ class _MetricRow extends StatelessWidget {
                 title,
                 style: Theme.of(
                   context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700, fontVariations: const [FontVariation('wght', 700.0)]),
               ),
               const SizedBox(height: 4),
               Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
@@ -216,7 +217,7 @@ class _AdminOptionTile extends StatelessWidget {
           Icon(icon, size: 22),
           const SizedBox(width: 12),
           Expanded(child: Text(title)),
-          const Icon(Icons.chevron_right_rounded),
+          const Icon(LucideIcons.chevronRight),
         ],
       ),
     );

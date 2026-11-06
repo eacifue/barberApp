@@ -19,7 +19,7 @@ export function Badge({ children, variant = 'muted', dot = false }: BadgeProps) 
           'bg-[var(--warning-soft)] text-[var(--warning)]': variant === 'warning',
           'bg-[var(--danger-soft)] text-[var(--danger)]': variant === 'danger',
           'bg-[var(--info-soft)] text-[var(--info)]': variant === 'info',
-          'bg-[var(--surface-hover)] text-[var(--text-muted)]': variant === 'muted',
+          'bg-[var(--surface-hover)] text-[var(--text-ink-muted)]': variant === 'muted',
         },
       )}
     >

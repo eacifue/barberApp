@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -216,7 +217,7 @@ class _ReservaProgress extends StatelessWidget {
                     color: i == 0
                         ? AppColors.textPrimaryOf(context)
                         : AppColors.textMutedOf(context),
-                    fontWeight: i == 0 ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: i == 0 ? FontWeight.w700 : FontWeight.w500, fontVariations: [FontVariation('wght', i == 0 ? 700.0 : 500.0)],
                   ),
                 ),
               ),
@@ -272,7 +273,7 @@ class _FiltroServicios extends StatelessWidget {
                   color: isSelected
                       ? AppColors.primary
                       : AppColors.textMutedOf(context),
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w600, fontVariations: const [FontVariation('wght', 600.0)],
                 ),
               ),
             ),
@@ -315,7 +316,7 @@ class _EmptyServicios extends StatelessWidget {
                 color: AppColors.primary.withValues(alpha: 0.1),
               ),
               child: const Icon(
-                Icons.content_cut,
+                LucideIcons.scissors,
                 size: 54,
                 color: AppColors.primary,
               ),

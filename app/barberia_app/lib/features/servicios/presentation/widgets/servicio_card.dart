@@ -1,8 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/service_type_icon.dart';
 import '../../domain/servicio_model.dart';
 
 class ServicioCard extends StatelessWidget {
@@ -61,7 +63,7 @@ class ServicioCard extends StatelessWidget {
                             Text(
                               servicio.nombre,
                               style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.w700),
+                                  ?.copyWith(fontWeight: FontWeight.w700, fontVariations: const [FontVariation('wght', 700.0)]),
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -74,7 +76,7 @@ class ServicioCard extends StatelessWidget {
                             Row(
                               children: [
                                 Icon(
-                                  Icons.schedule_rounded,
+                                  LucideIcons.clock,
                                   size: 16,
                                   color: AppColors.textMutedOf(context),
                                 ),
@@ -144,25 +146,8 @@ class _TipoIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lower = tipo.toLowerCase();
-    IconData icon = Icons.content_cut_rounded;
-    if (lower.contains('barba')) {
-      icon = Icons.face_retouching_natural_rounded;
-    } else if (lower.contains('combo')) {
-      icon = Icons.auto_awesome_mosaic_rounded;
-    } else if (lower.contains('tinte')) {
-      icon = Icons.palette_rounded;
-    }
-
-    return Container(
-      width: 72,
-      height: 72,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        color: AppColors.primary.withValues(alpha: 0.08),
-      ),
-      child: Icon(icon, color: AppColors.primary, size: 24),
-    );
+    // Se conserva el tamaño actual de la tarjeta; la fase 3 la lleva a 48 px.
+    return ServiceTypeBadge(tipo: tipo, size: 72);
   }
 }
 

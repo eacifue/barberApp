@@ -1,0 +1,69 @@
+{
+ "v": 3,
+ "createdOnFiles": {"v": 1, "at": "2026-11-06T06:12:36Z"},
+ "title": "BarberShop Medellín — App móvil",
+ "launch": {"view": "canvas"},
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {"x": 0, "y": 0, "w": 390, "h": 844, "title": "1 · Servicio", "is_interactive": true},
+  "Reserva-2-Barbero.dc.html": {"x": 470, "y": 0, "w": 390, "h": 844, "title": "2 · Barbero", "is_interactive": true},
+  "Reserva-3-Horario.dc.html": {"x": 940, "y": 0, "w": 390, "h": 1300, "title": "3 · Fecha y hora (pantalla completa)", "is_interactive": true},
+  "Reserva-4-Confirmar.dc.html": {"x": 1410, "y": 0, "w": 390, "h": 920, "title": "4 · Confirmar", "is_interactive": true},
+  "Reserva-Exito.dc.html": {"x": 1880, "y": 0, "w": 390, "h": 844, "title": "Reserva confirmada", "is_interactive": true},
+
+  "Servicios-error.dc.html": {"x": 0, "y": 1720, "w": 390, "h": 844, "title": "1 · Error al cargar servicios"},
+  "Horario-cargando.dc.html": {"x": 470, "y": 1720, "w": 390, "h": 1300, "title": "3 · Cargando horarios"},
+  "Horario-sin-horarios.dc.html": {"x": 940, "y": 1720, "w": 390, "h": 1300, "title": "3 · Día sin horarios"},
+  "Horario-expirado.dc.html": {"x": 1410, "y": 1720, "w": 390, "h": 1300, "title": "3 · Tiempo expirado"},
+  "Confirmar-salir.dc.html": {"x": 1880, "y": 1720, "w": 390, "h": 920, "title": "4 · Salir sin reservar"},
+  "Confirmar-reprogramando.dc.html": {"x": 2350, "y": 1720, "w": 390, "h": 920, "title": "4 · Modo reprogramación", "is_interactive": true},
+
+  "Mis-citas.dc.html": {"x": 0, "y": 3440, "w": 390, "h": 844, "title": "Mis citas · Próximas", "is_interactive": true},
+  "Citas-historial.dc.html": {"x": 470, "y": 3440, "w": 390, "h": 844, "title": "Mis citas · Historial"},
+  "Citas-vacio.dc.html": {"x": 940, "y": 3440, "w": 390, "h": 844, "title": "Mis citas · Sin citas"},
+  "Cita-detalle.dc.html": {"x": 1410, "y": 3440, "w": 390, "h": 920, "title": "Detalle de cita", "is_interactive": true},
+  "Cita-cancelar.dc.html": {"x": 1880, "y": 3440, "w": 390, "h": 920, "title": "Detalle · Cancelar cita"},
+  "Cita-calificar.dc.html": {"x": 2350, "y": 3440, "w": 390, "h": 844, "title": "Detalle · Calificar servicio"},
+
+  "Oscuro-servicio.dc.html": {"x": 0, "y": 4780, "w": 390, "h": 844, "title": "Oscuro · Servicio"},
+  "Oscuro-horario.dc.html": {"x": 470, "y": 4780, "w": 390, "h": 1300, "title": "Oscuro · Fecha y hora"},
+  "Oscuro-confirmar.dc.html": {"x": 940, "y": 4780, "w": 390, "h": 920, "title": "Oscuro · Confirmar"},
+  "Oscuro-citas.dc.html": {"x": 1410, "y": 4780, "w": 390, "h": 844, "title": "Oscuro · Mis citas"},
+  "Oscuro-detalle.dc.html": {"x": 1880, "y": 4780, "w": 390, "h": 920, "title": "Oscuro · Detalle"},
+
+  "Splash.dc.html": {"x": 0, "y": 6500, "w": 390, "h": 844, "title": "Splash"},
+  "Onboarding.dc.html": {"x": 470, "y": 6500, "w": 390, "h": 844, "title": "Onboarding 1 · Reserva en 4 pasos", "is_interactive": true},
+  "Onboarding-2.dc.html": {"x": 940, "y": 6500, "w": 390, "h": 844, "title": "Onboarding 2 · Horario apartado", "is_interactive": true},
+  "Onboarding-3.dc.html": {"x": 1410, "y": 6500, "w": 390, "h": 844, "title": "Onboarding 3 · Permiso de notificaciones", "is_interactive": true},
+  "Login.dc.html": {"x": 1880, "y": 6500, "w": 390, "h": 844, "title": "Iniciar sesión", "is_interactive": true},
+  "Login-error.dc.html": {"x": 2350, "y": 6500, "w": 390, "h": 844, "title": "Iniciar sesión · Error"},
+  "Registro.dc.html": {"x": 2820, "y": 6500, "w": 390, "h": 844, "title": "Crear cuenta", "is_interactive": true},
+  "Registro-errores.dc.html": {"x": 3290, "y": 6500, "w": 390, "h": 844, "title": "Crear cuenta · Validación"},
+
+  "Inicio.dc.html": {"x": 0, "y": 7764, "w": 390, "h": 1400, "title": "Inicio · con próxima cita (pantalla completa)", "is_interactive": true},
+  "Inicio-sin-cita.dc.html": {"x": 470, "y": 7764, "w": 390, "h": 1400, "title": "Inicio · sin citas"},
+  "Oscuro-inicio.dc.html": {"x": 940, "y": 7764, "w": 390, "h": 1400, "title": "Oscuro · Inicio"},
+  "Oscuro-login.dc.html": {"x": 1410, "y": 7764, "w": 390, "h": 844, "title": "Oscuro · Iniciar sesión"}
+ },
+ "order": [
+  "Main.dc.html", "Reserva-2-Barbero.dc.html", "Reserva-3-Horario.dc.html", "Reserva-4-Confirmar.dc.html", "Reserva-Exito.dc.html",
+  "Servicios-error.dc.html", "Horario-cargando.dc.html", "Horario-sin-horarios.dc.html", "Horario-expirado.dc.html", "Confirmar-salir.dc.html", "Confirmar-reprogramando.dc.html",
+  "Mis-citas.dc.html", "Citas-historial.dc.html", "Citas-vacio.dc.html", "Cita-detalle.dc.html", "Cita-cancelar.dc.html", "Cita-calificar.dc.html",
+  "Oscuro-servicio.dc.html", "Oscuro-horario.dc.html", "Oscuro-confirmar.dc.html", "Oscuro-citas.dc.html", "Oscuro-detalle.dc.html",
+  "Splash.dc.html", "Onboarding.dc.html", "Onboarding-2.dc.html", "Onboarding-3.dc.html", "Login.dc.html", "Login-error.dc.html", "Registro.dc.html", "Registro-errores.dc.html",
+  "Inicio.dc.html", "Inicio-sin-cita.dc.html", "Oscuro-inicio.dc.html", "Oscuro-login.dc.html"
+ ],
+ "notes": {
+  "row1": {"x": 0, "y": -300, "text": "Flujo de reserva · 4 pasos", "kind": "title1", "maxW": 2740},
+  "hold": {"x": 2350, "y": 0, "w": 380, "size": "m", "fill": "orange", "text": "Horario apartado (5 min)\n\nAl tocar un horario el servidor lo bloquea 5 minutos. La cuenta regresiva usa la hora de expiración que devuelve el servidor, no un reloj local.\n\nÚltimo minuto: la cuenta pasa a naranja y se anuncia una vez a lectores de pantalla.\n\nTocar otro horario libera el anterior. Salir del paso 4 pide confirmación.\n\nPrototipo: usa Play y los botones Continuar / Reservar ahora / Ver mis citas."},
+  "row2": {"x": 0, "y": 1420, "text": "Estados de la reserva: error, carga, vacío, expiración, salida y reprogramación", "kind": "title1", "maxW": 2740},
+  "row3": {"x": 0, "y": 3140, "text": "Mis citas y detalle", "kind": "title1", "maxW": 2740},
+  "row4": {"x": 0, "y": 4480, "text": "Tema oscuro", "kind": "title1", "maxW": 2740},
+  "row5": {"x": 0, "y": 6200, "text": "Primera apertura y acceso", "kind": "title1", "maxW": 3680},
+  "row6": {"x": 0, "y": 7464, "text": "Inicio del cliente", "kind": "title1", "maxW": 1800},
+  "acceso": {"x": 3760, "y": 6500, "w": 380, "size": "m", "fill": "orange", "text": "Primera apertura\n\nSplash (máx. 1 s) → 3 pantallas de onboarding saltables → Iniciar sesión.\n\nEl permiso de notificaciones se pide en la pantalla 3 con un botón propio antes del diálogo del sistema; «Ahora no» no vuelve a preguntar hasta la primera reserva.\n\nLogin y registro: etiqueta arriba, errores debajo de cada campo y un aviso general solo cuando el servidor rechaza las credenciales.\n\nPrototipo: Play desde Onboarding 1."}
+ },
+ "designSystems": [
+  {"title": "BarberShop Medellín", "namespace": "bsm", "artifact": "https://claude.ai/artifact/7JjuG41wCsxyV7GbAv9vXU", "version": "1793975674-f8b1", "copiedAt": "2026-11-06T14:34:50Z"}
+ ]
+}

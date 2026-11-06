@@ -47,7 +47,7 @@ export function ToastContainer() {
             key={t.id}
             role="alert"
             className={[
-              'relative flex items-start gap-3 overflow-hidden rounded-[22px] border px-4 py-4 shadow-[0_18px_48px_rgba(15,23,42,0.14)] backdrop-blur-xl',
+              'relative flex items-start gap-3 overflow-hidden rounded-[22px] border px-4 py-4 shadow-lg',
               s.bg,
             ].join(' ')}
           >
@@ -62,7 +62,7 @@ export function ToastContainer() {
             <button
               type="button"
               onClick={() => dismiss(t.id)}
-              className="ml-1 mt-0.5 shrink-0 rounded-full text-[var(--text-faint)] transition-colors hover:text-[var(--text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+              className="ml-1 mt-0.5 shrink-0 rounded-full text-[var(--text-faint)] transition-colors hover:text-[var(--text-strong)] focus-visible:outline-none focus-visible:shadow-focus"
               aria-label="Cerrar notificación"
             >
               <X className="h-4 w-4" />

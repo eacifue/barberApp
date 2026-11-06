@@ -204,8 +204,8 @@ export function DisponibilidadPage() {
 
       <PageHeader title="Disponibilidad" subtitle="Vista semanal operativa y slots del dia" />
 
-      <p className="mb-3 text-sm text-color-muted">
-        Barbería: <span className="font-medium text-color-base">{barberiaActualNombre}</span>
+      <p className="mb-3 text-sm text-ink-muted">
+        Barbería: <span className="font-medium text-ink">{barberiaActualNombre}</span>
       </p>
 
       <div className="mb-4 grid gap-3 rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-4 md:grid-cols-3">
@@ -229,7 +229,7 @@ export function DisponibilidadPage() {
         />
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-color-base">
+      <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-ink">
         <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-[var(--success)]" />Verde = Disponible</span>
         <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-[var(--danger)]" />Rojo = Ocupado</span>
         <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-[var(--info)]" />Azul = Redis activo</span>
@@ -239,35 +239,35 @@ export function DisponibilidadPage() {
       <div className="overflow-x-auto rounded-xl border border-[var(--border2)] bg-[var(--surface2)]">
         <div className="min-w-[860px]">
           <div className="grid grid-cols-[90px_repeat(6,minmax(120px,1fr))] border-b border-[var(--border)] bg-[var(--ink2)]">
-            <div className="px-2 py-2 text-[10px] uppercase tracking-[0.08em] text-color-muted">Hora</div>
+            <div className="px-2 py-2 text-[10px] uppercase tracking-[0.08em] text-ink-muted">Hora</div>
             {weekDates.map((date, idx) => (
               <button
                 type="button"
                 key={date}
                 onClick={() => setSelectedDayInWeek(date)}
                 className={[
-                  'px-2 py-2 text-left text-[10px] uppercase tracking-[0.08em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)]',
+                  'px-2 py-2 text-left text-[10px] uppercase tracking-[0.08em] focus-visible:outline-none focus-visible:ring-inset focus-visible:shadow-focus',
                   selectedDayInWeek === date
                     ? 'bg-[var(--accent-soft)] text-[var(--accent-strong)]'
-                    : 'text-color-muted hover:bg-[var(--surface-hover)]',
+                    : 'text-ink-muted hover:bg-[var(--surface-hover)]',
                 ].join(' ')}
               >
                 {weekLabels[idx]}
-                <div className="text-[11px] normal-case text-color-muted">{date.slice(5)}</div>
+                <div className="text-[11px] normal-case text-ink-muted">{date.slice(5)}</div>
               </button>
             ))}
           </div>
 
           {hours.map((hour) => (
             <div key={hour} className="grid grid-cols-[90px_repeat(6,minmax(120px,1fr))] border-b border-[var(--border)] last:border-b-0">
-              <div className="px-2 py-2 text-xs text-color-muted">{hour}</div>
+              <div className="px-2 py-2 text-xs text-ink-muted">{hour}</div>
               {weekDates.map((date) => {
                 const day = dayMap.get(date)
                 const slot = day?.slots.find((item) => normalizeTime(item.horaInicio) === hour)
                 const cita = day?.citas.find((item) => normalizeTime(item.horaInicio) === hour)
 
                 if (!slot) {
-                  return <div key={`${date}-${hour}`} className="px-2 py-2 text-[11px] text-color-faint">-</div>
+                  return <div key={`${date}-${hour}`} className="px-2 py-2 text-[11px] text-ink-muted">-</div>
                 }
 
                 if (slot.bloqueadoPorRedis) {
@@ -286,7 +286,7 @@ export function DisponibilidadPage() {
                       <button
                         type="button"
                         onClick={() => onCreateFromCell(date, hour)}
-                        className="w-full rounded-md bg-[var(--success-soft)] px-2 py-1 text-[11px] text-[var(--success)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+                        className="w-full rounded-md bg-[var(--success-soft)] px-2 py-1 text-[11px] text-[var(--success)] hover:opacity-80 focus-visible:outline-none focus-visible:shadow-focus"
                       >
                         Libre
                       </button>
@@ -315,8 +315,8 @@ export function DisponibilidadPage() {
 
       <div className="mt-5 rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-4">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-color-base">Slots del dia seleccionado</h2>
-          <span className="text-xs text-color-muted">{selectedDayInWeek}</span>
+          <h2 className="text-sm font-semibold text-ink">Slots del dia seleccionado</h2>
+          <span className="text-xs text-ink-muted">{selectedDayInWeek}</span>
         </div>
         <div className="flex flex-wrap gap-2">
           {(selectedDayData?.slots ?? []).map((slot) => {
@@ -325,7 +325,7 @@ export function DisponibilidadPage() {
                 ? 'bg-[var(--info-soft)] text-[var(--info)]'
                 : slot.disponible
                   ? 'bg-[var(--success-soft)] text-[var(--success)]'
-                  : 'bg-[var(--surface-strong)] text-color-base'
+                  : 'bg-[var(--surface-strong)] text-ink'
 
             return (
               <button
@@ -337,7 +337,7 @@ export function DisponibilidadPage() {
                   }
                 }}
                 className={[
-                  'inline-flex h-[30px] items-center justify-center rounded px-2 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]',
+                  'inline-flex h-[30px] items-center justify-center rounded px-2 text-xs focus-visible:outline-none focus-visible:shadow-focus',
                   baseClass,
                 ].join(' ')}
               >
@@ -346,7 +346,7 @@ export function DisponibilidadPage() {
             )
           })}
           {(selectedDayData?.slots ?? []).length === 0 ? (
-            <p className="text-sm text-color-muted">No hay slots para este dia.</p>
+            <p className="text-sm text-ink-muted">No hay slots para este dia.</p>
           ) : null}
         </div>
       </div>

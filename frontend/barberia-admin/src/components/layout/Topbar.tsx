@@ -39,7 +39,7 @@ export function Topbar({ title, onToggleNavigation }: TopbarProps) {
         <button
           type="button"
           onClick={onToggleNavigation}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface-overlay)] text-[var(--text-base)] transition duration-200 hover:border-[var(--accent)] hover:text-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)] lg:hidden"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface-overlay)] text-[var(--text-base)] transition duration-200 hover:border-brass-ink hover:text-brass-ink focus-visible:outline-none focus-visible:shadow-focus lg:hidden"
           aria-label="Abrir navegación"
         >
           <Menu className="h-4 w-4" />
@@ -51,7 +51,7 @@ export function Topbar({ title, onToggleNavigation }: TopbarProps) {
         <button
           type="button"
           onClick={toggleTheme}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface-overlay)] text-[var(--text-base)] transition duration-200 hover:-translate-y-0.5 hover:border-[var(--accent)] hover:text-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)]"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface-overlay)] text-[var(--text-base)] transition duration-200 hover:border-brass-ink hover:text-brass-ink focus-visible:outline-none focus-visible:shadow-focus"
           aria-label={theme === 'dark' ? 'Activar modo claro' : 'Activar modo oscuro'}
           title={theme === 'dark' ? 'Activar modo claro' : 'Activar modo oscuro'}
         >
@@ -68,14 +68,14 @@ export function Topbar({ title, onToggleNavigation }: TopbarProps) {
         </button>
 
         <div className="hidden items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--surface-overlay)] px-3 py-1.5 md:flex">
-          <span className="text-xs text-[var(--text-muted)]">{usuario?.nombre ?? 'Usuario'}</span>
-          <span className="text-[10px] font-medium text-[var(--accent)]">
+          <span className="text-xs text-[var(--text-ink-muted)]">{usuario?.nombre ?? 'Usuario'}</span>
+          <span className="text-[10px] font-medium text-brass-ink">
             {usuario?.rol ?? ''}
           </span>
           <button
             type="button"
             onClick={() => setIsLogoutOpen(true)}
-            className="ml-1 rounded-full p-1 text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--danger)]"
+            className="ml-1 rounded-full p-1 text-[var(--text-ink-muted)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--danger)]"
             aria-label="Cerrar sesión"
             title="Cerrar sesión"
           >
@@ -86,19 +86,19 @@ export function Topbar({ title, onToggleNavigation }: TopbarProps) {
 
       <Modal open={isLogoutOpen} title="Confirmar cierre de sesión" onClose={() => setIsLogoutOpen(false)}>
         <div className="space-y-4">
-          <p className="text-sm text-[var(--text-muted)]">¿Estás seguro de que deseas cerrar sesión?</p>
+          <p className="text-sm text-[var(--text-ink-muted)]">¿Estás seguro de que deseas cerrar sesión?</p>
           <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={() => setIsLogoutOpen(false)}
-              className="rounded-xl border border-[var(--border-strong)] px-4 py-2 text-sm text-[var(--text-muted)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--text-strong)]"
+              className="rounded-xl border border-[var(--border-strong)] px-4 py-2 text-sm text-[var(--text-ink-muted)] transition-colors hover:bg-[var(--surface-hover)] hover:text-[var(--text-strong)]"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={handleLogoutConfirm}
-              className="rounded-xl bg-[var(--danger)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-92"
+              className="rounded-xl bg-[var(--danger)] px-4 py-2 text-sm font-semibold text-danger-on transition hover:opacity-92"
             >
               Cerrar sesión
             </button>

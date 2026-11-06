@@ -78,7 +78,7 @@ export function DataTable<T extends object>({
                 className={[
                   'grid gap-x-4 border-b border-[var(--border-subtle)] px-5 py-4 text-sm text-[var(--text-base)] last:border-b-0',
                   onRowClick
-                    ? 'cursor-pointer transition-colors hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--focus-ring)]'
+                    ? 'cursor-pointer transition-colors hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:ring-inset focus-visible:shadow-focus'
                     : '',
                 ].join(' ')}
                 style={{ gridTemplateColumns: templateColumns, minWidth }}
@@ -98,7 +98,7 @@ export function DataTable<T extends object>({
       </div>
 
       {!loading && data.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center text-sm text-[var(--text-muted)]">
+        <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center text-sm text-[var(--text-ink-muted)]">
           <svg viewBox="0 0 24 24" className="h-8 w-8 text-[var(--text-faint)]" fill="none" aria-hidden="true">
             <rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
             <path d="M8 9h8M8 13h8" stroke="currentColor" strokeWidth="1.5" />

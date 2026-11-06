@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -45,7 +46,7 @@ class BarberoCard extends StatelessWidget {
                             barbero.nombreCompleto,
                             style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w700, fontVariations: const [FontVariation('wght', 700.0)],
                                   fontSize: 16,
                                 ),
                           ),
@@ -75,7 +76,7 @@ class BarberoCard extends StatelessWidget {
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(
                                     color: AppColors.primary,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w600, fontVariations: const [FontVariation('wght', 600.0)],
                                   ),
                             ),
                           ),
@@ -100,7 +101,7 @@ class BarberoCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Icon(
-                      Icons.chevron_right_rounded,
+                      LucideIcons.chevronRight,
                       color: isAvailable
                           ? AppColors.primary
                           : AppColors.textMutedOf(context),
@@ -190,7 +191,7 @@ class _AvatarInitials extends StatelessWidget {
         initials.isEmpty ? 'B' : initials,
         style: Theme.of(context).textTheme.titleLarge?.copyWith(
           color: AppColors.primary,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w800, fontVariations: const [FontVariation('wght', 700.0)],
         ),
       ),
     );
@@ -207,7 +208,7 @@ class _RatingStars extends StatelessWidget {
         5,
         (index) => const Padding(
           padding: EdgeInsets.only(right: 2),
-          child: Icon(Icons.star_rounded, color: AppColors.warning, size: 14),
+          child: Icon(LucideIcons.star, color: AppColors.warning, size: 14),
         ),
       ),
     );
@@ -231,7 +232,7 @@ class _EspecialidadChip extends StatelessWidget {
         label,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
           color: AppColors.primary,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w600, fontVariations: const [FontVariation('wght', 600.0)],
         ),
       ),
     );

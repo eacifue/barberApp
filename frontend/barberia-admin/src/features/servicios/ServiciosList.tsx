@@ -71,12 +71,12 @@ function RazorIcon() {
 }
 
 function getTipoStyle(tipo: TipoServicio) {
-  if (tipo === TipoServicio.Corte) return { color: '#e07060', icon: <ScissorIcon /> }
-  if (tipo === TipoServicio.Barba) return { color: '#5dba8e', icon: <BeardIcon /> }
-  if (tipo === TipoServicio.Tinte) return { color: '#5b9bd5', icon: <DropIcon /> }
-  if (tipo === TipoServicio.Combo) return { color: '#D4A017', icon: <StarIcon /> }
-  if (tipo === TipoServicio.Afeitado) return { color: '#c890e8', icon: <RazorIcon /> }
-  return { color: '#6b6b6b', icon: <StarIcon /> }
+  if (tipo === TipoServicio.Corte) return { color: 'var(--brass-ink)', icon: <ScissorIcon /> }
+  if (tipo === TipoServicio.Barba) return { color: 'var(--brass-ink)', icon: <BeardIcon /> }
+  if (tipo === TipoServicio.Tinte) return { color: 'var(--brass-ink)', icon: <DropIcon /> }
+  if (tipo === TipoServicio.Combo) return { color: 'var(--brass-ink)', icon: <StarIcon /> }
+  if (tipo === TipoServicio.Afeitado) return { color: 'var(--brass-ink)', icon: <RazorIcon /> }
+  return { color: 'var(--brass-ink)', icon: <StarIcon /> }
 }
 
 function formatCurrency(value: number) {

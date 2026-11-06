@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
@@ -94,7 +95,7 @@ class _SeleccionHorarioScreenState
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(
-                  Icons.info_outline,
+                  LucideIcons.info,
                   color: AppColors.primary,
                   size: 44,
                 ),
@@ -143,7 +144,7 @@ class _SeleccionHorarioScreenState
         appBar: AppBar(
           title: const Text('Selecciona fecha y hora'),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded),
+            icon: const Icon(LucideIcons.arrowLeft),
             onPressed: goBackAndRelease,
           ),
         ),
@@ -314,7 +315,7 @@ class _ContextoReservaCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.person_rounded, color: AppColors.primary),
+          const Icon(LucideIcons.user, color: AppColors.primary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -323,7 +324,7 @@ class _ContextoReservaCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: Theme.of(
                 context,
-              ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
+              ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700, fontVariations: const [FontVariation('wght', 700.0)]),
             ),
           ),
         ],
@@ -446,7 +447,7 @@ class _SlotChip extends StatelessWidget {
     if (isSelected) {
       background = AppColors.primary.withValues(alpha: 0.12);
       trailing = const Icon(
-        Icons.check_circle,
+        LucideIcons.circleCheck,
         size: 14,
         color: AppColors.primary,
       );
@@ -485,7 +486,7 @@ class _SlotChip extends StatelessWidget {
                   slot.horaInicioFormateada,
                   style: TextStyle(
                     color: textColor,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w700, fontVariations: const [FontVariation('wght', 700.0)],
                   ),
                 ),
                 if (trailing != null) ...[const SizedBox(width: 6), trailing],
@@ -497,7 +498,7 @@ class _SlotChip extends StatelessWidget {
                 style: TextStyle(
                   color: textColor,
                   fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w600, fontVariations: const [FontVariation('wght', 600.0)],
                 ),
               ),
           ],
@@ -593,7 +594,7 @@ class _BottomReservaBar extends StatelessWidget {
               'Seleccionaste las ${slot.horaInicioFormateada} · $duracionMin min',
               style: Theme.of(
                 context,
-              ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
+              ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700, fontVariations: const [FontVariation('wght', 700.0)]),
             ),
             const SizedBox(height: 8),
             if (estaBloqueando) const LinearProgressIndicator(),
@@ -602,7 +603,7 @@ class _BottomReservaBar extends StatelessWidget {
               'Tiempo restante: $tiempoRestante',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.primary,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w700, fontVariations: const [FontVariation('wght', 700.0)],
               ),
             ),
             const SizedBox(height: 8),
@@ -610,7 +611,7 @@ class _BottomReservaBar extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: estaBloqueando ? null : onContinuar,
-                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                icon: const Icon(LucideIcons.arrowRight, size: 18),
                 label: const Text('CONTINUAR'),
               ),
             ),

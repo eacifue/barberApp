@@ -1,0 +1,554 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-06T15:48:16.657900+00:00",
+  "title": "Design System: BarberShop Medellín",
+  "extensions": {
+    "colorMeta": {
+      "bg": {
+        "role": "neutral",
+        "displayName": "Marfil",
+        "canonical": "#F6F2EA",
+        "dark": "#14110E",
+        "usage": "Fondo de pantalla y de página (Scaffold / body). Marfil en claro, carbón en oscuro."
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Papel",
+        "canonical": "#FFFDF8",
+        "dark": "#1D1915",
+        "usage": "Tarjetas, sidebar, topbar, tablas, barra de navegación inferior. Se separa de `bg` con borde `line`, no con sombra."
+      },
+      "surface-raised": {
+        "role": "neutral",
+        "displayName": "Papel claro",
+        "canonical": "#FFFFFF",
+        "dark": "#27221C",
+        "usage": "Capas flotantes: modales, bottom sheets, menús, popovers. Siempre con `shadow-lg` o `shadow-md`."
+      },
+      "surface-sunken": {
+        "role": "neutral",
+        "displayName": "Papel hundido",
+        "canonical": "#EEE8DC",
+        "dark": "#0F0D0B",
+        "usage": "Hundidos: cabecera de tabla, pista del control segmentado, base de skeleton, días fuera de mes en el calendario."
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hilo",
+        "canonical": "#E3DACB",
+        "dark": "#352E27",
+        "usage": "Hairlines decorativas: borde de tarjeta, divisores, filas de tabla. No sirve como borde de control (no llega a 3:1)."
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Hilo marcado",
+        "canonical": "#8C8172",
+        "dark": "#7F7465",
+        "usage": "Borde de controles interactivos (input, select, botón secundario, chip sin elegir, slot disponible). ≥3:1 sobre `bg`, `surface` y `surface-raised` en ambos temas."
+      },
+      "scrim": {
+        "role": "neutral",
+        "displayName": "scrim",
+        "canonical": "#14110E8F",
+        "dark": "#000000A3",
+        "usage": "Velo detrás de modales, diálogos y bottom sheets."
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Tinta",
+        "canonical": "#1C1814",
+        "dark": "#F4EEE4",
+        "usage": "Texto principal sobre `bg`, `surface`, `surface-raised`, `surface-sunken` y `brass-soft` (≥12:1 en ambos temas)."
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Tinta suave",
+        "canonical": "#675D52",
+        "dark": "#ADA394",
+        "usage": "Texto secundario: metadatos, duración, subtítulos, ayudas de campo, placeholders. ≥4.5:1 sobre las cuatro superficies en ambos temas."
+      },
+      "ink-disabled": {
+        "role": "neutral",
+        "displayName": "Tinta apagada",
+        "canonical": "#A99F92",
+        "dark": "#5E554B",
+        "usage": "Solo texto e íconos deshabilitados (exentos de contraste). Nunca para información que el usuario necesite leer."
+      },
+      "brass": {
+        "role": "primary",
+        "displayName": "Latón pulido",
+        "canonical": "#C6A15B",
+        "dark": "#C6A15B",
+        "usage": "Latón: el único dorado de la marca. Relleno del botón primario, slot elegido, indicador de paso activo, pestaña activa de la barra inferior y logo. No es color de texto ni de ícono sobre superficies claras (2.2:1): para eso `brass-ink`."
+      },
+      "brass-strong": {
+        "role": "primary",
+        "displayName": "Latón hundido",
+        "canonical": "#B08A45",
+        "dark": "#D6B677",
+        "usage": "Hover y pressed de un relleno `brass`."
+      },
+      "on-brass": {
+        "role": "primary",
+        "displayName": "Sobre latón",
+        "canonical": "#1C1814",
+        "dark": "#1C1814",
+        "usage": "Texto e íconos sobre un relleno `brass` o `brass-strong` (7.3:1). Nunca blanco sobre latón."
+      },
+      "brass-ink": {
+        "role": "primary",
+        "displayName": "Tinta de latón",
+        "canonical": "#7A5C24",
+        "dark": "#D9BA7C",
+        "usage": "Latón como texto o ícono: enlaces, precio destacado, ítem activo del sidebar, MEDELLÍN del logo. ≥5:1 sobre `bg`, `surface`, `surface-raised` y `brass-soft`."
+      },
+      "brass-soft": {
+        "role": "primary",
+        "displayName": "Latón lavado",
+        "canonical": "#F2E7D0",
+        "dark": "#2F2718",
+        "usage": "Fondo tintado: chip elegido, ítem activo del sidebar, tarjeta seleccionada, badge Completada. Texto encima en `ink` o `brass-ink`."
+      },
+      "oxblood": {
+        "role": "secondary",
+        "displayName": "Granate de poste",
+        "canonical": "#7B2D26",
+        "dark": "#D27A6A",
+        "usage": "Granate (franja del poste del logo). Acento de marca escaso: cinta Popular, línea de ahora en la agenda. No significa error: el error es `danger`."
+      },
+      "oxblood-soft": {
+        "role": "secondary",
+        "displayName": "Granate lavado",
+        "canonical": "#F4E3E0",
+        "dark": "#2E1515",
+        "usage": "Fondo de la etiqueta Popular / Recomendado con texto `oxblood`."
+      },
+      "carbon": {
+        "role": "neutral",
+        "displayName": "Carbón",
+        "canonical": "#1C1814",
+        "dark": "#1C1814",
+        "usage": "Constante de marca: fondo del splash, ícono de app, panel de marca del login web. No cambia con el tema."
+      },
+      "ivory": {
+        "role": "neutral",
+        "displayName": "Marfil de marca",
+        "canonical": "#F6F2EA",
+        "dark": "#F6F2EA",
+        "usage": "Constante de marca: texto y poste del logo sobre `carbon`. No cambia con el tema."
+      },
+      "inverse": {
+        "role": "neutral",
+        "displayName": "Inverso",
+        "canonical": "#1C1814",
+        "dark": "#F4EEE4",
+        "usage": "Fondo de snackbar/toast y tooltip: contrasta con el tema activo."
+      },
+      "on-inverse": {
+        "role": "neutral",
+        "displayName": "Sobre inverso",
+        "canonical": "#F4EEE4",
+        "dark": "#1C1814",
+        "usage": "Texto sobre `inverse` (15:1)."
+      },
+      "inverse-action": {
+        "role": "neutral",
+        "displayName": "inverse-action",
+        "canonical": "#C6A15B",
+        "dark": "#7A5C24",
+        "usage": "Acción de un snackbar (Deshacer, Reintentar) sobre `inverse`."
+      },
+      "success": {
+        "role": "semantic",
+        "displayName": "success",
+        "canonical": "#1A6E44",
+        "dark": "#5DC28E",
+        "usage": "Éxito como texto/ícono sobre `success-bg`, `surface` y `bg`. Estado Confirmada, slot Disponible."
+      },
+      "success-bg": {
+        "role": "semantic",
+        "displayName": "success-bg",
+        "canonical": "#E2F2E8",
+        "dark": "#15281D",
+        "usage": "Fondo de badge/banner de éxito."
+      },
+      "warning": {
+        "role": "semantic",
+        "displayName": "warning",
+        "canonical": "#A8460B",
+        "dark": "#F2995A",
+        "usage": "Advertencia (naranja, deliberadamente lejos del latón) sobre `warning-bg`, `surface` y `bg`. Estado Pendiente, slot Bloqueado manual, cuenta regresiva < 60 s."
+      },
+      "warning-bg": {
+        "role": "semantic",
+        "displayName": "warning-bg",
+        "canonical": "#FCEBDD",
+        "dark": "#33200F",
+        "usage": "Fondo de badge/banner de advertencia."
+      },
+      "danger": {
+        "role": "semantic",
+        "displayName": "danger",
+        "canonical": "#B42318",
+        "dark": "#F47C70",
+        "usage": "Error y acciones destructivas como texto/ícono sobre `danger-bg`, `surface` y `bg`; relleno del botón peligro. Estado Cancelada."
+      },
+      "danger-bg": {
+        "role": "semantic",
+        "displayName": "danger-bg",
+        "canonical": "#FCE7E5",
+        "dark": "#3A1714",
+        "usage": "Fondo de badge/banner/campo con error."
+      },
+      "on-danger": {
+        "role": "semantic",
+        "displayName": "on-danger",
+        "canonical": "#FFFFFF",
+        "dark": "#1C1814",
+        "usage": "Texto sobre un relleno `danger` (6.5:1 claro, 6.6:1 oscuro)."
+      },
+      "info": {
+        "role": "semantic",
+        "displayName": "info",
+        "canonical": "#1F5FAD",
+        "dark": "#7DB0EE",
+        "usage": "Información sobre `info-bg`, `surface` y `bg`. Estado En progreso, bloqueo temporal (cliente reservando)."
+      },
+      "info-bg": {
+        "role": "semantic",
+        "displayName": "info-bg",
+        "canonical": "#E3EDF9",
+        "dark": "#13233A",
+        "usage": "Fondo de badge/banner informativo."
+      },
+      "neutral": {
+        "role": "semantic",
+        "displayName": "neutral",
+        "canonical": "#675D52",
+        "dark": "#ADA394",
+        "usage": "Estado neutro como texto/ícono sobre `neutral-bg`. No-show, slot Ocupado, Inactivo."
+      },
+      "neutral-bg": {
+        "role": "semantic",
+        "displayName": "neutral-bg",
+        "canonical": "#ECE6DA",
+        "dark": "#2A251F",
+        "usage": "Fondo de badge neutro."
+      },
+      "chart-1": {
+        "role": "chart",
+        "displayName": "chart-1",
+        "canonical": "#A87A24",
+        "dark": "#B48C3C",
+        "usage": "Serie 1 de gráficas (latón). Orden fijo 1→5, nunca cíclico; validado para daltonismo en ambos temas."
+      },
+      "chart-2": {
+        "role": "chart",
+        "displayName": "chart-2",
+        "canonical": "#3A6FB8",
+        "dark": "#5F94D6",
+        "usage": "Serie 2 de gráficas (azul)."
+      },
+      "chart-3": {
+        "role": "chart",
+        "displayName": "chart-3",
+        "canonical": "#B5503C",
+        "dark": "#C9644F",
+        "usage": "Serie 3 de gráficas (terracota)."
+      },
+      "chart-4": {
+        "role": "chart",
+        "displayName": "chart-4",
+        "canonical": "#8A5BB0",
+        "dark": "#9B79CB",
+        "usage": "Serie 4 de gráficas (violeta)."
+      },
+      "chart-5": {
+        "role": "chart",
+        "displayName": "chart-5",
+        "canonical": "#2F8A5A",
+        "dark": "#3F9E6E",
+        "usage": "Serie 5 de gráficas (verde). Una sexta serie se agrupa en Otros."
+      }
+    },
+    "typographyMeta": {
+      "display-lg": {
+        "displayName": "display-lg",
+        "purpose": "Hero del dashboard web, splash y pantalla de éxito."
+      },
+      "display": {
+        "displayName": "display",
+        "purpose": "Título de pantalla en móvil (pasos de reserva, Mis citas, Perfil) y título de página web."
+      },
+      "title-lg": {
+        "displayName": "title-lg",
+        "purpose": "Título de modal, nombre del barbero en su perfil, cifra de KPI secundaria."
+      },
+      "kpi": {
+        "displayName": "kpi",
+        "purpose": "Cifra de tarjeta KPI e importes destacados. Activar cifras tabulares (tnum)."
+      },
+      "title": {
+        "displayName": "title",
+        "purpose": "Encabezado de sección dentro de una pantalla o tarjeta grande."
+      },
+      "title-sm": {
+        "displayName": "title-sm",
+        "purpose": "Título de tarjeta (servicio, barbero, cita), encabezado de diálogo pequeño."
+      },
+      "body-lg": {
+        "displayName": "body-lg",
+        "purpose": "Texto de lectura en móvil y descripciones. Mínimo para inputs (evita el zoom en iOS)."
+      },
+      "body": {
+        "displayName": "body",
+        "purpose": "Texto por defecto en web: celdas de tabla, formularios, listas."
+      },
+      "label": {
+        "displayName": "label",
+        "purpose": "Etiqueta de botón, pestaña y elemento de navegación. Siempre en tipo oración, nunca en mayúsculas."
+      },
+      "label-sm": {
+        "displayName": "label-sm",
+        "purpose": "Badges, chips, etiquetas de campo, encabezado de columna de tabla."
+      },
+      "caption": {
+        "displayName": "caption",
+        "purpose": "Metadatos bajo títulos, ayudas de campo, leyendas de gráfica."
+      },
+      "overline": {
+        "displayName": "overline",
+        "purpose": "Rótulos de sección en resúmenes (Servicio, Barbero, Fecha y hora). Único estilo en mayúsculas."
+      },
+      "numeric": {
+        "displayName": "numeric",
+        "purpose": "Cuenta regresiva y horas grandes. Cifras tabulares obligatorias."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shadow-sm",
+        "value": "0 1px 2px #1C18140F",
+        "dark": "0 1px 2px #00000066",
+        "purpose": "Tarjeta arrastrada en la agenda, barra inferior fija de acción (Continuar)."
+      },
+      {
+        "name": "shadow-md",
+        "value": "0 4px 12px #1C181414, 0 1px 3px #1C18140F",
+        "dark": "0 4px 12px #00000080",
+        "purpose": "Menús, selects abiertos, popovers, barra de navegación flotante en web móvil."
+      },
+      {
+        "name": "shadow-lg",
+        "value": "0 12px 32px #1C18141F, 0 2px 6px #1C181414",
+        "dark": "0 12px 32px #000000A6",
+        "purpose": "Modales, diálogos, bottom sheets, snackbars."
+      },
+      {
+        "name": "focus-ring",
+        "value": "0 0 0 2px #F6F2EA, 0 0 0 4px #7A5C24",
+        "dark": "0 0 0 2px #14110E, 0 0 0 4px #D9BA7C",
+        "purpose": "Foco de teclado (web): 2px del color de fondo + 2px sólidos de `focus`. Como box-shadow para seguir el radio."
+      }
+    ],
+    "motion": [
+      {
+        "name": "duration-fast",
+        "value": "120ms",
+        "purpose": "Hover, pressed, cambio de color de chip o slot."
+      },
+      {
+        "name": "duration-base",
+        "value": "200ms",
+        "purpose": "Abrir/cerrar menús, cambio de pestaña, skeleton → contenido."
+      },
+      {
+        "name": "duration-slow",
+        "value": "320ms",
+        "purpose": "Modales, bottom sheets, transición entre pasos de reserva."
+      },
+      {
+        "name": "duration-celebrate",
+        "value": "900ms",
+        "purpose": "Animación Lottie del check en Reserva confirmada (una vez, sin bucle)."
+      },
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.2, 0, 0, 1)",
+        "purpose": "Por defecto (Material 3 standard)."
+      },
+      {
+        "name": "ease-enter",
+        "value": "cubic-bezier(0.05, 0.7, 0.1, 1)",
+        "purpose": "Elementos que entran: modal, sheet, snackbar."
+      },
+      {
+        "name": "ease-exit",
+        "value": "cubic-bezier(0.3, 0, 0.8, 0.15)",
+        "purpose": "Elementos que salen."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "bp-sm",
+        "value": "390px",
+        "purpose": "Web en celular: drawer + barra inferior flotante, tablas como lista de tarjetas."
+      },
+      {
+        "name": "bp-md",
+        "value": "768px",
+        "purpose": "Tablet: sidebar como drawer, tablas con columnas prioritarias."
+      },
+      {
+        "name": "bp-lg",
+        "value": "1280px",
+        "purpose": "Laptop: sidebar fijo, agenda por columnas."
+      },
+      {
+        "name": "bp-xl",
+        "value": "1440px",
+        "purpose": "Desktop: contenido máximo 1200 px centrado en Dashboard."
+      }
+    ],
+    "themes": {
+      "light": "[data-theme=\"light\"] / :root",
+      "dark": "[data-theme=\"dark\"]",
+      "source": "design/tokens/tokens.css"
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción principal; una por pantalla.",
+      "html": "<button class=\"ds-btn-primary\">Reservar ahora</button>",
+      "css": ".ds-btn-primary{font-family:\"Instrument Sans\",\"Segoe UI\",Roboto,system-ui,sans-serif;background:var(--brass,#C6A15B);color:var(--on-brass,#1C1814);height:44px;padding:0 20px;border:0;border-radius:8px;font-size:15px;font-weight:600;line-height:20px;cursor:pointer;transition:background 120ms cubic-bezier(.2,0,0,1)}.ds-btn-primary:hover{background:var(--brass-strong,#B08A45)}.ds-btn-primary:focus-visible{outline:none;box-shadow:var(--focus-ring,0 0 0 2px #F6F2EA,0 0 0 4px #7A5C24)}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Acción alternativa con borde.",
+      "html": "<button class=\"ds-btn-secondary\">Reprogramar</button>",
+      "css": ".ds-btn-secondary{font-family:\"Instrument Sans\",\"Segoe UI\",Roboto,system-ui,sans-serif;background:var(--surface,#FFFDF8);color:var(--ink,#1C1814);height:44px;padding:0 20px;border:1px solid var(--line-strong,#8C8172);border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:background 120ms}.ds-btn-secondary:hover{background:var(--surface-sunken,#EEE8DC)}.ds-btn-secondary:focus-visible{outline:none;box-shadow:var(--focus-ring,0 0 0 2px #F6F2EA,0 0 0 4px #7A5C24)}"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo con etiqueta visible; 16 px.",
+      "html": "<label class=\"ds-field\"><span>Correo</span><input class=\"ds-input\" placeholder=\"andres@correo.co\"></label>",
+      "css": ".ds-field{font-family:\"Instrument Sans\",\"Segoe UI\",Roboto,system-ui,sans-serif;display:grid;gap:6px;color:var(--ink,#1C1814)}.ds-field span{font-size:13px;font-weight:600}.ds-input{font-family:\"Instrument Sans\",\"Segoe UI\",Roboto,system-ui,sans-serif;height:44px;padding:0 12px;font-size:16px;background:var(--surface,#FFFDF8);color:var(--ink,#1C1814);border:1px solid var(--line-strong,#8C8172);border-radius:8px}.ds-input::placeholder{color:var(--ink-muted,#675D52)}.ds-input:focus-visible{outline:none;border-color:var(--brass-ink,#7A5C24);box-shadow:var(--focus-ring,0 0 0 2px #F6F2EA,0 0 0 4px #7A5C24)}"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "chip-selected",
+      "description": "Filtro por tipo; elegido en latón lavado con check.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip ds-chip-on\">✓ Todos</button><button class=\"ds-chip\">Corte</button><button class=\"ds-chip\">Barba</button></div>",
+      "css": ".ds-chips{display:flex;gap:8px}.ds-chip{font-family:\"Instrument Sans\",\"Segoe UI\",Roboto,system-ui,sans-serif;height:36px;padding:0 14px;border-radius:9999px;border:1px solid var(--line-strong,#8C8172);background:var(--surface,#FFFDF8);color:var(--ink,#1C1814);font-size:13px;font-weight:600;cursor:pointer;transition:background 120ms}.ds-chip:hover{background:var(--surface-sunken,#EEE8DC)}.ds-chip-on{background:var(--brass-soft,#F2E7D0);border:2px solid var(--brass-ink,#7A5C24)}"
+    },
+    {
+      "name": "Service Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Tarjeta plana con cuadro de ícono latón.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-ico\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"6\" cy=\"6\" r=\"3\"/><path d=\"M8.12 8.12 12 12\"/><path d=\"M20 4 8.12 15.88\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><path d=\"M14.8 14.8 20 20\"/></svg></div><div><div class=\"ds-t\">Corte + barba</div><div class=\"ds-m\">50 min</div></div><div class=\"ds-p\">$50.000</div></div>",
+      "css": ".ds-card{font-family:\"Instrument Sans\",\"Segoe UI\",Roboto,system-ui,sans-serif;display:flex;align-items:center;gap:12px;padding:16px;background:var(--surface,#FFFDF8);border:1px solid var(--line,#E3DACB);border-radius:12px;color:var(--ink,#1C1814)}.ds-ico{width:48px;height:48px;border-radius:8px;display:grid;place-items:center;background:var(--brass-soft,#F2E7D0);color:var(--brass-ink,#7A5C24)}.ds-t{font-size:17px;font-weight:600;line-height:24px}.ds-m{font-size:12px;color:var(--ink-muted,#675D52)}.ds-p{margin-left:auto;font-weight:600;font-variant-numeric:tabular-nums}"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "custom",
+      "refersTo": "badge",
+      "description": "Estado = color + ícono + palabra.",
+      "html": "<span class=\"ds-badge\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/></svg>Confirmada</span>",
+      "css": ".ds-badge{font-family:\"Instrument Sans\",\"Segoe UI\",Roboto,system-ui,sans-serif;display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:13px;font-weight:600;line-height:16px;color:var(--status-confirmada,#1A6E44);background:var(--status-confirmada-bg,#E2F2E8)}"
+    },
+    {
+      "name": "Sidebar Nav",
+      "kind": "nav",
+      "refersTo": "",
+      "description": "Ítem activo en latón lavado con texto tinta de latón.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-i ds-on\" href=\"#\">Agenda</a><a class=\"ds-nav-i\" href=\"#\">Clientes</a><a class=\"ds-nav-i\" href=\"#\">Barberos</a></nav>",
+      "css": ".ds-nav{font-family:\"Instrument Sans\",\"Segoe UI\",Roboto,system-ui,sans-serif;display:grid;gap:2px;width:220px;padding:8px;background:var(--surface,#FFFDF8);border:1px solid var(--line,#E3DACB);border-radius:12px}.ds-nav-i{display:block;padding:10px 12px;border-radius:8px;color:var(--ink,#1C1814);text-decoration:none;font-size:15px;font-weight:600;transition:background 120ms}.ds-nav-i:hover{background:var(--surface-sunken,#EEE8DC)}.ds-on{background:var(--brass-soft,#F2E7D0);color:var(--brass-ink,#7A5C24)}.ds-nav-i:focus-visible{outline:none;box-shadow:var(--focus-ring,0 0 0 2px #F6F2EA,0 0 0 4px #7A5C24)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Latón y Portal",
+    "overview": "Una barbería clásica de barrio con oficio: puerta en arco, poste de barbero, latón pulido, sillas de cuero, papel marfil. La interfaz es neutra y cálida (marfil y carbón) y un solo dorado, el latón, marca lo que se elige o se activa. El granate del poste aparece muy poco, como firma. Clásica en la tipografía (Gloock, letrero de vitrina) y moderna en la interacción (Instrument Sans, controles grandes, respuesta inmediata).\n\nEs una interfaz de trabajo: rápido antes que bonito. El cliente reserva en menos de un minuto y recepción ve el día y actúa en un toque. Cada pantalla tiene una acción principal. La densidad es cómoda en el móvil (lectura a 16 px) y compacta en el panel (lectura a 14 px, tablas densas), con los mismos tokens y nombres en las dos plataformas.\n\nLo que se descartó: los tres dorados anteriores (`#8B6F47` bronce, `#B8860B` gold), el efecto vidrio, los paneles semitransparentes, los degradados de fondo, Inter, Material Icons y el emblema de tijeras cruzadas.",
+    "keyCharacteristics": [
+      "Marfil y carbón cálidos, un solo dorado (`brass`) como relleno de selección y acción.",
+      "Gloock solo en títulos y cifras; Instrument Sans en todo lo que se lee o se toca.",
+      "Tarjetas planas separadas por hairlines; sombra solo en lo que flota.",
+      "Estado = color + ícono + palabra, siempre.",
+      "Claro y oscuro de primera clase en las dos plataformas."
+    ],
+    "rules": [
+      {
+        "name": "The One Brass Rule",
+        "body": "Hay un solo dorado. Cualquier #B8860B, #8B6F47, degradado dorado o latón usado como color de texto sobre claro es un error.",
+        "section": "colors"
+      },
+      {
+        "name": "The Never White On Brass Rule",
+        "body": "Sobre un relleno latón el texto y los íconos son on-brass (carbón), en los dos temas.",
+        "section": "colors"
+      },
+      {
+        "name": "The Color Plus Word Rule",
+        "body": "Ningún estado se comunica solo con color: lleva ícono y etiqueta. Leyendas, badges, slots y tendencias de KPI incluidos.",
+        "section": "colors"
+      },
+      {
+        "name": "The Sign Painter Rule",
+        "body": "Gloock solo en títulos de pantalla, nombre del barbero en su perfil y cifras protagonistas. Nunca en párrafos, botones, tablas ni formularios.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Money Rule",
+        "body": "Precios, horas, contadores y columnas numéricas usan cifras tabulares (tabular-nums / FontFeature.tabularFigures()).",
+        "section": "typography"
+      },
+      {
+        "name": "The Sentence Case Rule",
+        "body": "Botones, pestañas y títulos en tipo oración. «Continuar», nunca «CONTINUAR».",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Card Rule",
+        "body": "Las tarjetas no llevan sombra; se separan con line.",
+        "section": "elevation"
+      },
+      {
+        "name": "The No Glass Rule",
+        "body": "Sin backdrop-filter, sin paneles semitransparentes, sin degradados de fondo. El velo detrás de modales es scrim.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Selected State Rule",
+        "body": "Seleccionado = fondo brass-soft + borde brass-ink de 2 px + check en latón. Nunca una barra de color en el borde izquierdo.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "**Do** usar `brass` solo como relleno y `brass-ink` cuando el latón es texto o ícono.",
+      "**Do** dar a cada estado de cita su token `status-*`, su ícono y su palabra.",
+      "**Do** escribir el copy en es-CO con tildes: `$45.000`, `3:30 p. m.`, `jueves 12 de noviembre`, semana desde el lunes (`design/docs/03-copy.md`).",
+      "**Do** definir los estados de carga (Skeleton tras 300 ms), vacío (EmptyState con siguiente paso), error (Banner o Toast con «Reintentar») y deshabilitado en cada pantalla.",
+      "**Do** mantener los objetivos táctiles ≥ 44 px y el foco visible en web.",
+      "**Do** probar cada pantalla en claro y en oscuro, y con el texto del sistema al 130 %."
+    ],
+    "donts": [
+      "**Don't** usar `gold #B8860B`, `#8B6F47`, degradados dorados ni un segundo dorado.",
+      "**Don't** usar efecto vidrio, paneles semitransparentes ni degradados de fondo.",
+      "**Don't** poner texto blanco sobre latón.",
+      "**Don't** usar Gloock en botones, tablas, formularios ni párrafos.",
+      "**Don't** poner sombra en las tarjetas ni una barra de color en el borde izquierdo para marcar la selección.",
+      "**Don't** usar `oxblood` para errores; el error es `danger`.",
+      "**Don't** usar MAYÚSCULAS en botones o pestañas, «Aceptar», «OK» ni «Enviar».",
+      "**Don't** usar emoji ni Material Icons; los íconos son Lucide.",
+      "**Don't** inventar datos del negocio: portada, slogan, dirección, teléfono y correo van como marcadores entre corchetes."
+    ]
+  }
+}

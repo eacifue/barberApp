@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Inicio</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 1400px; position: relative; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--font-sans); display: flex; flex-direction: column; gap: 28px; box-sizing: border-box; padding-bottom: 96px;">
+  <header style="padding: 20px 16px 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <h1 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 32px; line-height: 36px;">Hola, Andrés</h1>
+      <p style="margin: 0; font-size: 16px; line-height: 24px; color: var(--ink-muted);">¿Listo para tu próximo corte?</p>
+    </div>
+    <x-import component-from-global-scope="BSM.IconButton" icon="bell" label="Notificaciones" badge="{{yes}}"></x-import>
+  </header>
+
+  <section aria-labelledby="h-cita" style="padding: 0 16px; display: flex; flex-direction: column; gap: 12px;">
+    <sc-if value="{{conCita}}" hint-placeholder-val="{{yes}}">
+      <h2 id="h-cita" style="margin: 0; font-size: 20px; line-height: 26px; font-weight: 600;">Tu próxima cita</h2>
+      <x-import component-from-global-scope="BSM.AppointmentCard" service="Corte + barba" barber="Julián Restrepo" date="2026-11-12" start="15:00" end="15:50" status="Confirmada" price="{{p50}}" actions="{{citaActions}}"></x-import>
+      <a href="Main.dc.html" class="bsm-btn bsm-btn-secondary bsm-btn-lg bsm-btn-block">
+        <x-import component-from-global-scope="BSM.Icon" name="calendar-plus" size="20"></x-import>
+        Reservar otra cita
+      </a>
+    </sc-if>
+    <sc-if value="{{sinCita}}" hint-placeholder-val="{{no}}">
+      <div style="padding: 20px; border-radius: var(--radius-lg); background: var(--brass-soft); display: flex; flex-direction: column; gap: 12px;">
+        <span style="color: var(--brass-ink);"><x-import component-from-global-scope="BSM.Icon" name="calendar-plus" size="28"></x-import></span>
+        <h2 id="h-cita" style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 24px; line-height: 30px;">No tienes citas próximas</h2>
+        <p style="margin: 0; font-size: 15px; line-height: 22px; color: var(--ink);">Reserva en menos de un minuto y te avisamos antes de tu turno.</p>
+        <a href="Main.dc.html" class="bsm-btn bsm-btn-primary bsm-btn-lg bsm-btn-block">Reservar una cita</a>
+      </div>
+    </sc-if>
+  </section>
+
+  <section aria-labelledby="h-serv" style="display: flex; flex-direction: column; gap: 12px;">
+    <div style="padding: 0 16px; display: flex; align-items: baseline; justify-content: space-between;">
+      <h2 id="h-serv" style="margin: 0; font-size: 20px; line-height: 26px; font-weight: 600;">Servicios populares</h2>
+      <a href="Main.dc.html" style="font-size: 14px; line-height: 20px; font-weight: 600; padding: 12px 0;">Ver todos</a>
+    </div>
+    <div role="list" style="display: flex; gap: 12px; padding: 0 16px; overflow: hidden;">
+      <div role="listitem" style="flex: 0 0 280px;"><x-import component-from-global-scope="BSM.ServiceCard" name="Corte + barba" type="Combo" description="Corte completo y perfilado con toalla caliente." duration="{{d50}}" price="{{p50}}" tag="Popular"></x-import></div>
+      <div role="listitem" style="flex: 0 0 280px;"><x-import component-from-global-scope="BSM.ServiceCard" name="Corte clásico" type="Corte" description="Tijera y máquina, lavado y peinado." duration="{{d30}}" price="{{p35}}"></x-import></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-barb" style="display: flex; flex-direction: column; gap: 12px;">
+    <div style="padding: 0 16px;">
+      <h2 id="h-barb" style="margin: 0; font-size: 20px; line-height: 26px; font-weight: 600;">Nuestros barberos</h2>
+    </div>
+    <div role="list" style="display: flex; gap: 8px; padding: 0 16px; overflow: hidden;">
+      <sc-for list="{{barbers}}" as="b" hint-placeholder-count="4">
+        <a role="listitem" href="#perfil" style="flex: 0 0 84px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 0; border-radius: var(--radius-md); text-decoration: none; color: var(--ink);">
+          <x-import component-from-global-scope="BSM.Avatar" name="{{b.name}}" size="{{s64}}"></x-import>
+          <span style="font-size: 14px; line-height: 18px; font-weight: 600; text-align: center;">{{b.first}}</span>
+          <x-import component-from-global-scope="BSM.Rating" value="{{b.rating}}" compact="{{yes}}"></x-import>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-local" style="margin: 0 16px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); overflow: hidden;">
+    <div role="img" aria-label="Foto de portada de la barbería" style="height: 168px; background: var(--surface-sunken); display: flex; align-items: center; justify-content: center; color: var(--ink-muted); font-size: 13px; line-height: 18px;">[Foto de portada de la barbería]</div>
+    <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <h2 id="h-local" style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 24px; line-height: 30px;">BarberShop Medellín</h2>
+        <p style="margin: 0; font-size: 15px; line-height: 22px; color: var(--ink-muted);">[Slogan de la barbería]</p>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: flex-start;">
+        <span style="color: var(--brass-ink); padding-top: 2px;"><x-import component-from-global-scope="BSM.Icon" name="clock" size="20"></x-import></span>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+          <span style="display: flex; align-items: center; gap: 8px; font-size: 15px; line-height: 20px; font-weight: 600;">Abierto hasta las 8:00 p. m. <x-import component-from-global-scope="BSM.Badge" tone="success" icon="circle-check">Abierto</x-import></span>
+          <span style="font-size: 14px; line-height: 20px; color: var(--ink-muted);">Lunes a sábado, 9:00 a. m. – 8:00 p. m. · Domingo cerrado</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: flex-start;">
+        <span style="color: var(--brass-ink); padding-top: 2px;"><x-import component-from-global-scope="BSM.Icon" name="map-pin" size="20"></x-import></span>
+        <div style="flex: 1; display: flex; flex-direction: column;">
+          <span style="font-size: 15px; line-height: 20px; font-weight: 600;">El Poblado, Medellín</span>
+          <span style="font-size: 14px; line-height: 20px; color: var(--ink-muted);">[Dirección de la barbería]</span>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+        <x-import component-from-global-scope="BSM.Button" variant="secondary" icon="phone">Llamar</x-import>
+        <x-import component-from-global-scope="BSM.Button" variant="secondary" icon="message-circle">WhatsApp</x-import>
+      </div>
+      <x-import component-from-global-scope="BSM.Button" icon="navigation" block="{{yes}}">Cómo llegar</x-import>
+    </div>
+  </section>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0;">
+    <x-import component-from-global-scope="BSM.BottomNav" active="Inicio"></x-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"cita":{"editor":"boolean","default":true,"section":"Vista"},"$preview":{"width":390,"height":1400}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const conCita = this.props.cita ?? true;
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      yes: true, no: false, s64: 64, d30: 30, d50: 50, p35: 35000, p50: 50000,
+      conCita: !!conCita, sinCita: !conCita,
+      citaActions: [{ label: 'Cómo llegar', icon: 'navigation', variant: 'secondary' }, { label: 'Ver detalle', variant: 'ghost', href: 'Cita-detalle.dc.html' }],
+      barbers: [
+        { name: 'Julián Restrepo', first: 'Julián', rating: 4.9 },
+        { name: 'Mateo Vélez', first: 'Mateo', rating: 4.7 },
+        { name: 'Santiago Ochoa', first: 'Santiago', rating: 4.6 },
+        { name: 'Sebastián Arango', first: 'Sebastián', rating: 4.8 }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

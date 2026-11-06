@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 type AvatarSize = 'sm' | 'md' | 'lg' | 'xl'
 
@@ -17,27 +17,8 @@ const sizeMap: Record<AvatarSize, number> = {
   xl: 72,
 }
 
-function hashCode(value: string) {
-  let hash = 0
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash << 5) - hash + value.charCodeAt(i)
-    hash |= 0
-  }
-  return Math.abs(hash)
-}
-
-function getColor(nombre: string) {
-  const colors = [
-    'rgba(192,57,43,.2)',
-    'rgba(184,134,11,.15)',
-    'rgba(26,82,118,.2)',
-    'rgba(26,122,74,.2)',
-    'rgba(74,32,96,.2)',
-  ]
-  const textColors = ['#e07060', '#D4A017', '#5b9bd5', '#5dba8e', '#c890e8']
-  const idx = hashCode(nombre) % 5
-  return { bg: colors[idx], color: textColors[idx] }
-}
+// Sistema: iniciales en Gloock sobre latón lavado (design/docs/componentes/Avatar.md).
+const initialsColor = { bg: 'var(--brass-soft)', color: 'var(--brass-ink)' }
 
 function UserSilhouetteIcon() {
   return (
@@ -53,14 +34,13 @@ export function Avatar({ fotoUrl, nombre, apellido, size = 'md', dashedFallback 
   const fullName = `${nombre} ${apellido}`.trim()
   const initials = `${nombre?.[0] ?? ''}${apellido?.[0] ?? ''}`.toUpperCase()
   const avatarSize = sizeMap[size]
-  const color = useMemo(() => getColor(nombre || fullName), [fullName, nombre])
 
   if (!fotoUrl && !nombre && !apellido) {
     return (
       <div
         className={[
-          'inline-flex items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--gold-l)]',
-          dashedFallback ? 'border border-dashed border-[var(--accent)]' : '',
+          'inline-flex items-center justify-center rounded-full bg-brass-soft text-brass-ink',
+          dashedFallback ? 'border border-dashed border-brass-ink' : '',
         ].join(' ')}
         style={{ width: avatarSize, height: avatarSize }}
         title="Foto pendiente"
@@ -86,8 +66,8 @@ export function Avatar({ fotoUrl, nombre, apellido, size = 'md', dashedFallback 
     return (
       <div
         className={[
-          'inline-flex items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--gold-l)]',
-          dashedFallback ? 'border border-dashed border-[var(--accent)]' : '',
+          'inline-flex items-center justify-center rounded-full bg-brass-soft text-brass-ink',
+          dashedFallback ? 'border border-dashed border-brass-ink' : '',
         ].join(' ')}
         style={{ width: avatarSize, height: avatarSize }}
         title="Foto pendiente"
@@ -100,14 +80,14 @@ export function Avatar({ fotoUrl, nombre, apellido, size = 'md', dashedFallback 
   return (
     <div
       className={[
-        'inline-flex items-center justify-center rounded-full font-semibold',
-        dashedFallback ? 'border border-dashed border-[var(--accent)]' : '',
+        'inline-flex items-center justify-center rounded-full font-display',
+        dashedFallback ? 'border border-dashed border-brass-ink' : '',
       ].join(' ')}
       style={{
         width: avatarSize,
         height: avatarSize,
-        background: color.bg,
-        color: color.color,
+        background: initialsColor.bg,
+        color: initialsColor.color,
         fontSize: avatarSize >= 56 ? 18 : 13,
       }}
       title={fullName}

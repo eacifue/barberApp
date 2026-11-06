@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Crear cuenta</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn,a.bsm-iconbtn{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; position: relative; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--font-sans); display: flex; flex-direction: column; box-sizing: border-box; padding: 8px 24px 28px;">
+  <a href="Login.dc.html" class="bsm-iconbtn" aria-label="Volver a iniciar sesión" style="margin-left: -10px;">
+    <x-import component-from-global-scope="BSM.Icon" name="arrow-left" size="24"></x-import>
+  </a>
+
+  <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px;">
+    <h1 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 32px; line-height: 36px;">Crea tu cuenta</h1>
+    <p style="margin: 0; font-size: 16px; line-height: 24px; color: var(--ink-muted);">Solo lo necesario para tus reservas.</p>
+  </div>
+
+  <form style="margin-top: 20px; display: flex; flex-direction: column; gap: 14px;">
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+      <x-import component-from-global-scope="BSM.Input" label="Nombre" default-value="{{vNombre}}" error="{{eNombre}}" autocomplete="given-name"></x-import>
+      <x-import component-from-global-scope="BSM.Input" label="Apellido" default-value="Gómez" autocomplete="family-name"></x-import>
+    </div>
+    <x-import component-from-global-scope="BSM.Input" label="Celular" type="tel" icon="phone" default-value="300 123 4567" hint="Solo para avisos de tus citas." autocomplete="tel"></x-import>
+    <x-import component-from-global-scope="BSM.Input" label="Correo electrónico" type="email" icon="mail" default-value="{{vCorreo}}" error="{{eCorreo}}" autocomplete="email"></x-import>
+    <x-import component-from-global-scope="BSM.Input" label="Contraseña" revealable="{{yes}}" default-value="{{vClave}}" hint="Mínimo 6 caracteres." error="{{eClave}}" autocomplete="new-password"></x-import>
+    <a href="Onboarding.dc.html" class="bsm-btn bsm-btn-primary bsm-btn-lg bsm-btn-block" style="margin-top: 6px;">Crear cuenta</a>
+  </form>
+
+  <p style="margin: auto 0 0; text-align: center; font-size: 15px; line-height: 22px; color: var(--ink-muted);">¿Ya tienes cuenta? <a href="Login.dc.html" style="font-weight: 600;">Inicia sesión</a></p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"estado":{"editor":"enum","options":["normal","errores"],"default":"normal","section":"Vista"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const err = (this.props.estado ?? 'normal') === 'errores';
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      yes: true,
+      vNombre: err ? '' : 'Andrés', eNombre: err ? 'Escribe tu nombre.' : '',
+      vCorreo: err ? 'andres@correo' : 'andres.gomez@correo.co', eCorreo: err ? 'Ingresa un correo válido, por ejemplo nombre@correo.co.' : '',
+      vClave: err ? '12345' : 'barberia26', eClave: err ? 'La contraseña debe tener al menos 6 caracteres.' : ''
+    };
+  }
+}
+</script>
+</body>
+</html>

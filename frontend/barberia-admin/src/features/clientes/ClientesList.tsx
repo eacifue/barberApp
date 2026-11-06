@@ -239,7 +239,7 @@ export function ClientesList() {
               header: 'FCM',
               width: '0.6fr',
               render: (row) => (
-                <span className={row.tokenFCM ? 'text-[var(--success)]' : 'text-color-muted'}>
+                <span className={row.tokenFCM ? 'text-[var(--success)]' : 'text-ink-muted'}>
                   {row.tokenFCM ? <BellActiveIcon /> : <BellOffIcon />}
                 </span>
               ),
@@ -304,19 +304,19 @@ export function ClientesList() {
               <div className="mb-4 flex items-center gap-3">
                 <Avatar fotoUrl={cliente.fotoUrl} nombre={cliente.nombre} apellido={cliente.apellido} size="md" />
                 <div>
-                  <p className="text-sm font-semibold text-color-strong">{cliente.nombre} {cliente.apellido}</p>
-                  <p className="text-xs text-color-muted">{cliente.correo}</p>
+                  <p className="text-sm font-semibold text-ink">{cliente.nombre} {cliente.apellido}</p>
+                  <p className="text-xs text-ink-muted">{cliente.correo}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="rounded-lg bg-[var(--surface3)] p-2">
-                  <p className="text-[10px] uppercase text-color-muted">N Citas</p>
-                  <p className="text-color-strong">{cliente.totalCitas}</p>
+                  <p className="text-[10px] uppercase text-ink-muted">N Citas</p>
+                  <p className="text-ink">{cliente.totalCitas}</p>
                 </div>
                 <div className="rounded-lg bg-[var(--surface3)] p-2">
-                  <p className="text-[10px] uppercase text-color-muted">Ultima visita</p>
-                  <p className="text-color-strong">{daysSince(cliente.ultimaCita)}</p>
+                  <p className="text-[10px] uppercase text-ink-muted">Ultima visita</p>
+                  <p className="text-ink">{daysSince(cliente.ultimaCita)}</p>
                 </div>
               </div>
 
@@ -344,7 +344,7 @@ export function ClientesList() {
             </article>
           ))}
           {!clientesQuery.isLoading && clientes.length === 0 ? (
-            <div className="rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-6 text-center text-sm text-color-muted md:col-span-2 xl:col-span-3">
+            <div className="rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-6 text-center text-sm text-ink-muted md:col-span-2 xl:col-span-3">
               No hay clientes registrados
             </div>
           ) : null}

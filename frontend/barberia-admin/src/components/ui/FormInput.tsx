@@ -19,14 +19,14 @@ export function FormInput({ label, error, required, hint, className, ...props }:
         {...props}
         className={[
           'form-control h-12 rounded-2xl px-4 outline-none transition duration-200',
-          error ? 'border-[var(--danger)] focus-visible:outline-[rgba(180,79,70,0.2)]' : '',
+          error ? 'border-[var(--danger)]' : '',
           className,
         ]
           .filter(Boolean)
           .join(' ')}
       />
       {error ? <span className="form-message-error text-xs">{error}</span> : null}
-      {!error && hint ? <span className="text-xs text-[var(--text-muted)]">{hint}</span> : null}
+      {!error && hint ? <span className="text-xs text-[var(--text-ink-muted)]">{hint}</span> : null}
     </label>
   )
 }

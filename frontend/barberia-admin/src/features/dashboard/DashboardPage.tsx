@@ -212,7 +212,7 @@ export function DashboardPage() {
               <h2 className="mt-3 font-display text-4xl leading-none text-[var(--text-strong)] md:text-5xl">
                 La operación de hoy está bajo control.
               </h2>
-              <p className="mt-4 max-w-xl text-sm leading-6 text-[var(--text-muted)] md:text-base">
+              <p className="mt-4 max-w-xl text-sm leading-6 text-[var(--text-ink-muted)] md:text-base">
                 Visualiza de inmediato el estado de las citas, la ocupación del equipo y la actividad comercial sin cambiar de módulo.
               </p>
             </div>
@@ -242,7 +242,7 @@ export function DashboardPage() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--text-faint)]">Estado del sistema</p>
             <div className="mt-4 space-y-3">
               {systemStatusLoading ? (
-                <div className="rounded-[22px] border border-[var(--border-subtle)] bg-[var(--surface-overlay)] px-4 py-3 text-sm text-[var(--text-muted)]">
+                <div className="rounded-[22px] border border-[var(--border-subtle)] bg-[var(--surface-overlay)] px-4 py-3 text-sm text-[var(--text-ink-muted)]">
                   Revisando estado del sistema…
                 </div>
               ) : (
@@ -278,7 +278,7 @@ export function DashboardPage() {
           loading={citasHoyQuery.isLoading}
           icon={<CalendarCheck2 className="h-5 w-5" />}
           caption="Reservas previstas para hoy"
-          valueTone="text-[var(--accent)]"
+          valueTone="text-brass-ink"
         />
         <StatCard
           label="Ingresos"
@@ -308,7 +308,7 @@ export function DashboardPage() {
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="font-display text-3xl text-[var(--text-strong)]">Citas recientes</h3>
-              <p className="mt-2 text-sm text-[var(--text-muted)]">Turnos del día ordenados por hora y estado.</p>
+              <p className="mt-2 text-sm text-[var(--text-ink-muted)]">Turnos del día ordenados por hora y estado.</p>
             </div>
             <Button variant="ghost" onClick={() => navigate('/citas')}>
               Ver agenda
@@ -351,7 +351,7 @@ export function DashboardPage() {
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-faint)]">Calendario operativo</p>
               <h3 className="mt-2 font-display text-3xl capitalize text-[var(--text-strong)]">{calendar.title}</h3>
             </div>
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-brass-ink">
               <Activity className="h-5 w-5" />
             </span>
           </div>
@@ -373,24 +373,24 @@ export function DashboardPage() {
                   key={item.dateIso}
                   onClick={() => navigate(`/citas?fecha=${item.dateIso}`)}
                   className={[
-                    'relative h-12 rounded-2xl border border-transparent text-sm text-[var(--text-base)] transition hover:border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]',
-                    isToday ? 'border-[var(--border-subtle)] bg-[var(--accent-soft)] text-[var(--accent)]' : 'bg-[var(--surface-overlay)]',
+                    'relative h-12 rounded-2xl border border-transparent text-sm text-[var(--text-base)] transition hover:border-[var(--border-subtle)] hover:bg-[var(--surface-hover)] focus-visible:outline-none focus-visible:shadow-focus',
+                    isToday ? 'border-[var(--border-subtle)] bg-[var(--accent-soft)] text-brass-ink' : 'bg-[var(--surface-overlay)]',
                   ].join(' ')}
                 >
                   {item.day}
-                  {hasCitas ? <span className="absolute bottom-1.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[var(--accent)]" /> : null}
+                  {hasCitas ? <span className="absolute bottom-1.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-brass" /> : null}
                 </button>
               )
             })}
           </div>
           <div className="mt-5 rounded-[24px] border border-[var(--border-subtle)] bg-[var(--surface-overlay)] p-4">
             <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+              <span className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-brass-ink">
                 <Scissors className="h-4 w-4" />
               </span>
               <div>
                 <p className="text-sm font-semibold text-[var(--text-strong)]">Operación del mes</p>
-                <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">
+                <p className="mt-1 text-sm leading-6 text-[var(--text-ink-muted)]">
                   {citasMes.length} citas registradas en el mes actual.
                 </p>
               </div>

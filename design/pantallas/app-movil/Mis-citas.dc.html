@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Mis citas</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-cardlink{display:block;text-decoration:none;color:inherit;border-radius:12px}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; position: relative; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--font-sans); display: flex; flex-direction: column;">
+  <header style="padding: 20px 16px 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+    <h1 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 32px; line-height: 36px;">Mis citas</h1>
+    <x-import component-from-global-scope="BSM.IconButton" icon="bell" label="Notificaciones" badge="{{yes}}"></x-import>
+  </header>
+  <div style="padding: 0 16px;">
+    <x-import component-from-global-scope="BSM.Tabs" label="Citas" items="{{tabs}}" value="{{tab}}"></x-import>
+  </div>
+
+  <sc-if value="{{isProximas}}" hint-placeholder-val="{{yes}}">
+    <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px;">
+      <a href="Cita-detalle.dc.html" class="bsm-cardlink" aria-label="Ver detalle: Corte + barba, jueves 12 de noviembre, 3:00 p. m.">
+        <x-import component-from-global-scope="BSM.AppointmentCard" service="Corte + barba" barber="Julián Restrepo" date="2026-11-12" start="15:00" end="15:50" status="Confirmada" price="{{p50}}"></x-import>
+      </a>
+      <a href="Cita-detalle.dc.html" class="bsm-cardlink" aria-label="Ver detalle: Perfilado de barba, viernes 20 de noviembre, 10:00 a. m.">
+        <x-import component-from-global-scope="BSM.AppointmentCard" service="Perfilado de barba" barber="Mateo Vélez" date="2026-11-20" start="10:00" end="10:20" status="Pendiente" price="{{p20}}"></x-import>
+      </a>
+      <p style="margin: 4px 0 0; font-size: 13px; line-height: 18px; color: var(--ink-muted); text-align: center;">Toca una cita para reprogramarla, cancelarla o ver cómo llegar.</p>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isHistorial}}" hint-placeholder-val="{{no}}">
+    <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px;">
+      <span class="bsm-overline">Octubre 2026</span>
+      <x-import component-from-global-scope="BSM.AppointmentCard" service="Corte clásico" barber="Julián Restrepo" date="2026-10-28" start="18:00" end="18:30" status="Completada" price="{{p35}}" actions="{{rateAction}}"></x-import>
+      <x-import component-from-global-scope="BSM.AppointmentCard" service="Corte + barba" barber="Mateo Vélez" date="2026-10-15" start="11:00" end="11:50" status="Cancelada" actions="{{againAction}}"></x-import>
+      <span class="bsm-overline" style="margin-top: 4px;">Septiembre 2026</span>
+      <x-import component-from-global-scope="BSM.AppointmentCard" service="Afeitado con toalla caliente" barber="Julián Restrepo" date="2026-09-20" start="10:00" end="10:30" status="NoShow" actions="{{againAction}}"></x-import>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isVacio}}" hint-placeholder-val="{{no}}">
+    <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 0 16px 96px;">
+      <x-import component-from-global-scope="BSM.EmptyState" icon="calendar-days" title="Aún no tienes citas" body="Reserva en menos de un minuto y te avisamos antes de tu turno." action-label="Reservar" action-icon="calendar-plus"></x-import>
+    </div>
+  </sc-if>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0;">
+    <x-import component-from-global-scope="BSM.BottomNav" active="Mis citas"></x-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"vista":{"editor":"enum","options":["proximas","historial","vacio"],"default":"proximas","section":"Vista"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const vista = this.props.vista ?? 'proximas';
+    const vacio = vista === 'vacio';
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      yes: true, no: false, p20: 20000, p35: 35000, p50: 50000,
+      tab: vista === 'historial' ? 'historial' : 'proximas',
+      tabs: [{ value: 'proximas', label: 'Próximas', count: vacio ? undefined : 2 }, { value: 'historial', label: 'Historial' }],
+      isProximas: vista === 'proximas', isHistorial: vista === 'historial', isVacio: vacio,
+      rateAction: [{ label: 'Calificar servicio', variant: 'ghost', icon: 'star' }],
+      againAction: [{ label: 'Reservar de nuevo', variant: 'ghost', icon: 'rotate-ccw' }]
+    };
+  }
+}
+</script>
+</body>
+</html>
