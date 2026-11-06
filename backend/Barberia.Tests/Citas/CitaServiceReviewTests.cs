@@ -14,65 +14,8 @@ namespace Barberia.Tests.Citas;
 // Pruebas de servicio sobre EF Core InMemory: cubren reglas de negocio
 // independientes del proveedor (propiedad, estado, duplicado, rangos).
 // No prueban el índice único relacional de reviews.CitaId (eso lo garantiza Postgres).
-public class CitaServiceReviewTests
+public class CitaServiceReviewTests : CitaServiceTestBase
 {
-    private sealed class FakeCurrentUser(Guid clienteId) : ICurrentUserService
-    {
-        public Guid? UserId => clienteId;
-        public Guid? ClienteId => clienteId;
-        public string Role => Roles.Cliente;
-        public bool IsAuthenticated => true;
-        public bool IsAdmin => false;
-        public bool IsAdminBarberia => false;
-        public bool IsBarbero => false;
-        public bool IsCliente => true;
-        public Guid? BarberoId => null;
-    }
-
-    private readonly string databaseName = Guid.NewGuid().ToString();
-    private readonly Guid clienteId = Guid.NewGuid();
-    private readonly Guid otroClienteId = Guid.NewGuid();
-    private readonly Guid barberoId = Guid.NewGuid();
-    private readonly Guid servicioId = Guid.NewGuid();
-
-    private BarberiaDbContext NewContext(Guid currentClienteId) =>
-        new(new DbContextOptionsBuilder<BarberiaDbContext>().UseInMemoryDatabase(databaseName).Options,
-            new FakeCurrentUser(currentClienteId));
-
-    private CitaService NewService(BarberiaDbContext context, Guid currentClienteId)
-    {
-        var mapper = new MapperConfiguration(cfg => cfg.AddMaps(typeof(CitaProfile).Assembly)).CreateMapper();
-        // La creación de reseñas no usa bloqueos de slots, notificaciones ni el validador de creación.
-        return new CitaService(context, null!, null!, new FakeCurrentUser(currentClienteId), null!, mapper);
-    }
-
-    private async Task<Guid> SeedCitaAsync(EstadoCita estado, Guid? owner = null)
-    {
-        await using var context = NewContext(clienteId);
-        if (!await context.Barberos.IgnoreQueryFilters().AnyAsync(x => x.Id == barberoId))
-        {
-            context.Clientes.Add(new Cliente { Id = clienteId, Nombre = "Andrés", Apellido = "Gómez", Correo = "andres@correo.co" });
-            context.Clientes.Add(new Cliente { Id = otroClienteId, Nombre = "Laura", Apellido = "Henao", Correo = "laura@correo.co" });
-            context.Barberos.Add(new Barbero { Id = barberoId, Nombre = "Julián", Apellido = "Restrepo" });
-            context.Servicios.Add(new Servicio { Id = servicioId, Nombre = "Corte clásico", DuracionMinutos = 30, Precio = 35000 });
-        }
-
-        var cita = new Cita
-        {
-            ClienteId = owner ?? clienteId,
-            BarberoId = barberoId,
-            ServicioId = servicioId,
-            FechaCita = new DateOnly(2026, 10, 28),
-            HoraInicio = new TimeOnly(18, 0),
-            HoraFin = new TimeOnly(18, 30),
-            PrecioFinal = 35000,
-            Estado = estado,
-        };
-        context.Citas.Add(cita);
-        await context.SaveChangesAsync();
-        return cita.Id;
-    }
-
     [Fact]
     public async Task CrearReview_CitaCompletadaDelCliente_GuardaLaResenaConElBarberoDeLaCita()
     {

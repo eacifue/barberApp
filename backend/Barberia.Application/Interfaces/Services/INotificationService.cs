@@ -11,4 +11,6 @@ public interface INotificationService
     Task NotificarCitaCanceladaBarberoAsync(Guid barberoId, string mensaje, CancellationToken cancellationToken);
 
     Task NotificarCitaCanceladaClienteAsync(Guid clienteId, string mensaje, CancellationToken cancellationToken);
+
+    Task NotificarCitaNoAsistidaClienteAsync(Guid clienteId, string mensaje, CancellationToken cancellationToken);
 }

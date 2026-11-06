@@ -98,6 +98,24 @@ public class CitasController : ControllerBase
         return Ok(ApiResponse<CitaDto>.Ok(result, "Cita completada correctamente."));
     }
 
+    /// <summary>El barbero empieza el servicio: Confirmada → En progreso.</summary>
+    [HttpPut("api/v1/citas/{id:guid}/iniciar")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia}")]
+    public async Task<ActionResult<ApiResponse<CitaDto>>> IniciarAsync([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        var result = await citaService.IniciarCitaAsync(id, cancellationToken);
+        return Ok(ApiResponse<CitaDto>.Ok(result, "Servicio iniciado."));
+    }
+
+    /// <summary>El cliente no llegó (Pendiente o Confirmada), desde la hora de inicio de la cita.</summary>
+    [HttpPut("api/v1/citas/{id:guid}/no-asistio")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia}")]
+    public async Task<ActionResult<ApiResponse<CitaDto>>> MarcarNoAsistioAsync([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        var result = await citaService.MarcarNoAsistioAsync(id, cancellationToken);
+        return Ok(ApiResponse<CitaDto>.Ok(result, "Cita marcada como «No asistió»."));
+    }
+
     [HttpGet("api/v1/barberos/{id:guid}/citas")]
     [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia},{Roles.Barbero}")]
     public async Task<ActionResult<ApiResponse<List<CitaDto>>>> GetByBarberoAsync(

@@ -22,6 +22,7 @@ public static class DependencyInjection
         services.AddScoped<IBarberiaService, BarberiaService>();
         services.AddScoped<IClienteAdminService, ClienteAdminService>();
         services.AddScoped<IDisponibilidadService, DisponibilidadService>();
+        services.AddSingleton(TimeProvider.System);
         services.AddScoped<ICitaService, CitaService>();
         services.AddScoped<IAvailabilityService, AvailabilityService>();
         services.AddScoped<IAuthService, AuthService>();

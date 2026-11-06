@@ -38,6 +38,11 @@ public class FirebasePushNotificationService : INotificationService
         await SendToClienteAsync(clienteId, "Cita cancelada", mensaje, cancellationToken);
     }
 
+    public async Task NotificarCitaNoAsistidaClienteAsync(Guid clienteId, string mensaje, CancellationToken cancellationToken)
+    {
+        await SendToClienteAsync(clienteId, "Te esperábamos", mensaje, cancellationToken);
+    }
+
     private async Task SendToClienteAsync(Guid clienteId, string titulo, string mensaje, CancellationToken cancellationToken)
     {
         try
