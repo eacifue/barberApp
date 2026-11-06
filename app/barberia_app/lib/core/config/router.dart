@@ -11,6 +11,7 @@ import '../../features/auth/presentation/screens/registro_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/barberos/presentation/screens/seleccion_barbero_screen.dart';
 import '../../features/citas/presentation/screens/confirmacion_screen.dart';
+import '../../features/citas/presentation/screens/calificar_cita_screen.dart';
 import '../../features/citas/presentation/screens/cita_exitosa_screen.dart';
 import '../../features/citas/presentation/screens/detalle_cita_screen.dart';
 import '../../features/citas/presentation/screens/mis_citas_screen.dart';
@@ -20,6 +21,7 @@ import '../../features/dev/componentes_screen.dart';
 import '../../features/horarios/presentation/screens/seleccion_horario_screen.dart';
 import '../../features/servicios/presentation/screens/home_screen.dart';
 import '../../features/servicios/presentation/screens/seleccion_servicio_screen.dart';
+import '../../shared/widgets/bsm/bsm.dart';
 import '../auth/jwt_utils.dart';
 import '../storage/secure_storage.dart';
 
@@ -92,6 +94,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: ':id',
                 builder: (context, state) =>
                     DetalleCitaScreen(citaId: state.pathParameters['id']!),
+                routes: [
+                  GoRoute(
+                    path: 'calificar',
+                    builder: (context, state) =>
+                        CalificarCitaScreen(citaId: state.pathParameters['id']!),
+                  ),
+                ],
               ),
             ],
           ),
@@ -136,11 +145,17 @@ class _AppShell extends ConsumerStatefulWidget {
 
   final Widget child;
 
+  // Destinos de la barra inferior: (ruta, prefijo que la marca activa, ítem).
+  // Perfil se agrega cuando exista su pantalla (design/docs/02-patrones.md).
   static const _tabs = [
-    ('/dashboard', LucideIcons.layoutDashboard, 'Dashboard'),
-    ('/reservar/servicio', LucideIcons.calendarCheck, 'Reservar'),
-    ('/appointments', LucideIcons.scissors, 'Mis citas'),
+    ('/dashboard', '/dashboard', BsmNavItem(icon: LucideIcons.house, label: 'Inicio')),
+    ('/reservar/servicio', '/reservar', BsmNavItem(icon: LucideIcons.calendarPlus, label: 'Reservar')),
+    ('/appointments', '/appointments', BsmNavItem(icon: LucideIcons.calendarDays, label: 'Mis citas')),
   ];
+
+  /// La barra se ve solo en las pantallas raíz; se oculta en los pasos 2–4,
+  /// en la confirmación y en los detalles, para mantener el foco.
+  static const _conBarra = {'/dashboard', '/reservar/servicio', '/appointments'};
 
   @override
   ConsumerState<_AppShell> createState() => _AppShellState();
@@ -212,22 +227,20 @@ class _AppShellState extends ConsumerState<_AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    final location = GoRouterState.of(context).uri.toString();
+    final location = GoRouterState.of(context).uri.path;
     final currentIndex = _AppShell._tabs.indexWhere(
-      (item) => location.startsWith(item.$1),
+      (item) => location.startsWith(item.$2),
     );
 
     return Scaffold(
       body: widget.child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex < 0 ? 0 : currentIndex,
-        onDestinationSelected: (index) => context.go(_AppShell._tabs[index].$1),
-        height: 72,
-        destinations: [
-          for (final tab in _AppShell._tabs)
-            NavigationDestination(icon: Icon(tab.$2), label: tab.$3),
-        ],
-      ),
+      bottomNavigationBar: _AppShell._conBarra.contains(location)
+          ? BsmBottomNav(
+              items: [for (final tab in _AppShell._tabs) tab.$3],
+              selectedIndex: currentIndex < 0 ? 0 : currentIndex,
+              onSelected: (index) => context.go(_AppShell._tabs[index].$1),
+            )
+          : null,
     );
   }
 }

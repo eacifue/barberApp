@@ -21,6 +21,7 @@ _$CitaModelImpl _$$CitaModelImplFromJson(Map<String, dynamic> json) =>
         json['servicio'] as Map<String, dynamic>,
       ),
       createdAt: DateTime.parse(json['createdAt'] as String),
+      tieneReview: json['tieneReview'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$CitaModelImplToJson(_$CitaModelImpl instance) =>
@@ -36,6 +37,7 @@ Map<String, dynamic> _$$CitaModelImplToJson(_$CitaModelImpl instance) =>
       'barbero': instance.barbero,
       'servicio': instance.servicio,
       'createdAt': instance.createdAt.toIso8601String(),
+      'tieneReview': instance.tieneReview,
     };
 
 _$ClienteResumenImpl _$$ClienteResumenImplFromJson(Map<String, dynamic> json) =>
