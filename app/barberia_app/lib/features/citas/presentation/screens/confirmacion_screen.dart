@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/errors/error_message.dart';
+import '../../../../core/services/permiso_notificaciones.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -127,6 +130,8 @@ class _ConfirmacionScreenState extends ConsumerState<ConfirmacionScreen> {
         }
       }
 
+      // Si en el onboarding eligió «Ahora no», este es el momento de ofrecer los recordatorios.
+      unawaited(ref.read(permisoNotificacionesProvider).pedirSiPospuesto());
       router.go('/reservar/exito', extra: cita);
     } catch (e) {
       if (!mounted) return;

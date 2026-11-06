@@ -17,3 +17,10 @@ String mensajeDeError(Object error, String fallback) {
 /// «ese horario ya no está disponible».
 bool esErrorDeValidacion(Object error) =>
     error is ValidationException || (error is DioException && error.error is ValidationException);
+
+/// La [AppException] detrás del error (directa o envuelta por Dio), si la hay.
+AppException? excepcionDe(Object error) {
+  if (error is AppException) return error;
+  if (error is DioException && error.error is AppException) return error.error as AppException;
+  return null;
+}
