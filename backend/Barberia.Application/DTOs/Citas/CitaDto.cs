@@ -23,6 +23,9 @@ public class CitaDto
     public ServicioCitaDto Servicio { get; set; } = new();
 
     public DateTime CreatedAt { get; set; }
+
+    /// <summary>El cliente ya calificó esta cita (oculta «Calificar servicio» en la app).</summary>
+    public bool TieneReview { get; set; }
 }
 
 public class ClienteCitaDto

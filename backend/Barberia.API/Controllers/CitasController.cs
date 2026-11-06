@@ -67,6 +67,21 @@ public class CitasController : ControllerBase
         return Ok(ApiResponse<CitaDto>.Ok(result, "Cita cancelada correctamente."));
     }
 
+    /// <summary>
+    /// El cliente califica su propia cita completada (1 a 5 estrellas, comentario opcional
+    /// de hasta 500 caracteres). Una reseña por cita: la segunda responde 409.
+    /// </summary>
+    [HttpPost("api/v1/citas/{id:guid}/review")]
+    [Authorize(Policy = Roles.Cliente)]
+    public async Task<ActionResult<ApiResponse<ReviewDto>>> CrearReviewAsync(
+        [FromRoute] Guid id,
+        [FromBody] CrearReviewRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await citaService.CrearReviewAsync(id, request, cancellationToken);
+        return Created($"/api/v1/citas/{id}/review", ApiResponse<ReviewDto>.Ok(result, "¡Gracias por tu reseña!"));
+    }
+
     [HttpPut("api/v1/citas/{id:guid}/confirmar")]
     [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia}")]
     public async Task<ActionResult<ApiResponse<CitaDto>>> ConfirmarAsync([FromRoute] Guid id, CancellationToken cancellationToken)

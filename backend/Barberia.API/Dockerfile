@@ -7,7 +7,7 @@ COPY Barberia.Application/Barberia.Application.csproj Barberia.Application/
 COPY Barberia.Domain/Barberia.Domain.csproj Barberia.Domain/
 COPY Barberia.Infrastructure/Barberia.Infrastructure.csproj Barberia.Infrastructure/
 COPY Barberia.Shared/Barberia.Shared.csproj Barberia.Shared/
-RUN dotnet restore Barberia.sln
+RUN dotnet restore Barberia.API/Barberia.API.csproj
 
 COPY . .
 RUN dotnet publish Barberia.API/Barberia.API.csproj -c Release -o /app/publish /p:UseAppHost=false

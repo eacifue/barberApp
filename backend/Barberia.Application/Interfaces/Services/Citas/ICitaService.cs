@@ -18,6 +18,9 @@ public interface ICitaService
 
     Task<CitaDto> GetByIdAsync(Guid citaId, CancellationToken cancellationToken);
 
+    /// <summary>El cliente autenticado califica su propia cita completada (una reseña por cita).</summary>
+    Task<ReviewDto> CrearReviewAsync(Guid citaId, CrearReviewRequest request, CancellationToken cancellationToken);
+
     Task<List<CitaDto>> GetAdminListAsync(
         Guid? barberoId,
         DateOnly? fechaInicio,
