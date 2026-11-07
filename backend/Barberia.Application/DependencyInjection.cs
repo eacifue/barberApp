@@ -28,6 +28,7 @@ public static class DependencyInjection
         services.AddScoped<IAvailabilityService, AvailabilityService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IReservasEnCursoService, ReservasEnCursoService>();
+        services.AddScoped<IRecuperacionPasswordService, RecuperacionPasswordService>();
 
         return services;
     }

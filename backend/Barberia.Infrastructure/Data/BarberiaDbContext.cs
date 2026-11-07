@@ -43,6 +43,8 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
 
     public DbSet<Review> Reviews => Set<Review>();
 
+    public DbSet<CodigoRecuperacion> CodigosRecuperacion => Set<CodigoRecuperacion>();
+
     private bool BypassTenantFilter => !currentUserService.IsAuthenticated || currentUserService.IsAdmin;
 
     private string CurrentRole => currentUserService.Role;
@@ -64,6 +66,7 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
         ConfigureBarberDayOff(modelBuilder);
         ConfigureBloqueoHorario(modelBuilder);
         ConfigureCliente(modelBuilder);
+        ConfigureCodigoRecuperacion(modelBuilder);
         ConfigureCita(modelBuilder);
         ConfigureReview(modelBuilder);
     }
@@ -373,6 +376,23 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
                 CurrentRole == Roles.AdminBarberia ||
                 (CurrentRole == Roles.Barbero && CurrentBarberoId != null && x.BarberoId == CurrentBarberoId) ||
                 (CurrentRole == Roles.Cliente && CurrentUserId != null && x.ClienteId == CurrentUserId));
+        });
+    }
+
+    private static void ConfigureCodigoRecuperacion(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<CodigoRecuperacion>(entity =>
+        {
+            entity.ToTable("codigos_recuperacion");
+
+            entity.Property(x => x.CodigoHash).HasMaxLength(100).IsRequired();
+            entity.HasIndex(x => new { x.ClienteId, x.Activo });
+
+            // Sin filtro de tenant: solo se usa en el flujo anónimo de recuperación.
+            entity.HasOne(x => x.Cliente)
+                .WithMany()
+                .HasForeignKey(x => x.ClienteId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 
