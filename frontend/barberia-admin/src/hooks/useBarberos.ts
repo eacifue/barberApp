@@ -3,12 +3,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { barberoService } from '../services/barberoService'
 import type { BarberoUpsertInput } from '../types/barbero'
 
-export function useBarberos(barberiaId: string) {
+export function useBarberos(barberiaId: string, incluirInactivos = false) {
   const queryClient = useQueryClient()
 
   const barberosQuery = useQuery({
-    queryKey: ['barberos', barberiaId],
-    queryFn: () => barberoService.getByBarberia(barberiaId),
+    queryKey: ['barberos', barberiaId, incluirInactivos],
+    queryFn: () => barberoService.getByBarberia(barberiaId, incluirInactivos),
     enabled: Boolean(barberiaId),
   })
 

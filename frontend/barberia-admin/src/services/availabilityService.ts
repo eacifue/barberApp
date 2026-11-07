@@ -192,6 +192,16 @@ export const availabilityService = {
     return unwrap(response.data)
   },
 
+  /** Días libres de hoy en adelante (hora de Bogotá), del más cercano al más lejano. */
+  async getDaysOff(barberId: string): Promise<BarberDayOff[]> {
+    const response = await http.get<BarberDayOff[] | ApiLikeResponse<BarberDayOff[]>>(`/v1/barbers/${barberId}/day-off`)
+    return (unwrap(response.data) ?? []).map((d) => ({ ...d, date: String(d.date).slice(0, 10) }))
+  },
+
+  async removeDayOff(barberId: string, dayOffId: string): Promise<void> {
+    await http.delete(`/v1/barbers/${barberId}/day-off/${dayOffId}`)
+  },
+
   async getSlots(barberId: string, date: string): Promise<BarberSlot[]> {
     const response = await http.get<BarberSlot[] | ApiLikeResponse<BarberSlot[]>>(
       `/v1/barbers/${barberId}/slots`,

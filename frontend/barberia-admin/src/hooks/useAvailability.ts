@@ -20,11 +20,25 @@ export function useAvailability(barberId: string) {
     },
   })
 
+  const daysOffQuery = useQuery({
+    queryKey: ['days-off', barberId],
+    queryFn: () => availabilityService.getDaysOff(barberId),
+    enabled: Boolean(barberId),
+  })
+
+  const invalidarDiasLibres = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['days-off', barberId] })
+    await queryClient.invalidateQueries({ queryKey: ['availability', barberId] })
+  }
+
   const addDayOffMutation = useMutation({
     mutationFn: (payload: CreateBarberDayOffRequest) => availabilityService.addDayOff(barberId, payload),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['availability', barberId] })
-    },
+    onSuccess: invalidarDiasLibres,
+  })
+
+  const removeDayOffMutation = useMutation({
+    mutationFn: (dayOffId: string) => availabilityService.removeDayOff(barberId, dayOffId),
+    onSuccess: invalidarDiasLibres,
   })
 
   const slotsByDateMutation = useMutation({
@@ -34,7 +48,9 @@ export function useAvailability(barberId: string) {
   return {
     availabilityQuery,
     upsertAvailabilityMutation,
+    daysOffQuery,
     addDayOffMutation,
+    removeDayOffMutation,
     slotsByDateMutation,
   }
 }
