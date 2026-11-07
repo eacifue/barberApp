@@ -10,7 +10,6 @@ import { ServiciosList } from './features/servicios/ServiciosList'
 import { ClientesList } from './features/clientes/ClientesList'
 import { AgendaPage } from './features/citas/AgendaPage'
 import { DisponibilidadPage } from './features/disponibilidad/DisponibilidadPage'
-import { SlotsRedisPage } from './features/slots/SlotsRedisPage'
 import { UsersPage } from './features/users/UsersPage'
 
 /** Protege las rutas privadas: redirige a /login si no hay token */
@@ -56,7 +55,7 @@ export const router = createBrowserRouter([
           { path: 'clientes', element: <ClientesList /> },
           { path: 'citas', element: <AgendaPage /> },
           { path: 'disponibilidad', element: <DisponibilidadPage /> },
-          { path: 'slots', element: <SlotsRedisPage /> },
+          { path: 'slots', element: <Navigate to="/disponibilidad?vista=reservas" replace /> },
           {
             element: <AdminGuard />,
             children: [

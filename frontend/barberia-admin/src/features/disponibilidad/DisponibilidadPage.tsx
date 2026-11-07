@@ -1,364 +1,271 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
+import { useQuery, type UseQueryResult } from '@tanstack/react-query'
+import { Link, useSearchParams } from 'react-router-dom'
 
-import { useBarberias } from '../../hooks/useBarberias'
-import { useTenantBarberia } from '../../hooks/useTenantBarberia'
-import { barberoService } from '../../services/barberoService'
-import { citaService } from '../../services/citaService'
-import type { SlotDisponible } from '../../types/disponibilidad'
+import { Banner, Button, EmptyState, IconButton, Select, Skeleton, SlotGrid, Table, Tabs, formatDuration, formatLongDate, formatShortDate, formatTime, type Slot, type TableColumn } from '../../components/bsm'
 import { PageHeader } from '../../components/shared/PageHeader'
-import { FormInput } from '../../components/ui/FormInput'
-import { FormSelect } from '../../components/ui/FormSelect'
+import { useBarberias } from '../../hooks/useBarberias'
+import { useBarberos } from '../../hooks/useBarberos'
+import { useTenantBarberia } from '../../hooks/useTenantBarberia'
+import { citaService } from '../../services/citaService'
+import { slotsRedisService, type SlotActivo } from '../../services/slotsRedisService'
+import type { Cita, SlotDisponible } from '../../types/cita'
+import { addDaysIso, esDiaDescanso, hhmm, minutesOf, mondayOf, parseIso, todayIso, weekDays } from '../citas/agendaUtils'
 import { CreateCitaModal } from '../citas/CreateCitaModal'
 
-type WeeklyDayData = {
-  date: string
-  slots: SlotDisponible[]
-  citas: Array<{ horaInicio: string; clienteNombre: string }>
-}
+type Dia = { fecha: string; slots: SlotDisponible[]; citas: Cita[]; error: boolean }
+type Vista = 'horarios' | 'reservas'
 
-type WeeklyData = {
-  fetchedAt: number
-  days: WeeklyDayData[]
-}
+const DOW = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 
-type CreateTarget = {
-  barberoId: string
-  servicioId: string
-  fecha: string
-  hora: string
-}
-
-const weekLabels = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab']
-
-function normalizeTime(value: string) {
-  return value.slice(0, 5)
-}
-
-function getMonday(dateIso: string) {
-  const date = new Date(`${dateIso}T00:00:00`)
-  const day = date.getDay()
-  const offset = day === 0 ? -6 : 1 - day
-  const monday = new Date(date)
-  monday.setDate(date.getDate() + offset)
-  return monday
-}
-
-function getWeekDates(dateIso: string) {
-  const monday = getMonday(dateIso)
-  return Array.from({ length: 6 }).map((_, index) => {
-    const date = new Date(monday)
-    date.setDate(monday.getDate() + index)
-    return date.toISOString().slice(0, 10)
+/** Estado de cada horario para el panel: ocupado por cita, apartado en la app, bloqueado o libre. */
+function slotsDelDia(d: Dia | undefined): Slot[] {
+  if (!d) return []
+  const citas = d.citas.filter((c) => c.estado !== 'Cancelada' && c.estado !== 'NoShow')
+  return d.slots.map((s) => {
+    const t = hhmm(s.horaInicio)
+    const m = minutesOf(t)
+    const cita = citas.find((c) => m >= minutesOf(hhmm(c.horaInicio)) && m < minutesOf(hhmm(c.horaFin)))
+    if (cita) return { time: t, state: 'booked', note: `${cita.cliente.nombre} ${cita.cliente.apellido.charAt(0)}.`.trim() }
+    if (s.bloqueadoPorRedis) return { time: t, state: 'hold', note: s.minutosRestantesBloqueo ? `Reservando · ${s.minutosRestantesBloqueo} min` : 'Reservando' }
+    if (!s.disponible) return { time: t, state: 'blocked', note: 'No disponible' }
+    return { time: t, state: 'available' }
   })
 }
 
-function fallbackHours() {
-  const list: string[] = []
-  for (let hour = 8; hour <= 19; hour += 1) {
-    list.push(`${String(hour).padStart(2, '0')}:00`)
-  }
-  return list
-}
-
-function formatCountdown(slot: SlotDisponible, fetchedAt: number, nowMs: number) {
-  const initial = slot.minutosRestantesBloqueo ?? 0
-  const elapsedMinutes = Math.floor((nowMs - fetchedAt) / 60000)
-  const remaining = Math.max(0, initial - elapsedMinutes)
-  return `⏱ ${remaining}:00 min`
-}
-
+/**
+ * Disponibilidad (design/pantallas/panel-web/Disponibilidad): qué horarios ven
+ * los clientes en la app y quién está reservando ahora.
+ */
 export function DisponibilidadPage() {
-  const { effectiveBarberiaId, tenantError } = useTenantBarberia()
-  const todayIso = new Date().toISOString().slice(0, 10)
-  const [selectedDate, setSelectedDate] = useState(todayIso)
-  const [selectedDayInWeek, setSelectedDayInWeek] = useState(todayIso)
-  const [createTarget, setCreateTarget] = useState<CreateTarget | null>(null)
-  const [nowMs, setNowMs] = useState(Date.now())
-
-  const { barberiasQuery } = useBarberias()
-  const barberias = barberiasQuery.data ?? []
-  const barberiaActualNombre = useMemo(() => {
-    return barberias.find((barberia) => barberia.id === effectiveBarberiaId)?.nombre ?? '-'
-  }, [barberias, effectiveBarberiaId])
-
-  const [filters, setFilters] = useState({ barberoId: '', servicioId: '' })
-
-  useEffect(() => {
-    const timer = setInterval(() => setNowMs(Date.now()), 30000)
-    return () => clearInterval(timer)
-  }, [])
-
-  const allBarberosQuery = useQuery({
-    queryKey: ['barberos-for-barberia', effectiveBarberiaId],
-    enabled: Boolean(effectiveBarberiaId),
-    queryFn: async () => {
-      return barberoService.getByBarberia(effectiveBarberiaId as string)
-    },
-  })
-
-  const allBarberos = allBarberosQuery.data ?? []
-
-  useEffect(() => {
-    if (!filters.barberoId && allBarberos.length > 0) {
-      const first = allBarberos[0]
-      setFilters((prev) => ({ ...prev, barberoId: first.id, servicioId: first.servicios?.[0]?.id ?? '' }))
-    }
-  }, [allBarberos, filters.barberoId])
-
-  const selectedBarbero = useMemo(
-    () => allBarberos.find((barbero) => barbero.id === filters.barberoId),
-    [allBarberos, filters.barberoId],
-  )
-
-  const servicios = selectedBarbero?.servicios ?? []
-
-  useEffect(() => {
-    if (servicios.length > 0 && !servicios.find((servicio) => servicio.id === filters.servicioId)) {
-      setFilters((prev) => ({ ...prev, servicioId: servicios[0].id }))
-    }
-  }, [servicios, filters.servicioId])
-
-  const weekDates = useMemo(() => getWeekDates(selectedDate), [selectedDate])
-
-  useEffect(() => {
-    if (!weekDates.includes(selectedDayInWeek)) {
-      setSelectedDayInWeek(weekDates[0] ?? selectedDate)
-    }
-  }, [selectedDate, selectedDayInWeek, weekDates])
-
-  const weeklyAvailabilityQuery = useQuery({
-    queryKey: ['disponibilidad-week', filters.barberoId, filters.servicioId, weekDates.join('|')],
-    enabled: Boolean(filters.barberoId && filters.servicioId && weekDates.length > 0),
-    queryFn: async (): Promise<WeeklyData> => {
-      const fetchedAt = Date.now()
-      const dayResponses = await Promise.all(
-        weekDates.map(async (date) => {
-          try {
-            const [disponibilidad, citas] = await Promise.all([
-              citaService.getDisponibilidad(filters.barberoId, filters.servicioId, date),
-              citaService.getByBarbero(filters.barberoId, date),
-            ])
-
-            const citasSimple = (citas ?? []).map((cita) => ({
-              horaInicio: normalizeTime(cita.horaInicio),
-              clienteNombre: `${cita.cliente.nombre} ${cita.cliente.apellido}`,
-            }))
-
-            const slots = (disponibilidad.slots ?? []).map((slot) => ({
-              horaInicio: normalizeTime(slot.horaInicio),
-              horaFin: normalizeTime(slot.horaFin),
-              disponible: slot.disponible,
-              bloqueadoPorRedis: slot.bloqueadoPorRedis,
-              minutosRestantesBloqueo: slot.minutosRestantesBloqueo,
-            }))
-
-            return { date, slots, citas: citasSimple }
-          } catch {
-            // Un día puntual sin disponibilidad (p. ej. una fecha ya pasada, que
-            // el backend rechaza) no debe tumbar la semana completa.
-            return { date, slots: [], citas: [] }
-          }
-        }),
-      )
-
-      return { fetchedAt, days: dayResponses }
-    },
-  })
-
-  const weeklyData = weeklyAvailabilityQuery.data
-
-  const hours = useMemo(() => {
-    const merged = (weeklyData?.days ?? []).flatMap((day) => day.slots.map((slot) => slot.horaInicio))
-    const unique = Array.from(new Set(merged)).sort()
-    return unique.length > 0 ? unique : fallbackHours()
-  }, [weeklyData])
-
-  const dayMap = useMemo(() => {
-    const map = new Map<string, WeeklyDayData>()
-    for (const day of weeklyData?.days ?? []) {
-      map.set(day.date, day)
-    }
-    return map
-  }, [weeklyData])
-
-  const selectedDayData = dayMap.get(selectedDayInWeek)
-
-  const onCreateFromCell = (date: string, hour: string) => {
-    if (!selectedBarbero) return
-    setCreateTarget({
-      barberoId: selectedBarbero.id,
-      servicioId: filters.servicioId,
-      fecha: date,
-      hora: hour,
-    })
-  }
+  const [params, setParams] = useSearchParams()
+  const vista: Vista = params.get('vista') === 'reservas' ? 'reservas' : 'horarios'
+  const reservasQuery = useQuery({ queryKey: ['slots-activos'], queryFn: slotsRedisService.getActivos, refetchInterval: 10_000 })
 
   return (
-    <section className="relative">
-      {tenantError ? (
-        <div className="mb-4 rounded-lg border border-[var(--danger)]/25 bg-[var(--danger-soft)] px-4 py-3 text-sm text-[var(--danger)]">
-          {tenantError}
-        </div>
-      ) : null}
+    <div className="mx-auto flex max-w-[1200px] flex-col gap-5 px-4 py-5 md:px-6 lg:px-8">
+      <PageHeader title="Disponibilidad" subtitle="Qué horarios ven tus clientes en la app y quién está reservando ahora." />
+      <Tabs
+        label="Vistas de disponibilidad"
+        value={vista}
+        onChange={(v) => setParams(v === 'reservas' ? { vista: 'reservas' } : {}, { replace: true })}
+        items={[
+          { value: 'horarios', label: 'Horarios del día', icon: 'clock' },
+          { value: 'reservas', label: 'Reservas en curso', icon: 'timer', count: reservasQuery.data?.length || undefined },
+        ]}
+      />
+      {vista === 'horarios' ? <Horarios onVerReservas={() => setParams({ vista: 'reservas' }, { replace: true })} /> : <Reservas query={reservasQuery} />}
+    </div>
+  )
+}
 
-      <PageHeader title="Disponibilidad" subtitle="Vista semanal operativa y slots del dia" />
+function Horarios({ onVerReservas }: { onVerReservas: () => void }) {
+  const { effectiveBarberiaId } = useTenantBarberia()
+  const { barberosQuery } = useBarberos(effectiveBarberiaId ?? '')
+  const { barberiasQuery } = useBarberias()
+  const barberia = barberiasQuery.data?.find((b) => b.id === effectiveBarberiaId) ?? barberiasQuery.data?.[0]
+  const barberos = useMemo(() => (barberosQuery.data ?? []).filter((b) => b.activo), [barberosQuery.data])
+  const hoy = todayIso()
 
-      <p className="mb-3 text-sm text-ink-muted">
-        Barbería: <span className="font-medium text-ink">{barberiaActualNombre}</span>
-      </p>
+  const [barberoSel, setBarberoSel] = useState('')
+  const [servicioSel, setServicioSel] = useState('')
+  const [semana, setSemana] = useState(() => mondayOf(hoy))
+  const [diaSel, setDiaSel] = useState(hoy)
+  const [nueva, setNueva] = useState<{ fecha: string; hora: string } | null>(null)
 
-      <div className="mb-4 grid gap-3 rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-4 md:grid-cols-3">
-        <FormSelect
-          label="Barbero"
-          value={filters.barberoId}
-          onChange={(e) => setFilters({ barberoId: e.target.value, servicioId: '' })}
-          options={allBarberos.map((barbero) => ({ value: barbero.id, label: `${barbero.nombre} ${barbero.apellido}` }))}
-        />
-        <FormSelect
+  const barbero = barberos.find((b) => b.id === barberoSel) ?? barberos[0]
+  const servicios = barbero?.servicios ?? []
+  const servicio = servicios.find((s) => s.id === servicioSel) ?? servicios[0]
+  const dias = weekDays(semana)
+  const diaEf = dias.includes(diaSel) ? diaSel : (dias.find((d) => d >= hoy) ?? dias[0])
+
+  const semanaQuery = useQuery({
+    queryKey: ['disponibilidad-semana', barbero?.id, servicio?.id, semana],
+    enabled: Boolean(barbero && servicio),
+    refetchInterval: 30_000,
+    queryFn: async (): Promise<Dia[]> =>
+      Promise.all(
+        dias.map(async (fecha) => {
+          if (fecha < hoy) return { fecha, slots: [], citas: [], error: false }
+          try {
+            const [disp, citas] = await Promise.all([citaService.getDisponibilidad(barbero!.id, servicio!.id, fecha), citaService.getByBarbero(barbero!.id, fecha)])
+            return { fecha, slots: disp.slots ?? [], citas: citas ?? [], error: false }
+          } catch {
+            return { fecha, slots: [], citas: [], error: true }
+          }
+        }),
+      ),
+  })
+  const porFecha = new Map((semanaQuery.data ?? []).map((d) => [d.fecha, d]))
+  const slots = slotsDelDia(porFecha.get(diaEf))
+  const cuenta = (estado: Slot['state']) => slots.filter((s) => s.state === estado).length
+  const apartados = slots.filter((s) => s.state === 'hold')
+  const cerrado = (f: string) => esDiaDescanso(barberia?.diasDescanso as Array<string | number> | undefined, f)
+
+  if (barberosQuery.isLoading) return <Skeleton variant="slots" label="Cargando barberos" />
+  if (!barberos.length)
+    return <EmptyState icon="scissors" title="Aún no tienes barberos activos" body="Agrega un barbero con servicios y horario para ver su disponibilidad." action={<Link to="/barberos" className="bsm-btn bsm-btn-primary">Ir a Barberos</Link>} />
+
+  const finSemana = parseIso(dias[6])
+  const rango = `${parseIso(dias[0]).getDate()} – ${formatShortDate(finSemana, finSemana.getFullYear() !== new Date().getFullYear())}`
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+        <Select label="Barbero" value={barbero?.id ?? ''} options={barberos.map((b) => ({ value: b.id, label: `${b.nombre} ${b.apellido}` }))} onChange={(e) => { setBarberoSel(e.target.value); setServicioSel('') }} />
+        <Select
           label="Servicio"
-          value={filters.servicioId}
-          onChange={(e) => setFilters((prev) => ({ ...prev, servicioId: e.target.value }))}
-          options={servicios.map((servicio) => ({ value: servicio.id, label: servicio.nombre }))}
+          value={servicio?.id ?? ''}
+          placeholder={servicios.length ? undefined : 'Este barbero no tiene servicios'}
+          options={servicios.map((s) => ({ value: s.id, label: `${s.nombre} · ${formatDuration(s.duracionMinutos)}` }))}
+          hint="La duración del servicio define qué horarios caben."
+          onChange={(e) => setServicioSel(e.target.value)}
         />
-        <FormInput
-          label="Fecha"
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-        />
+        <div className="flex items-center gap-1 md:mb-[22px]">
+          <IconButton icon="chevron-left" label="Semana anterior" disabled={semana <= mondayOf(hoy)} onClick={() => setSemana(addDaysIso(semana, -7))} />
+          <span className="min-w-[140px] text-center text-label-sm text-ink">{rango}</span>
+          <IconButton icon="chevron-right" label="Semana siguiente" onClick={() => setSemana(addDaysIso(semana, 7))} />
+          {semana !== mondayOf(hoy) && (
+            <Button variant="ghost" size="sm" onClick={() => { setSemana(mondayOf(hoy)); setDiaSel(hoy) }}>
+              Hoy
+            </Button>
+          )}
+        </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-ink">
-        <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-[var(--success)]" />Verde = Disponible</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-[var(--danger)]" />Rojo = Ocupado</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-[var(--info)]" />Azul = Redis activo</span>
-        <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-[var(--warning)]" />Amarillo = Bloqueado manual</span>
-      </div>
-
-      <div className="overflow-x-auto rounded-xl border border-[var(--border2)] bg-[var(--surface2)]">
-        <div className="min-w-[860px]">
-          <div className="grid grid-cols-[90px_repeat(6,minmax(120px,1fr))] border-b border-[var(--border)] bg-[var(--ink2)]">
-            <div className="px-2 py-2 text-[10px] uppercase tracking-[0.08em] text-ink-muted">Hora</div>
-            {weekDates.map((date, idx) => (
-              <button
-                type="button"
-                key={date}
-                onClick={() => setSelectedDayInWeek(date)}
-                className={[
-                  'px-2 py-2 text-left text-[10px] uppercase tracking-[0.08em] focus-visible:outline-none focus-visible:ring-inset focus-visible:shadow-focus',
-                  selectedDayInWeek === date
-                    ? 'bg-[var(--accent-soft)] text-[var(--accent-strong)]'
-                    : 'text-ink-muted hover:bg-[var(--surface-hover)]',
-                ].join(' ')}
-              >
-                {weekLabels[idx]}
-                <div className="text-[11px] normal-case text-ink-muted">{date.slice(5)}</div>
-              </button>
-            ))}
+      {!servicio ? (
+        <EmptyState icon="clipboard-list" title={`${barbero?.nombre} no tiene servicios asignados`} body="Asígnale servicios para que aparezca en la app." action={<Link to="/barberos" className="bsm-btn bsm-btn-secondary">Ir a Barberos</Link>} />
+      ) : (
+        <>
+          <div role="group" aria-label="Días de la semana" className="grid grid-cols-7 gap-1 md:gap-2">
+            {dias.map((f) => {
+              const d = porFecha.get(f)
+              const s = slotsDelDia(d)
+              const ocupados = s.filter((x) => x.state !== 'available').length
+              const pasado = f < hoy
+              const sinHorario = cerrado(f) || (d && !d.error && !pasado && s.length === 0)
+              const sub = pasado ? 'Pasado' : semanaQuery.isLoading ? '…' : sinHorario ? (cerrado(f) ? 'Cerrado' : 'No atiende') : d?.error ? 'Sin datos' : `${ocupados} de ${s.length}`
+              const pct = s.length ? Math.round((ocupados / s.length) * 100) : 0
+              const sel = f === diaEf
+              return (
+                <button
+                  key={f}
+                  type="button"
+                  aria-pressed={sel}
+                  disabled={pasado}
+                  aria-label={`${formatLongDate(parseIso(f))}, ${sub === `${ocupados} de ${s.length}` ? `${ocupados} de ${s.length} horarios ocupados` : sub.toLowerCase()}`}
+                  onClick={() => setDiaSel(f)}
+                  className={`flex flex-col items-center gap-1 rounded-md border px-1 py-2 text-center transition-colors disabled:opacity-50 ${sel ? 'border-brass bg-brass-soft' : 'border-line bg-surface hover:border-brass'}`}
+                >
+                  <span className="text-caption text-ink-muted">{f === hoy ? 'Hoy' : DOW[parseIso(f).getDay()]}</span>
+                  <span className="font-display text-title text-ink">{parseIso(f).getDate()}</span>
+                  <span className="hidden text-caption text-ink-muted md:block">{sub}</span>
+                  <span className="h-1 w-full max-w-[48px] overflow-hidden rounded-full bg-line" aria-hidden="true">
+                    <span className="block h-full bg-brass" style={{ width: `${pct}%` }} />
+                  </span>
+                </button>
+              )
+            })}
           </div>
 
-          {hours.map((hour) => (
-            <div key={hour} className="grid grid-cols-[90px_repeat(6,minmax(120px,1fr))] border-b border-[var(--border)] last:border-b-0">
-              <div className="px-2 py-2 text-xs text-ink-muted">{hour}</div>
-              {weekDates.map((date) => {
-                const day = dayMap.get(date)
-                const slot = day?.slots.find((item) => normalizeTime(item.horaInicio) === hour)
-                const cita = day?.citas.find((item) => normalizeTime(item.horaInicio) === hour)
-
-                if (!slot) {
-                  return <div key={`${date}-${hour}`} className="px-2 py-2 text-[11px] text-ink-muted">-</div>
-                }
-
-                if (slot.bloqueadoPorRedis) {
-                  return (
-                    <div key={`${date}-${hour}`} className="p-1.5">
-                      <div className="rounded-md bg-[var(--info-soft)] px-2 py-1 text-[11px] text-[var(--info)]">
-                        {formatCountdown(slot, weeklyData?.fetchedAt ?? Date.now(), nowMs)}
-                      </div>
-                    </div>
-                  )
-                }
-
-                if (slot.disponible) {
-                  return (
-                    <div key={`${date}-${hour}`} className="p-1.5">
-                      <button
-                        type="button"
-                        onClick={() => onCreateFromCell(date, hour)}
-                        className="w-full rounded-md bg-[var(--success-soft)] px-2 py-1 text-[11px] text-[var(--success)] hover:opacity-80 focus-visible:outline-none focus-visible:shadow-focus"
-                      >
-                        Libre
-                      </button>
-                    </div>
-                  )
-                }
-
-                if (cita) {
-                  return (
-                    <div key={`${date}-${hour}`} className="p-1.5">
-                      <div className="rounded-md bg-[var(--danger-soft)] px-2 py-1 text-[11px] text-[var(--danger)]">{cita.clienteNombre}</div>
-                    </div>
-                  )
-                }
-
-                return (
-                  <div key={`${date}-${hour}`} className="p-1.5">
-                    <div className="rounded-md bg-[var(--warning-soft)] px-2 py-1 text-[11px] text-[var(--warning)]">Bloqueado</div>
-                  </div>
-                )
-              })}
+          <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-5" aria-labelledby="bsm-disp-dia">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h3 id="bsm-disp-dia" className="font-display text-title text-ink first-letter:uppercase">
+                {formatLongDate(parseIso(diaEf))} · {barbero.nombre}
+              </h3>
+              {slots.length > 0 && (
+                <p className="text-body-sm text-ink-muted">
+                  {cuenta('available')} libres · {cuenta('booked')} ocupados · {cuenta('blocked')} no disponibles{cuenta('hold') ? ` · ${cuenta('hold')} reservando` : ''}
+                </p>
+              )}
             </div>
-          ))}
-        </div>
-      </div>
 
-      <div className="mt-5 rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-ink">Slots del dia seleccionado</h2>
-          <span className="text-xs text-ink-muted">{selectedDayInWeek}</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {(selectedDayData?.slots ?? []).map((slot) => {
-            const baseClass =
-              slot.bloqueadoPorRedis
-                ? 'bg-[var(--info-soft)] text-[var(--info)]'
-                : slot.disponible
-                  ? 'bg-[var(--success-soft)] text-[var(--success)]'
-                  : 'bg-[var(--surface-strong)] text-ink'
+            {apartados.length > 0 && (
+              <Banner tone="info" icon="timer" title={apartados.length === 1 ? `Un cliente está reservando las ${formatTime(apartados[0].time)}` : `${apartados.length} horarios apartados ahora`} actionLabel="Ver reservas en curso" onAction={onVerReservas}>
+                Si no confirma en unos minutos, el horario se libera solo.
+              </Banner>
+            )}
 
-            return (
-              <button
-                type="button"
-                key={`${slot.horaInicio}-${slot.horaFin}`}
-                onClick={() => {
-                  if (slot.disponible && !slot.bloqueadoPorRedis) {
-                    onCreateFromCell(selectedDayInWeek, normalizeTime(slot.horaInicio))
-                  }
-                }}
-                className={[
-                  'inline-flex h-[30px] items-center justify-center rounded px-2 text-xs focus-visible:outline-none focus-visible:shadow-focus',
-                  baseClass,
-                ].join(' ')}
-              >
-                {normalizeTime(slot.horaInicio)}
-              </button>
-            )
-          })}
-          {(selectedDayData?.slots ?? []).length === 0 ? (
-            <p className="text-sm text-ink-muted">No hay slots para este dia.</p>
-          ) : null}
-        </div>
-      </div>
+            {semanaQuery.isLoading ? (
+              <Skeleton variant="slots" label="Cargando horarios" />
+            ) : porFecha.get(diaEf)?.error ? (
+              <EmptyState tone="error" title="No pudimos cargar los horarios de este día" body="Revisa tu conexión e inténtalo de nuevo." actionLabel="Reintentar" actionIcon="refresh-cw" actionVariant="secondary" onAction={() => void semanaQuery.refetch()} />
+            ) : slots.length === 0 ? (
+              <EmptyState icon="calendar-x" title={cerrado(diaEf) ? 'La barbería cierra este día' : `${barbero.nombre} no atiende este día`} body={cerrado(diaEf) ? 'Los días de descanso se cambian en Mi negocio.' : 'Puede ser su día de descanso o un día libre. Se ajusta en la ficha del barbero.'} />
+            ) : (
+              <SlotGrid mode="admin" label={`Horarios de ${barbero.nombre}`} slots={slots} onSelect={(s) => s.state === 'available' && setNueva({ fecha: diaEf, hora: s.time })} />
+            )}
+
+            <p className="text-caption text-ink-muted">
+              Toca un horario libre para agendar una cita. Los días libres y vacaciones se configuran en la ficha del barbero. <Link to="/barberos">Ir a Barberos</Link>
+            </p>
+          </section>
+        </>
+      )}
 
       <CreateCitaModal
-        open={createTarget !== null}
-        onClose={() => setCreateTarget(null)}
-        initialBarberoId={createTarget?.barberoId}
-        initialServicioId={createTarget?.servicioId}
-        initialFecha={createTarget?.fecha}
-        initialHora={createTarget?.hora}
+        open={nueva != null}
+        onClose={() => setNueva(null)}
+        onCreated={() => void semanaQuery.refetch()}
+        initialBarberoId={barbero?.id}
+        initialServicioId={servicio?.id}
+        initialFecha={nueva?.fecha}
+        initialHora={nueva?.hora}
       />
-    </section>
+    </div>
+  )
+}
+
+function Reservas({ query }: { query: UseQueryResult<SlotActivo[] | null> }) {
+  const { effectiveBarberiaId } = useTenantBarberia()
+  const { barberosQuery } = useBarberos(effectiveBarberiaId ?? '')
+  const nombre = (id: string) => {
+    const b = barberosQuery.data?.find((x) => x.id === id)
+    return b ? `${b.nombre} ${b.apellido}` : 'Barbero'
+  }
+  const filas = query.data ?? []
+
+  const explicacion = (
+    <p className="text-body-sm text-ink-muted">Cuando un cliente elige un horario en la app, se le aparta unos minutos para que confirme. Si no confirma, el horario se libera solo.</p>
+  )
+
+  if (query.data === null) {
+    return (
+      <div className="flex flex-col gap-4">
+        {explicacion}
+        <Banner tone="info" title="Esta vista aún no está disponible">
+          El servidor todavía no comparte la lista de horarios apartados con el panel. Mientras tanto, los horarios que alguien está reservando aparecen como «Reservando» en Horarios del día.
+        </Banner>
+      </div>
+    )
+  }
+
+  const columnas: TableColumn<SlotActivo>[] = [
+    { key: 'cliente', label: 'Cliente', render: (r) => <strong className="text-label-sm text-ink">{r.cliente}</strong> },
+    { key: 'barbero', label: 'Barbero', muted: true, render: (r) => nombre(r.barberoId) },
+    { key: 'horario', label: 'Horario apartado', render: (r) => `${formatShortDate(parseIso(r.fechaCita.slice(0, 10)))} · ${formatTime(hhmm(r.horaInicio))}` },
+    { key: 'desde', label: 'Apartado a las', muted: true, render: (r) => (r.bloqueadoEn ? formatTime(new Date(r.bloqueadoEn)) : '—') },
+    { key: 'libera', label: 'Se libera', render: (r) => (r.expiraEn ? formatTime(new Date(r.expiraEn)) : '—') },
+  ]
+
+  return (
+    <div className="flex flex-col gap-4">
+      {explicacion}
+      <Table
+        caption="Reservas en curso"
+        columns={columnas}
+        rows={filas}
+        rowKey={(r) => r.keyRedis}
+        state={
+          query.isError ? (
+            <EmptyState tone="error" title="No pudimos cargar las reservas en curso" body="Revisa tu conexión e inténtalo de nuevo." actionLabel="Reintentar" actionIcon="refresh-cw" actionVariant="secondary" onAction={() => void query.refetch()} />
+          ) : query.isLoading ? (
+            <Skeleton variant="row" rows={3} label="Cargando reservas en curso" />
+          ) : filas.length === 0 ? (
+            <EmptyState icon="timer" title="Nadie está reservando ahora" body="Se actualiza cada 10 segundos." />
+          ) : undefined
+        }
+      />
+    </div>
   )
 }
