@@ -19,6 +19,8 @@ public sealed class FakeNotificationService : INotificationService
 
     public Task NotificarCitaNoAsistidaClienteAsync(Guid clienteId, string mensaje, CancellationToken cancellationToken) => Registrar("CitaNoAsistidaCliente", clienteId, mensaje);
 
+    public Task NotificarHorarioLiberadoClienteAsync(Guid clienteId, string mensaje, CancellationToken cancellationToken) => Registrar("HorarioLiberadoCliente", clienteId, mensaje);
+
     private Task Registrar(string tipo, Guid destinatario, string mensaje)
     {
         Enviadas.Add((tipo, destinatario, mensaje));

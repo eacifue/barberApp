@@ -7,6 +7,7 @@ using Barberia.Application.Interfaces.Services.Citas;
 using Barberia.Application.Interfaces.Services.Clientes;
 using Barberia.Application.Interfaces.Services.Disponibilidad;
 using Barberia.Application.Interfaces.Services.Servicios;
+using Barberia.Application.Interfaces.Services.Slots;
 using Barberia.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<ICitaService, CitaService>();
         services.AddScoped<IAvailabilityService, AvailabilityService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IReservasEnCursoService, ReservasEnCursoService>();
 
         return services;
     }

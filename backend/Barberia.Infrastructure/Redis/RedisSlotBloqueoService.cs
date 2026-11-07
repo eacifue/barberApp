@@ -184,6 +184,75 @@ public class RedisSlotBloqueoService : ISlotBloqueoService
         return totalLiberados;
     }
 
+    public async Task<IReadOnlyList<BloqueoActivoDto>> ListarActivosAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var activos = new List<BloqueoActivoDto>();
+        var db = redis.GetDatabase();
+        foreach (var endpoint in redis.GetEndPoints())
+        {
+            var server = redis.GetServer(endpoint);
+            if (!server.IsConnected || server.IsReplica)
+            {
+                continue;
+            }
+
+            await foreach (var key in server.KeysAsync(pattern: $"{KeyPrefix}*"))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!TryParseKey(key.ToString(), out var barberoId, out var fecha, out var hora))
+                {
+                    continue;
+                }
+
+                var value = await db.StringGetAsync(key);
+                if (!value.HasValue || Deserialize(value!) is not { } bloqueo)
+                {
+                    continue;
+                }
+
+                activos.Add(new BloqueoActivoDto(barberoId, fecha, hora, bloqueo.ClienteId, bloqueo.BloqueadoEn, bloqueo.ExpiraEn));
+            }
+        }
+
+        return activos;
+    }
+
+    public async Task<BloqueoActivoDto?> LiberarSinTokenAsync(Guid barberoId, DateOnly fecha, TimeOnly horaInicio, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var db = redis.GetDatabase();
+        var key = BuildKey(barberoId, fecha, horaInicio);
+        // GETDEL: lee y borra en un paso, así dos liberaciones simultáneas no avisan dos veces.
+        var value = await db.StringGetDeleteAsync(key);
+        if (!value.HasValue || Deserialize(value!) is not { } bloqueo)
+        {
+            return null;
+        }
+
+        return new BloqueoActivoDto(barberoId, fecha, horaInicio, bloqueo.ClienteId, bloqueo.BloqueadoEn, bloqueo.ExpiraEn);
+    }
+
+    /// <summary>Inverso de <see cref="BuildKey"/>: `barberia:slot:{barberoId}:{yyyy-MM-dd}:{HH:mm}`.</summary>
+    public static bool TryParseKey(string key, out Guid barberoId, out DateOnly fecha, out TimeOnly hora)
+    {
+        barberoId = default;
+        fecha = default;
+        hora = default;
+        if (!key.StartsWith(KeyPrefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var parts = key[KeyPrefix.Length..].Split(':');
+        return parts.Length == 4
+            && Guid.TryParse(parts[0], out barberoId)
+            && DateOnly.TryParseExact(parts[1], "yyyy-MM-dd", out fecha)
+            && TimeOnly.TryParseExact($"{parts[2]}:{parts[3]}", "HH:mm", out hora);
+    }
+
     public static string BuildKey(Guid barberoId, DateOnly fecha, TimeOnly horaInicio)
     {
         return $"{KeyPrefix}{barberoId}:{fecha:yyyy-MM-dd}:{horaInicio:HH\\:mm}";

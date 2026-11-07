@@ -13,4 +13,7 @@ public interface INotificationService
     Task NotificarCitaCanceladaClienteAsync(Guid clienteId, string mensaje, CancellationToken cancellationToken);
 
     Task NotificarCitaNoAsistidaClienteAsync(Guid clienteId, string mensaje, CancellationToken cancellationToken);
+
+    /// <summary>Recepción liberó el horario que el cliente tenía apartado.</summary>
+    Task NotificarHorarioLiberadoClienteAsync(Guid clienteId, string mensaje, CancellationToken cancellationToken);
 }
