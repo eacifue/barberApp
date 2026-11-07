@@ -4,7 +4,8 @@ namespace Barberia.Application.Interfaces.Services.Barberos;
 
 public interface IBarberoService
 {
-    Task<List<BarberoDto>> GetAllByBarberiaAsync(Guid barberiaId, CancellationToken cancellationToken);
+    /// <summary>Equipo; con <paramref name="incluirInactivos"/> también los desactivados (panel).</summary>
+    Task<List<BarberoDto>> GetAllByBarberiaAsync(Guid barberiaId, CancellationToken cancellationToken, bool incluirInactivos = false);
 
     Task<BarberoDto> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 

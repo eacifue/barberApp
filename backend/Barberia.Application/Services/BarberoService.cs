@@ -30,11 +30,11 @@ public class BarberoService : IBarberoService
         this.setHorarioValidator = setHorarioValidator;
     }
 
-    public async Task<List<BarberoDto>> GetAllByBarberiaAsync(Guid barberiaId, CancellationToken cancellationToken)
+    public async Task<List<BarberoDto>> GetAllByBarberiaAsync(Guid barberiaId, CancellationToken cancellationToken, bool incluirInactivos = false)
     {
         var barberos = await dbContext.Barberos
             .AsNoTracking()
-            .Where(x => x.Activo)
+            .Where(x => incluirInactivos || x.Activo)
             .OrderBy(x => x.Nombre)
             .ThenBy(x => x.Apellido)
             .ToListAsync(cancellationToken);

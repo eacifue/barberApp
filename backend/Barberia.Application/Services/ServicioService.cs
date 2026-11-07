@@ -26,11 +26,11 @@ public class ServicioService : IServicioService
         this.createValidator = createValidator;
     }
 
-    public async Task<List<ServicioDto>> GetAllByBarberiaAsync(Guid barberiaId, CancellationToken cancellationToken)
+    public async Task<List<ServicioDto>> GetAllByBarberiaAsync(Guid barberiaId, CancellationToken cancellationToken, bool incluirInactivos = false)
     {
         var servicios = await dbContext.Servicios
             .AsNoTracking()
-            .Where(x => x.Activo)
+            .Where(x => incluirInactivos || x.Activo)
             .OrderBy(x => x.Nombre)
             .ToListAsync(cancellationToken);
 

@@ -37,9 +37,12 @@ public class BarberosController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<ApiResponse<List<BarberoDto>>>> GetByBarberiaAsync(
         [FromRoute] Guid barberiaId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [FromQuery] bool incluirInactivos = false)
     {
-        var result = await barberoService.GetAllByBarberiaAsync(barberiaId, cancellationToken);
+        // Ver los desactivados es solo para el panel (Admin y Admin Barbería).
+        var verInactivos = incluirInactivos && (User.IsInRole(Roles.Admin) || User.IsInRole(Roles.AdminBarberia));
+        var result = await barberoService.GetAllByBarberiaAsync(barberiaId, cancellationToken, verInactivos);
         return Ok(ApiResponse<List<BarberoDto>>.Ok(result, "Barberos obtenidos correctamente."));
     }
 
