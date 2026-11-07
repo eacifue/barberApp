@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/recuperar_screen.dart';
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
 import '../../features/auth/presentation/screens/registro_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
@@ -44,7 +45,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoggedIn = token != null && token.isNotEmpty;
       final isAuthRoute =
           state.matchedLocation == '/login' ||
-          state.matchedLocation == '/registro';
+          state.matchedLocation == '/registro' ||
+          state.matchedLocation == '/recuperar';
       // Splash y onboarding se ven con o sin sesión; el splash decide el destino.
       final isPublic = state.matchedLocation == '/' || state.matchedLocation == '/bienvenida';
       if (isPublic) return null;
@@ -87,6 +89,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
       GoRoute(path: '/bienvenida', builder: (context, state) => const OnboardingScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+      GoRoute(
+        path: '/recuperar',
+        builder: (context, state) => RecuperarScreen(correoInicial: state.extra is String ? state.extra! as String : ''),
+      ),
       GoRoute(
         path: '/registro',
         builder: (context, state) => const RegistroScreen(),
