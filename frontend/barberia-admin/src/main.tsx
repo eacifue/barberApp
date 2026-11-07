@@ -5,7 +5,7 @@ import { RouterProvider } from 'react-router-dom'
 
 import { router } from './router'
 import { ThemeProvider } from './components/theme/ThemeProvider'
-import { ToastContainer } from './components/ui/ToastContainer'
+import { ToastContainer } from './components/layout/ToastContainer'
 import './globals.css'
 import './components/bsm/bsm.css'
 
