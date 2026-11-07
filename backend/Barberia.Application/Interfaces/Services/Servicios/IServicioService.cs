@@ -12,6 +12,9 @@ public interface IServicioService
 
     Task<ServicioDto> UpdateAsync(Guid id, CreateServicioRequest request, CancellationToken cancellationToken);
 
+    /// <summary>Vuelve a ofrecer un servicio desactivado.</summary>
+    Task<ServicioDto> ActivarAsync(Guid id, CancellationToken cancellationToken);
+
     Task DeleteAsync(Guid id, CancellationToken cancellationToken);
 
     Task<List<ServicioDto>> GetByBarberoAsync(Guid barberoId, CancellationToken cancellationToken);

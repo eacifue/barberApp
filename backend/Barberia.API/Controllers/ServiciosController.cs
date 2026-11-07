@@ -69,6 +69,15 @@ public class ServiciosController : ControllerBase
         return Ok(ApiResponse<object?>.Ok(null, "Servicio eliminado correctamente."));
     }
 
+    /// <summary>Vuelve a ofrecer un servicio desactivado.</summary>
+    [HttpPut("api/v1/servicios/{id:guid}/activar")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia}")]
+    public async Task<ActionResult<ApiResponse<ServicioDto>>> ActivarAsync([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        var result = await servicioService.ActivarAsync(id, cancellationToken);
+        return Ok(ApiResponse<ServicioDto>.Ok(result, "Servicio activado."));
+    }
+
     [HttpGet("api/v1/barberos/{barberoId:guid}/servicios")]
     [AllowAnonymous]
     public async Task<ActionResult<ApiResponse<List<ServicioDto>>>> GetByBarberoAsync(

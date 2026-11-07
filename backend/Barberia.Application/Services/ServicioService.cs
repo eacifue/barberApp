@@ -132,4 +132,20 @@ public class ServicioService : IServicioService
                 validationResult.Errors.Select(x => x.ErrorMessage).ToArray());
         }
     }
+
+    public async Task<ServicioDto> ActivarAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var servicio = await dbContext.Servicios
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (servicio is null)
+        {
+            throw new NotFoundException("El servicio no existe.");
+        }
+
+        servicio.Activo = true;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return mapper.Map<ServicioDto>(servicio);
+    }
 }

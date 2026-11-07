@@ -16,6 +16,9 @@ public interface IBarberoService
 
     Task DeleteAsync(Guid id, CancellationToken cancellationToken);
 
+    /// <summary>Reactiva un barbero (activo y disponible). Sus servicios se confirman al editarlo.</summary>
+    Task<BarberoDto> ActivarAsync(Guid id, CancellationToken cancellationToken);
+
     Task AsignarServicioAsync(Guid barberoId, Guid servicioId, CancellationToken cancellationToken);
 
     Task<List<HorarioSemanaDto>> SetHorariosAsync(SetHorarioRequest request, CancellationToken cancellationToken);

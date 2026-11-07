@@ -94,6 +94,15 @@ public class BarberosController : ControllerBase
         return Ok(ApiResponse<object?>.Ok(null, "Barbero eliminado correctamente."));
     }
 
+    /// <summary>Reactiva un barbero (activo y disponible). Sus servicios se confirman al editarlo.</summary>
+    [HttpPut("api/v1/barberos/{id:guid}/activar")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia}")]
+    public async Task<ActionResult<ApiResponse<BarberoDto>>> ActivarAsync([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        var result = await barberoService.ActivarAsync(id, cancellationToken);
+        return Ok(ApiResponse<BarberoDto>.Ok(result, "Barbero activado. Confirma los servicios que presta."));
+    }
+
     [HttpPost("api/v1/barberos/{id:guid}/horarios")]
     [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia}")]
     public async Task<ActionResult<ApiResponse<List<HorarioSemanaDto>>>> SetHorariosAsync(
@@ -162,6 +171,23 @@ public class BarberosController : ControllerBase
         request.BarberId = id;
         var result = await availabilityService.AddDayOffAsync(request, cancellationToken);
         return Ok(ApiResponse<BarberDayOffDto>.Ok(result, "Día no disponible agregado correctamente."));
+    }
+
+    /// <summary>Días libres de hoy en adelante.</summary>
+    [HttpGet("api/v1/barbers/{id:guid}/day-off")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia}")]
+    public async Task<ActionResult<ApiResponse<List<BarberDayOffDto>>>> GetDaysOffAsync([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        var result = await availabilityService.GetDaysOffAsync(id, cancellationToken);
+        return Ok(ApiResponse<List<BarberDayOffDto>>.Ok(result, "Días libres obtenidos correctamente."));
+    }
+
+    [HttpDelete("api/v1/barbers/{id:guid}/day-off/{dayOffId:guid}")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia}")]
+    public async Task<ActionResult<ApiResponse<object?>>> RemoveDayOffAsync([FromRoute] Guid id, [FromRoute] Guid dayOffId, CancellationToken cancellationToken)
+    {
+        await availabilityService.RemoveDayOffAsync(id, dayOffId, cancellationToken);
+        return Ok(ApiResponse<object?>.Ok(null, "Día libre quitado."));
     }
 
     [HttpGet("api/v1/barbers/{id:guid}/slots")]

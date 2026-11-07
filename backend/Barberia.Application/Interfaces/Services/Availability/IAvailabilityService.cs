@@ -20,4 +20,10 @@ public interface IAvailabilityService
         Guid barberId,
         DateOnly date,
         CancellationToken cancellationToken);
+
+    /// <summary>Días libres de hoy en adelante (hora de Medellín), del más próximo al más lejano.</summary>
+    Task<List<BarberDayOffDto>> GetDaysOffAsync(Guid barberId, CancellationToken cancellationToken);
+
+    /// <summary>Quita un día libre del barbero.</summary>
+    Task RemoveDayOffAsync(Guid barberId, Guid dayOffId, CancellationToken cancellationToken);
 }

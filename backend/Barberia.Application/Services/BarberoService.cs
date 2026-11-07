@@ -365,4 +365,24 @@ public class BarberoService : IBarberoService
 
         return result;
     }
+
+    public async Task<BarberoDto> ActivarAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var barbero = await dbContext.Barberos
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (barbero is null)
+        {
+            throw new NotFoundException("El barbero no existe.");
+        }
+
+        // Al desactivarlo se apagaron sus servicios; no se adivinan cuáles prestaba:
+        // el panel abre la edición para confirmarlos.
+        barbero.Activo = true;
+        barbero.Disponible = true;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return await GetByIdAsync(barbero.Id, cancellationToken);
+    }
 }

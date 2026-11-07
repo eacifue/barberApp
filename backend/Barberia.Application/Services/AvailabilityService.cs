@@ -23,13 +23,16 @@ public class AvailabilityService : IAvailabilityService
 
     private readonly IBarberiaDbContext dbContext;
     private readonly IValidator<UpsertBarberAvailabilityRequest> setAvailabilityValidator;
+    private readonly TimeProvider timeProvider;
 
     public AvailabilityService(
         IBarberiaDbContext dbContext,
-        IValidator<UpsertBarberAvailabilityRequest> setAvailabilityValidator)
+        IValidator<UpsertBarberAvailabilityRequest> setAvailabilityValidator,
+        TimeProvider timeProvider)
     {
         this.dbContext = dbContext;
         this.setAvailabilityValidator = setAvailabilityValidator;
+        this.timeProvider = timeProvider;
     }
 
     public async Task<List<BarberAvailabilityDto>> SetAvailabilityAsync(
@@ -331,5 +334,32 @@ public class AvailabilityService : IAvailabilityService
             DayOfWeek.Sunday => DiaSemana.Domingo,
             _ => DiaSemana.Lunes
         };
+    }
+
+    public async Task<List<BarberDayOffDto>> GetDaysOffAsync(Guid barberId, CancellationToken cancellationToken)
+    {
+        var colombiaZone = TimeZoneInfo.FindSystemTimeZoneById("America/Bogota");
+        var hoy = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(timeProvider.GetUtcNow(), colombiaZone).DateTime);
+
+        return await dbContext.BarberDaysOff
+            .AsNoTracking()
+            .Where(x => x.BarberId == barberId && x.Activo && x.Date >= hoy)
+            .OrderBy(x => x.Date)
+            .Select(x => new BarberDayOffDto { Id = x.Id, BarberId = x.BarberId, Date = x.Date, Reason = x.Reason })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task RemoveDayOffAsync(Guid barberId, Guid dayOffId, CancellationToken cancellationToken)
+    {
+        var dayOff = await dbContext.BarberDaysOff
+            .FirstOrDefaultAsync(x => x.Id == dayOffId && x.BarberId == barberId && x.Activo, cancellationToken);
+
+        if (dayOff is null)
+        {
+            throw new NotFoundException("El día libre no existe.");
+        }
+
+        dayOff.Activo = false;
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 }
