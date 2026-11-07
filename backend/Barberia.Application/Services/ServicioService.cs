@@ -26,11 +26,11 @@ public class ServicioService : IServicioService
         this.createValidator = createValidator;
     }
 
-    public async Task<List<ServicioDto>> GetAllByBarberiaAsync(Guid barberiaId, CancellationToken cancellationToken)
+    public async Task<List<ServicioDto>> GetAllByBarberiaAsync(Guid barberiaId, CancellationToken cancellationToken, bool incluirInactivos = false)
     {
         var servicios = await dbContext.Servicios
             .AsNoTracking()
-            .Where(x => x.Activo)
+            .Where(x => incluirInactivos || x.Activo)
             .OrderBy(x => x.Nombre)
             .ToListAsync(cancellationToken);
 
@@ -131,5 +131,21 @@ public class ServicioService : IServicioService
                 "La solicitud contiene errores de validación.",
                 validationResult.Errors.Select(x => x.ErrorMessage).ToArray());
         }
+    }
+
+    public async Task<ServicioDto> ActivarAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var servicio = await dbContext.Servicios
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (servicio is null)
+        {
+            throw new NotFoundException("El servicio no existe.");
+        }
+
+        servicio.Activo = true;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return mapper.Map<ServicioDto>(servicio);
     }
 }

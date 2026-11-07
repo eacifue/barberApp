@@ -20,6 +20,8 @@ type Props = {
   initialServicioId?: string
   initialFecha?: string
   initialHora?: string
+  /** Precarga el cliente (p. ej. desde su ficha). */
+  initialClienteId?: string
   /** Reprogramar: precarga cliente, barbero y servicio; al crear, cancela esta cita. */
   reprogramarDe?: Cita | null
 }
@@ -29,7 +31,7 @@ type Props = {
  * fecha, horas libres y búsqueda de cliente (design/pantallas/panel-web/Agenda-nueva-cita).
  * Compartido por Agenda y Disponibilidad.
  */
-export function CreateCitaModal({ open, onClose, onCreated, initialBarberoId, initialServicioId, initialFecha, initialHora, reprogramarDe }: Props) {
+export function CreateCitaModal({ open, onClose, onCreated, initialBarberoId, initialServicioId, initialFecha, initialHora, initialClienteId, reprogramarDe }: Props) {
   const queryClient = useQueryClient()
   const { effectiveBarberiaId } = useTenantBarberia()
   const { barberosQuery } = useBarberos(effectiveBarberiaId ?? '')
@@ -56,7 +58,7 @@ export function CreateCitaModal({ open, onClose, onCreated, initialBarberoId, in
       setServicioId(reprogramarDe?.servicio.id ?? initialServicioId ?? '')
       setFecha(initialFecha ?? todayIso())
       setHora(initialHora ?? '')
-      setClienteId(reprogramarDe?.cliente.id ?? '')
+      setClienteId(reprogramarDe?.cliente.id ?? initialClienteId ?? '')
       setBusqueda('')
       setError(null)
       setDirty(false)

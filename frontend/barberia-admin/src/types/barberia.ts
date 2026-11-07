@@ -2,6 +2,10 @@ export interface Barberia {
   id: string
   nombre: string
   descripcion?: string
+  slogan?: string
+  sitioWeb?: string
+  /** URL de la foto horizontal del local (tarjeta de Inicio en la app). */
+  fotoPortada?: string
   telefono: string
   correo: string
   direccion: string

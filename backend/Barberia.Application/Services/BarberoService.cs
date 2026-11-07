@@ -30,11 +30,11 @@ public class BarberoService : IBarberoService
         this.setHorarioValidator = setHorarioValidator;
     }
 
-    public async Task<List<BarberoDto>> GetAllByBarberiaAsync(Guid barberiaId, CancellationToken cancellationToken)
+    public async Task<List<BarberoDto>> GetAllByBarberiaAsync(Guid barberiaId, CancellationToken cancellationToken, bool incluirInactivos = false)
     {
         var barberos = await dbContext.Barberos
             .AsNoTracking()
-            .Where(x => x.Activo)
+            .Where(x => incluirInactivos || x.Activo)
             .OrderBy(x => x.Nombre)
             .ThenBy(x => x.Apellido)
             .ToListAsync(cancellationToken);
@@ -364,5 +364,25 @@ public class BarberoService : IBarberoService
         }
 
         return result;
+    }
+
+    public async Task<BarberoDto> ActivarAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var barbero = await dbContext.Barberos
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (barbero is null)
+        {
+            throw new NotFoundException("El barbero no existe.");
+        }
+
+        // Al desactivarlo se apagaron sus servicios; no se adivinan cuáles prestaba:
+        // el panel abre la edición para confirmarlos.
+        barbero.Activo = true;
+        barbero.Disponible = true;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return await GetByIdAsync(barbero.Id, cancellationToken);
     }
 }

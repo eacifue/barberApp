@@ -70,8 +70,11 @@ function toApiPayload(data: BarberoUpsertInput) {
 }
 
 export const barberoService = {
-  async getByBarberia(barberiaId: string): Promise<Barbero[]> {
-    const response = await http.get<RawBarbero[] | ApiLikeResponse<RawBarbero[]>>(`/v1/barberias/${barberiaId}/barberos`)
+  /** Con `incluirInactivos` (solo panel) también llegan los desactivados. */
+  async getByBarberia(barberiaId: string, incluirInactivos = false): Promise<Barbero[]> {
+    const response = await http.get<RawBarbero[] | ApiLikeResponse<RawBarbero[]>>(`/v1/barberias/${barberiaId}/barberos`, {
+      params: incluirInactivos ? { incluirInactivos: true } : undefined,
+    })
     const payload = unwrap(response.data) ?? []
     return payload.map((item) => normalizeBarbero(item))
   },
@@ -93,6 +96,12 @@ export const barberoService = {
 
   async updateFCM(id: string, token: string): Promise<void> {
     await http.put(`/v1/barberos/${id}/fcm-token`, { tokenFCM: token })
+  },
+
+  /** Reactiva un barbero; sus servicios se confirman al editarlo. */
+  async activate(id: string): Promise<Barbero> {
+    const response = await http.put<RawBarbero | ApiLikeResponse<RawBarbero>>(`/v1/barberos/${id}/activar`)
+    return normalizeBarbero(unwrap(response.data))
   },
 
   async remove(id: string): Promise<void> {

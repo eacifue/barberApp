@@ -92,7 +92,8 @@ function normalizeSlot(item: unknown): SlotActivo | null {
 }
 
 export const slotsRedisService = {
-  async getActivos(): Promise<SlotActivo[]> {
+  /** `null` cuando el backend no expone la lista (404): la vista lo dice en vez de mostrarla vacía. */
+  async getActivos(): Promise<SlotActivo[] | null> {
     try {
       const response = await http.get<unknown[] | ApiLikeResponse<unknown[]>>('/v1/slots/activos')
       const rawList = unwrap(response.data) ?? []
@@ -100,7 +101,7 @@ export const slotsRedisService = {
     } catch (error) {
       const axiosError = error as AxiosError
       if (axiosError.response?.status === 404) {
-        return []
+        return null
       }
       throw error
     }

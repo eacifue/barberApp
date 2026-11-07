@@ -22,9 +22,12 @@ public class ServiciosController : ControllerBase
     [AllowAnonymous]
     public async Task<ActionResult<ApiResponse<List<ServicioDto>>>> GetByBarberiaAsync(
         [FromRoute] Guid barberiaId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [FromQuery] bool incluirInactivos = false)
     {
-        var result = await servicioService.GetAllByBarberiaAsync(barberiaId, cancellationToken);
+        // Ver los desactivados es solo para el panel (Admin y Admin Barbería).
+        var verInactivos = incluirInactivos && (User.IsInRole(Roles.Admin) || User.IsInRole(Roles.AdminBarberia));
+        var result = await servicioService.GetAllByBarberiaAsync(barberiaId, cancellationToken, verInactivos);
         return Ok(ApiResponse<List<ServicioDto>>.Ok(result, "Servicios obtenidos correctamente."));
     }
 
@@ -67,6 +70,15 @@ public class ServiciosController : ControllerBase
     {
         await servicioService.DeleteAsync(id, cancellationToken);
         return Ok(ApiResponse<object?>.Ok(null, "Servicio eliminado correctamente."));
+    }
+
+    /// <summary>Vuelve a ofrecer un servicio desactivado.</summary>
+    [HttpPut("api/v1/servicios/{id:guid}/activar")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia}")]
+    public async Task<ActionResult<ApiResponse<ServicioDto>>> ActivarAsync([FromRoute] Guid id, CancellationToken cancellationToken)
+    {
+        var result = await servicioService.ActivarAsync(id, cancellationToken);
+        return Ok(ApiResponse<ServicioDto>.Ok(result, "Servicio activado."));
     }
 
     [HttpGet("api/v1/barberos/{barberoId:guid}/servicios")]
