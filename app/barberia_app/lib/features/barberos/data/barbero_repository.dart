@@ -35,4 +35,16 @@ class BarberoRepository {
 
     return response.data ?? const [];
   }
+
+  /// Equipo de la barbería (público): para «Nuestros barberos» en Inicio.
+  Future<List<BarberoModel>> getBarberosPorBarberia(String barberiaId) async {
+    final response = await _apiClient.getList<List<BarberoModel>>(
+      ApiEndpoints.barberosPorBarberia(barberiaId),
+      fromJson: (list) => list.whereType<Map<String, dynamic>>().map(BarberoModel.fromJson).toList(),
+    );
+    if (!response.success) {
+      throw AppException(response.message.isEmpty ? 'No fue posible cargar los barberos.' : response.message);
+    }
+    return response.data ?? const [];
+  }
 }
