@@ -1,16 +1,17 @@
-import { useMemo, useState } from 'react'
-import { useQuery, type UseQueryResult } from '@tanstack/react-query'
+import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 
-import { Banner, Button, EmptyState, IconButton, Select, Skeleton, SlotGrid, Table, Tabs, formatDuration, formatLongDate, formatShortDate, formatTime, type Slot, type TableColumn } from '../../components/bsm'
+import { Banner, Button, ConfirmDialog, Countdown, EmptyState, IconButton, Select, Skeleton, SlotGrid, Table, Tabs, formatDuration, formatLongDate, formatShortDate, formatTime, type Slot, type TableColumn } from '../../components/bsm'
 import { PageHeader } from '../../components/shared/PageHeader'
 import { useBarberias } from '../../hooks/useBarberias'
 import { useBarberos } from '../../hooks/useBarberos'
 import { useTenantBarberia } from '../../hooks/useTenantBarberia'
 import { citaService } from '../../services/citaService'
-import { slotsRedisService, type SlotActivo } from '../../services/slotsRedisService'
+import { slotsRedisService, type ReservaEnCurso } from '../../services/slotsRedisService'
+import { toast } from '../../stores/toastStore'
 import type { Cita, SlotDisponible } from '../../types/cita'
-import { addDaysIso, esDiaDescanso, hhmm, minutesOf, mondayOf, parseIso, todayIso, weekDays } from '../citas/agendaUtils'
+import { addDaysIso, esDiaDescanso, hhmm, mensajeDeError, minutesOf, mondayOf, parseIso, todayIso, weekDays } from '../citas/agendaUtils'
 import { CreateCitaModal } from '../citas/CreateCitaModal'
 
 type Dia = { fecha: string; slots: SlotDisponible[]; citas: Cita[]; error: boolean }
@@ -216,55 +217,93 @@ function Horarios({ onVerReservas }: { onVerReservas: () => void }) {
   )
 }
 
-function Reservas({ query }: { query: UseQueryResult<SlotActivo[] | null> }) {
-  const { effectiveBarberiaId } = useTenantBarberia()
-  const { barberosQuery } = useBarberos(effectiveBarberiaId ?? '')
-  const nombre = (id: string) => {
-    const b = barberosQuery.data?.find((x) => x.id === id)
-    return b ? `${b.nombre} ${b.apellido}` : 'Barbero'
-  }
-  const filas = query.data ?? []
+function useAhora(ms = 1000) {
+  const [ahora, setAhora] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setAhora(Date.now()), ms)
+    return () => clearInterval(id)
+  }, [ms])
+  return ahora
+}
 
-  const explicacion = (
-    <p className="text-body-sm text-ink-muted">Cuando un cliente elige un horario en la app, se le aparta unos minutos para que confirme. Si no confirma, el horario se libera solo.</p>
-  )
+function Reservas({ query }: { query: UseQueryResult<ReservaEnCurso[]> }) {
+  const queryClient = useQueryClient()
+  const ahora = useAhora()
+  const [liberar, setLiberar] = useState<ReservaEnCurso | null>(null)
+  const liberarMutation = useMutation({
+    mutationFn: (r: ReservaEnCurso) => slotsRedisService.liberar(r),
+    onSuccess: async () => {
+      toast.success('Horario liberado. Avisamos al cliente.')
+      setLiberar(null)
+      await queryClient.invalidateQueries({ queryKey: ['slots-activos'] })
+      await queryClient.invalidateQueries({ queryKey: ['disponibilidad-semana'] })
+    },
+    onError: async (e) => {
+      toast.error(mensajeDeError(e, 'No pudimos liberar el horario.'))
+      setLiberar(null)
+      await queryClient.invalidateQueries({ queryKey: ['slots-activos'] })
+    },
+  })
+  // Se esconden en cuanto vencen, sin esperar al siguiente refresco.
+  const filas = (query.data ?? []).filter((r) => new Date(r.expiraEn).getTime() > ahora)
+  const restantes = (r: ReservaEnCurso) => Math.max(0, Math.round((new Date(r.expiraEn).getTime() - ahora) / 1000))
 
-  if (query.data === null) {
-    return (
-      <div className="flex flex-col gap-4">
-        {explicacion}
-        <Banner tone="info" title="Esta vista aún no está disponible">
-          El servidor todavía no comparte la lista de horarios apartados con el panel. Mientras tanto, los horarios que alguien está reservando aparecen como «Reservando» en Horarios del día.
-        </Banner>
-      </div>
-    )
-  }
-
-  const columnas: TableColumn<SlotActivo>[] = [
-    { key: 'cliente', label: 'Cliente', render: (r) => <strong className="text-label-sm text-ink">{r.cliente}</strong> },
-    { key: 'barbero', label: 'Barbero', muted: true, render: (r) => nombre(r.barberoId) },
+  const columnas: TableColumn<ReservaEnCurso>[] = [
+    {
+      key: 'cliente',
+      label: 'Cliente',
+      render: (r) => (
+        <span className="flex flex-col text-left">
+          <strong className="text-label-sm text-ink">{r.clienteNombre}</strong>
+          <span className="text-caption text-ink-muted">Desde la app</span>
+        </span>
+      ),
+    },
+    { key: 'barbero', label: 'Barbero', muted: true, render: (r) => r.barberoNombre },
     { key: 'horario', label: 'Horario apartado', render: (r) => `${formatShortDate(parseIso(r.fechaCita.slice(0, 10)))} · ${formatTime(hhmm(r.horaInicio))}` },
-    { key: 'desde', label: 'Apartado a las', muted: true, render: (r) => (r.bloqueadoEn ? formatTime(new Date(r.bloqueadoEn)) : '—') },
-    { key: 'libera', label: 'Se libera', render: (r) => (r.expiraEn ? formatTime(new Date(r.expiraEn)) : '—') },
+    { key: 'desde', label: 'Apartado a las', muted: true, render: (r) => formatTime(new Date(r.bloqueadoEn)) },
+    { key: 'libera', label: 'Se libera en', render: (r) => <Countdown variant="compact" seconds={restantes(r)} /> },
+    {
+      key: 'acciones',
+      label: 'Acciones',
+      align: 'right',
+      render: (r) => (
+        <Button variant="secondary" size="sm" onClick={() => setLiberar(r)}>
+          Liberar ahora
+        </Button>
+      ),
+    },
   ]
 
   return (
     <div className="flex flex-col gap-4">
-      {explicacion}
+      <p className="text-body-sm text-ink-muted">Cuando un cliente elige un horario en la app, se le aparta 5 minutos para que confirme. Si no confirma, el horario se libera solo.</p>
       <Table
         caption="Reservas en curso"
         columns={columnas}
         rows={filas}
-        rowKey={(r) => r.keyRedis}
+        rowKey={(r) => `${r.barberoId}-${r.fechaCita}-${r.horaInicio}`}
         state={
           query.isError ? (
             <EmptyState tone="error" title="No pudimos cargar las reservas en curso" body="Revisa tu conexión e inténtalo de nuevo." actionLabel="Reintentar" actionIcon="refresh-cw" actionVariant="secondary" onAction={() => void query.refetch()} />
           ) : query.isLoading ? (
             <Skeleton variant="row" rows={3} label="Cargando reservas en curso" />
           ) : filas.length === 0 ? (
-            <EmptyState icon="timer" title="Nadie está reservando ahora" body="Se actualiza cada 10 segundos." />
+            <EmptyState icon="timer" title="Nadie está reservando ahora" body="La lista se actualiza cada 10 segundos." />
           ) : undefined
         }
+      />
+      <p className="text-caption text-ink-muted">«Liberar ahora» devuelve el horario a la app al instante; el cliente recibe el aviso «Tu horario se liberó» y puede elegir otro.</p>
+      <ConfirmDialog
+        open={liberar != null}
+        tone="danger"
+        icon="timer"
+        title={`¿Liberar el horario de ${liberar?.clienteNombre ?? ''}?`}
+        body={liberar ? `Las ${formatTime(hhmm(liberar.horaInicio))} con ${liberar.barberoNombre} vuelven a estar disponibles en la app. ${liberar.clienteNombre} pierde el horario si aún no confirma.` : ''}
+        confirmLabel="Liberar horario"
+        loading={liberarMutation.isPending}
+        onCancel={() => setLiberar(null)}
+        onConfirm={() => liberar && liberarMutation.mutate(liberar)}
       />
     </div>
   )
