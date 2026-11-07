@@ -1,9 +1,7 @@
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/errors/error_message.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -12,6 +10,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/format/formato.dart';
 import '../../../../shared/widgets/bsm/bsm.dart';
 import '../../../barberias/domain/barbershop_model.dart';
+import '../../../barberias/presentation/abrir_mapas.dart';
 import '../../../barberias/presentation/providers/barbershops_provider.dart';
 import '../../domain/models/cita_model.dart';
 import '../booking_actions.dart';
@@ -64,13 +63,8 @@ class _DetalleCitaScreenState extends ConsumerState<DetalleCitaScreen> {
   }
 
   Future<void> _comoLlegar(BarbershopModel barbershop) async {
-    final query = Uri.encodeComponent('${barbershop.nombre}, ${barbershop.direccionCompleta}');
-    final apple = defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS;
-    final uri = apple ? Uri.parse('https://maps.apple.com/?q=$query') : Uri.parse('https://www.google.com/maps/search/?api=1&query=$query');
-    final abierto = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!abierto && mounted) {
-      showBsmToast(context, 'No pudimos abrir la aplicación de mapas.', tone: BsmToastTone.danger);
-    }
+    final abierto = await abrirMapas(barbershop);
+    if (!abierto && mounted) showBsmToast(context, 'No pudimos abrir la aplicación de mapas.', tone: BsmToastTone.danger);
   }
 
   @override

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/onboarding_screen.dart';
 import '../../features/auth/presentation/screens/registro_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/barberos/presentation/screens/seleccion_barbero_screen.dart';
@@ -23,6 +24,8 @@ import '../../features/servicios/presentation/screens/home_screen.dart';
 import '../../features/servicios/presentation/screens/seleccion_servicio_screen.dart';
 import '../../shared/widgets/bsm/bsm.dart';
 import '../auth/jwt_utils.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 import '../storage/secure_storage.dart';
 
 const _sessionExpiryWarningThreshold = Duration(minutes: 30);
@@ -41,11 +44,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isAuthRoute =
           state.matchedLocation == '/login' ||
           state.matchedLocation == '/registro';
+      // Splash y onboarding se ven con o sin sesión; el splash decide el destino.
+      final isPublic = state.matchedLocation == '/' || state.matchedLocation == '/bienvenida';
+      if (isPublic) return null;
       final isAdminRoute = state.matchedLocation.startsWith('/admin');
-
-      if (state.matchedLocation == '/') {
-        return isLoggedIn ? '/dashboard' : '/login';
-      }
 
       if (!isLoggedIn && !isAuthRoute) {
         return '/login';
@@ -74,6 +76,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
+      GoRoute(path: '/bienvenida', builder: (context, state) => const OnboardingScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/registro',
@@ -208,16 +211,26 @@ class _AppShellState extends ConsumerState<_AppShell> {
       return;
     }
 
+    final p = context.palette;
     ScaffoldMessenger.of(context).showMaterialBanner(
       MaterialBanner(
-        content: const Text(
-          'Tu sesión expirará pronto. Si estás en medio de una reserva, '
-          'complétala pronto o inicia sesión de nuevo para no perderla.',
+        backgroundColor: p.warningBg,
+        leading: Icon(LucideIcons.triangleAlert, color: p.warning),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Tu sesión expirará pronto', style: AppTextStyles.label.copyWith(color: p.ink)),
+            Text(
+              'Si estás reservando, termina ahora o vuelve a iniciar sesión para no perder tu horario.',
+              style: AppTextStyles.body.copyWith(color: p.ink),
+            ),
+          ],
         ),
         actions: [
           TextButton(
-            onPressed: () =>
-                ScaffoldMessenger.of(context).hideCurrentMaterialBanner(),
+            onPressed: () => ScaffoldMessenger.of(context).hideCurrentMaterialBanner(),
+            style: TextButton.styleFrom(foregroundColor: p.warning),
             child: const Text('Entendido'),
           ),
         ],

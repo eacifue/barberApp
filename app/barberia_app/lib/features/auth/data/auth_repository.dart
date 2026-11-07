@@ -39,6 +39,8 @@ class AuthRepository {
     }
 
     await _secureStorageService.saveToken(token);
+    final nombre = (response.data!['nombreCompleto'] as String? ?? '').trim().split(RegExp(r'\s+')).first;
+    if (nombre.isNotEmpty) await _secureStorageService.saveNombre(nombre);
   }
 
   Future<void> registro({
@@ -74,6 +76,8 @@ class AuthRepository {
     }
 
     await _secureStorageService.saveToken(token);
+    final primerNombre = nombre.trim().split(RegExp(r'\s+')).first;
+    if (primerNombre.isNotEmpty) await _secureStorageService.saveNombre(primerNombre);
   }
 
   Future<void> actualizarTokenFCM(String token) async {
