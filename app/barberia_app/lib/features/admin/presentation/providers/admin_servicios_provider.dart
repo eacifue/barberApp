@@ -21,6 +21,6 @@ final adminServiciosTabProvider = FutureProvider.autoDispose<AdminServiciosTabDa
 
   final servicios = await ref
       .watch(adminServicioRepositoryProvider)
-      .getServiciosPorBarberia(barberiaId);
+      .getServiciosPorBarberia(barberiaId, incluirInactivos: true);
   return AdminServiciosTabData(barberiaId: barberiaId, servicios: servicios);
 });

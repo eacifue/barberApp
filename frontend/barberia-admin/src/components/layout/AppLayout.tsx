@@ -6,7 +6,7 @@ import { useLogout } from '../../hooks/useLogout'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { usePendientesHoy } from '../../hooks/usePendientesHoy'
 import { BottomNav, ConfirmDialog, Sidebar, Topbar, cx, type BottomNavAction, type NavItem, type NavSection } from '../bsm'
-import { useTheme } from '../theme/ThemeProvider'
+import { useTheme } from '../theme/themeContext'
 
 const ROUTE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -75,7 +75,7 @@ export function AppLayout() {
   const pendientesQuery = usePendientesHoy(rol !== 'Barbero')
   const pendientes = pendientesQuery.data?.length ?? 0
   const sections = navigation(rol, pendientes)
-  const title = ROUTE_TITLES[location.pathname] ?? 'Panel'
+  const title = rol === 'Barbero' && location.pathname === '/citas' ? 'Mis citas' : (ROUTE_TITLES[location.pathname] ?? 'Panel')
 
   // Esc cierra el drawer (navegar también lo cierra, vía onNavigate).
   useEffect(() => {

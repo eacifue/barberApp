@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
+import { useAuthStore } from '../../stores/authStore'
 import { Avatar, Button, ConfirmDialog, Icon, IconButton, StatusBadge, formatCOP, formatDuration, formatLongDate, formatTime } from '../../components/bsm'
 import { citaService } from '../../services/citaService'
 import { toast } from '../../stores/toastStore'
@@ -40,6 +41,7 @@ type Props = {
  * visible y se puede pasar de una cita a otra (design/pantallas/panel-web/Agenda-detalle).
  */
 export function CitaDetailPanel({ cita, onClose, onReprogramar, overlay }: Props) {
+  const esBarbero = useAuthStore((st) => st.usuario?.rol === 'Barbero')
   const queryClient = useQueryClient()
   const headingRef = useRef<HTMLHeadingElement>(null)
   const [confirmar, setConfirmar] = useState<'cancelar' | 'noAsistio' | null>(null)
@@ -94,7 +96,16 @@ export function CitaDetailPanel({ cita, onClose, onReprogramar, overlay }: Props
   const run = (accion: Accion) => mutation.mutate(accion)
 
   let footer: ReactNode = null
-  if (cita.estado === 'Pendiente') {
+  if (esBarbero) {
+    // El backend reserva los cambios de estado a recepción (Admin y Admin Barbería).
+    footer =
+      cita.estado === 'Pendiente' || cita.estado === 'Confirmada' || cita.estado === 'EnProgreso' ? (
+        <p className="flex items-center justify-center gap-2 text-center text-caption text-ink-muted">
+          <Icon name="info" size={14} />
+          Recepción confirma, inicia y completa tus citas desde el panel.
+        </p>
+      ) : null
+  } else if (cita.estado === 'Pendiente') {
     footer = (
       <>
         <Button size="lg" block icon="circle-check" loading={accionEnCurso === 'confirmar'} disabled={busy} onClick={() => run('confirmar')}>
@@ -206,7 +217,7 @@ export function CitaDetailPanel({ cita, onClose, onReprogramar, overlay }: Props
       {footer && (
         <footer className="flex flex-col gap-2 border-t border-line px-6 py-4">
           {footer}
-          {(cita.estado === 'Pendiente' || cita.estado === 'Confirmada') && !empezo && (
+          {!esBarbero && (cita.estado === 'Pendiente' || cita.estado === 'Confirmada') && !empezo && (
             <p className="text-center text-caption text-ink-muted">«No asistió» se habilita desde las {formatTime(hhmm(cita.horaInicio))}.</p>
           )}
         </footer>
