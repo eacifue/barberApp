@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Avatar, Button, Calendar, EmptyState, Icon, Skeleton, StatCard, StatusBadge, formatCOP, formatLongDate, formatTime, useDelayedFlag } from '../../components/bsm'
 import { useBarberias } from '../../hooks/useBarberias'
 import { useBarberos } from '../../hooks/useBarberos'
+import { citasEnRango } from '../citas/citasEnRango'
 import { useTenantBarberia } from '../../hooks/useTenantBarberia'
 import { citaService } from '../../services/citaService'
 import { clienteService } from '../../services/clienteService'
@@ -18,16 +19,6 @@ import { BarList, ColumnChart, LineChart, type ColumnDatum } from './charts'
 const SEMANAS = 8
 const WEEKDAY_SHORT = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
 
-async function citasEnRango(from: string, to: string): Promise<Cita[]> {
-  const pageSize = 200
-  const all: Cita[] = []
-  for (let page = 1; page <= 20; page++) {
-    const chunk = await citaService.getAdminList({ from, to, page, pageSize })
-    all.push(...chunk)
-    if (chunk.length < pageSize) break
-  }
-  return Array.from(new Map(all.map((c) => [c.id, c])).values())
-}
 
 /** `$1,71 M` · `$840 mil` · `$0` para ejes y etiquetas directas. */
 function millones(n: number): string {
