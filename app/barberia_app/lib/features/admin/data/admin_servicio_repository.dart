@@ -16,9 +16,11 @@ class AdminServicioRepository {
 
   final ApiClient _apiClient;
 
-  Future<List<ServicioModel>> getServiciosPorBarberia(String barberiaId) async {
+  /// Con [incluirInactivos] también llegan los desactivados (solo admin).
+  Future<List<ServicioModel>> getServiciosPorBarberia(String barberiaId, {bool incluirInactivos = false}) async {
     final response = await _apiClient.getList<List<ServicioModel>>(
       ApiEndpoints.serviciosPorBarberia(barberiaId),
+      queryParams: incluirInactivos ? const {'incluirInactivos': true} : null,
       fromJson: (list) {
         return list
             .whereType<Map<String, dynamic>>()
@@ -116,5 +118,21 @@ class AdminServicioRepository {
             : response.message,
       );
     }
+  }
+
+  /// Reactiva un servicio desactivado.
+  Future<ServicioModel> activarServicio(String id) async {
+    final response = await _apiClient.put<Map<String, dynamic>>(
+      '${ApiEndpoints.servicioPorId(id)}/activar',
+      fromJson: (json) => json,
+    );
+
+    if (!response.success || response.data == null) {
+      throw AppException(
+        response.message.isEmpty ? 'No fue posible activar el servicio.' : response.message,
+      );
+    }
+
+    return ServicioModel.fromJson(response.data!);
   }
 }

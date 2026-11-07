@@ -14,6 +14,7 @@ class AdminBarberiaModel {
     required this.diasDescanso,
     required this.latitud,
     required this.longitud,
+    this.raw = const {},
   });
 
   final String id;
@@ -30,6 +31,17 @@ class AdminBarberiaModel {
   final List<String> diasDescanso;
   final double latitud;
   final double longitud;
+
+  /// JSON tal como llegó: conserva slogan, descripción, país, foto y sitio web
+  /// para no borrarlos al guardar (el PUT reemplaza la barbería completa).
+  final Map<String, dynamic> raw;
+
+  String _texto(String k) => (raw[k] as String?) ?? '';
+  String get slogan => _texto('slogan');
+  String get descripcion => _texto('descripcion');
+  String get sitioWeb => _texto('sitioWeb');
+  String get fotoPortada => _texto('fotoPortada');
+  String get pais => _texto('pais').isEmpty ? 'Colombia' : _texto('pais');
 
   factory AdminBarberiaModel.fromJson(Map<String, dynamic> json) {
     return AdminBarberiaModel(
@@ -51,11 +63,17 @@ class AdminBarberiaModel {
           const [],
       latitud: (json['latitud'] as num?)?.toDouble() ?? 0,
       longitud: (json['longitud'] as num?)?.toDouble() ?? 0,
+      raw: json,
     );
   }
 
   Map<String, dynamic> toUpsertJson() {
     return {
+      'descripcion': descripcion,
+      'slogan': slogan,
+      'sitioWeb': sitioWeb,
+      'fotoPortada': fotoPortada,
+      'pais': pais,
       'nombre': nombre,
       'telefono': telefono,
       'correo': correo,

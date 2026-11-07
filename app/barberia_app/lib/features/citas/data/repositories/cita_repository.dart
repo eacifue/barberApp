@@ -61,6 +61,22 @@ class CitaRepository {
     return response.data ?? const [];
   }
 
+  /// Citas de un barbero en un día (rol Barbero: su propia agenda).
+  Future<List<CitaModel>> getAgendaBarbero(String barberoId, DateTime fecha) async {
+    final dia = '${fecha.year.toString().padLeft(4, '0')}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}';
+    final response = await _apiClient.getList<List<CitaModel>>(
+      ApiEndpoints.citasPorBarbero(barberoId),
+      queryParams: {'fecha': dia},
+      fromJson: (list) => list.whereType<Map<String, dynamic>>().map(CitaModel.fromJson).toList(),
+    );
+
+    if (!response.success) {
+      throw AppException(response.message.isEmpty ? 'No se pudo cargar tu agenda.' : response.message);
+    }
+
+    return response.data ?? const [];
+  }
+
   Future<CitaModel> getCitaById(String citaId) async {
     final response = await _apiClient.get<CitaModel>(
       ApiEndpoints.citaPorId(citaId),
