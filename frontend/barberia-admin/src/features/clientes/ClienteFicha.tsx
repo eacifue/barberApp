@@ -1,4 +1,4 @@
-import { Avatar, Badge, Button, IconButton, Skeleton, StatusBadge, formatCOP, formatTime, statusOf } from '../../components/bsm'
+import { Avatar, Badge, Button, IconButton, Skeleton, StatusBadge, formatCOP, formatPhone, formatTime, statusOf } from '../../components/bsm'
 import type { Cliente } from '../../types/cliente'
 import { nombreBarbero } from '../citas/agendaUtils'
 import { fechaCorta, type Metricas } from './clientesUtils'
@@ -41,7 +41,7 @@ export function ClienteFicha({ cliente, metricas: m, cargando, onClose, onNuevaC
         <div className="flex items-center gap-2">
           <dt className="sr-only">Celular</dt>
           <dd>
-            <a href={`tel:${cliente.telefono.replace(/\s/g, '')}`}>{cliente.telefono || '—'}</a>
+            <a href={`tel:${cliente.telefono.replace(/\s/g, '')}`}>{cliente.telefono ? formatPhone(cliente.telefono) : '—'}</a>
           </dd>
         </div>
         <div className="flex items-center gap-2">

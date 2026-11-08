@@ -112,7 +112,7 @@ function Horarios({ onVerReservas }: { onVerReservas: () => void }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+      <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-start">
         <Select label="Barbero" value={barbero?.id ?? ''} options={barberos.map((b) => ({ value: b.id, label: `${b.nombre} ${b.apellido}` }))} onChange={(e) => { setBarberoSel(e.target.value); setServicioSel('') }} />
         <Select
           label="Servicio"
@@ -122,7 +122,7 @@ function Horarios({ onVerReservas }: { onVerReservas: () => void }) {
           hint="La duración del servicio define qué horarios caben."
           onChange={(e) => setServicioSel(e.target.value)}
         />
-        <div className="flex items-center gap-1 md:mb-[22px]">
+        <div className="flex items-center gap-1 md:mt-[26px]">
           <IconButton icon="chevron-left" label="Semana anterior" disabled={semana <= mondayOf(hoy)} onClick={() => setSemana(addDaysIso(semana, -7))} />
           <span className="min-w-[140px] text-center text-label-sm text-ink">{rango}</span>
           <IconButton icon="chevron-right" label="Semana siguiente" onClick={() => setSemana(addDaysIso(semana, 7))} />

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
-import { Avatar, Badge, Button, Chip, ConfirmDialog, EmptyState, IconButton, Input, Modal, Pagination, Skeleton, Table, type TableColumn } from '../../components/bsm'
+import { Avatar, Badge, Button, Chip, formatPhone, ConfirmDialog, EmptyState, IconButton, Input, Modal, Pagination, Skeleton, Table, type TableColumn } from '../../components/bsm'
 import { PageHeader } from '../../components/shared/PageHeader'
 import { useClientes } from '../../hooks/useClientes'
 import { useDebounce } from '../../hooks/useDebounce'
@@ -149,7 +149,7 @@ export function ClientesList() {
         </span>
       ),
     },
-    { key: 'celular', label: 'Celular', muted: true, render: (c) => c.telefono || '—' },
+    { key: 'celular', label: 'Celular', muted: true, render: (c) => <span className="whitespace-nowrap">{c.telefono ? formatPhone(c.telefono) : '—'}</span> },
     { key: 'citas', label: 'Citas', align: 'right', render: (c) => (citasQuery.isLoading ? '…' : (citasPorCliente.get(c.id)?.length ?? 0)) },
     { key: 'ultima', label: 'Última visita', render: (c) => (citasQuery.isLoading ? '…' : ultimaVisita.has(c.id) ? fechaCorta(ultimaVisita.get(c.id)!, hoy) : <span className="text-ink-muted">Sin visitas</span>) },
     { key: 'estado', label: 'Estado', render: (c) => (c.activo ? <Badge tone="success" icon="circle-check">Activo</Badge> : <Badge tone="neutral" icon="ban">Inactivo</Badge>) },
