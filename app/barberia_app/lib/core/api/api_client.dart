@@ -19,6 +19,13 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 });
 
 class ApiClient {
+  /// Va en cada petición. `X-Barberia-Id`: la barbería de esta app; el API la usa en
+  /// login, registro y catálogo (con sesión manda el token). El selector llega después.
+  static const encabezadosBase = <String, String>{
+    'Content-Type': 'application/json',
+    'X-Barberia-Id': AppConfig.defaultBarberiaId,
+  };
+
   ApiClient({
     required Ref ref,
     required SecureStorageService secureStorageService,
@@ -29,7 +36,7 @@ class ApiClient {
            baseUrl: AppConfig.baseUrl,
            connectTimeout: AppConfig.connectTimeout,
            receiveTimeout: AppConfig.receiveTimeout,
-           headers: const {'Content-Type': 'application/json'},
+           headers: encabezadosBase,
          ),
        ) {
     _dio.interceptors.add(

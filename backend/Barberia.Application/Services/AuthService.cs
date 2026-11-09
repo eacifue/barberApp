@@ -71,19 +71,28 @@ public class AuthService : IAuthService
     public async Task<AuthResponseDto> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
         var correo = request.Correo.Trim().ToLowerInvariant();
-        var barberiaId = await barberiaContexto.ObtenerIdAsync(cancellationToken);
-        var cliente = await dbContext.Clientes
+        // La app manda su barbería; el panel no. Sin barbería se busca en todas.
+        var barberiaId = await barberiaContexto.ObtenerIdSiHayAsync(cancellationToken);
+        var candidatas = await dbContext.Clientes
             .AsNoTracking()
             .IgnoreQueryFilters()
-            .Where(x => x.Correo == correo && x.Activo && (x.BarberiaId == barberiaId || x.BarberiaId == null))
+            .Where(x => x.Correo == correo && x.Activo && (barberiaId == null || x.BarberiaId == barberiaId || x.BarberiaId == null))
             // La cuenta de la barbería va antes que la del SuperAdmin con el mismo correo.
             .OrderBy(x => x.BarberiaId == null)
-            .FirstOrDefaultAsync(cancellationToken);
+            .ToListAsync(cancellationToken);
 
-        if (cliente is null || !BCrypt.Net.BCrypt.Verify(request.Password, cliente.PasswordHash))
+        var validas = candidatas.Where(x => BCrypt.Net.BCrypt.Verify(request.Password, x.PasswordHash)).ToList();
+        if (validas.Count == 0)
         {
             throw new UnauthorizedException("Correo o contraseña inválidos.");
         }
+
+        if (barberiaId is null && validas.Count > 1)
+        {
+            throw new ValidationException("Tienes cuenta en varias barberías. Elige tu barbería para entrar.");
+        }
+
+        var cliente = validas[0];
 
         return BuildAuthResponse(cliente);
     }

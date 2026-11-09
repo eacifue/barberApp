@@ -75,6 +75,22 @@ public class CurrentUserService : ICurrentUserService
         }
     }
 
+    public Guid? BarberiaId
+    {
+        get
+        {
+            var value = httpContextAccessor.HttpContext?.User.FindFirstValue("barberiaId");
+            if (Guid.TryParse(value, out var id))
+                return id;
+
+            return GetItemGuid(Middleware.TenantContextMiddleware.BarberiaElegidaItemKey);
+        }
+    }
+
+    public bool VeTodasLasBarberias =>
+        httpContextAccessor.HttpContext is null
+        || (IsAdmin && BarberiaId is null);
+
     private Guid? GetItemGuid(string key)
     {
         return httpContextAccessor.HttpContext?.Items.TryGetValue(key, out var value) == true && value is Guid parsed

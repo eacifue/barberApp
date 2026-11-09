@@ -279,6 +279,11 @@ public class CitaService : ICitaService
 
     public async Task<List<CitaDto>> GetByBarberoAsync(Guid barberoId, DateOnly fecha, CancellationToken cancellationToken)
     {
+        if (!await dbContext.Barberos.AnyAsync(x => x.Id == barberoId, cancellationToken))
+        {
+            throw new NotFoundException("El barbero no existe.");
+        }
+
         var citas = await dbContext.Citas
             .AsNoTracking()
             .Include(x => x.Cliente)
@@ -325,6 +330,7 @@ public class CitaService : ICitaService
         var query = dbContext.Citas
             .AsNoTracking()
             .IgnoreQueryFilters()
+            .Where(x => currentUserService.VeTodasLasBarberias || x.BarberiaId == currentUserService.BarberiaId)
             .Include(x => x.Cliente)
             .Include(x => x.Barbero)
             .Include(x => x.Servicio)
@@ -434,6 +440,8 @@ public class CitaService : ICitaService
     {
         IQueryable<Cita> query = dbContext.Citas
             .IgnoreQueryFilters()
+            // IgnoreQueryFilters trae cliente y barbero aunque el rol los esconda; la barbería se exige aparte.
+            .Where(x => currentUserService.VeTodasLasBarberias || x.BarberiaId == currentUserService.BarberiaId)
             .Include(x => x.Cliente)
             .Include(x => x.Barbero)
             .Include(x => x.Servicio)

@@ -23,6 +23,8 @@ public abstract class GestionTestBase
         public bool IsBarbero => false;
         public bool IsCliente => false;
         public Guid? BarberoId => null;
+        public Guid? BarberiaId => null;
+        public bool VeTodasLasBarberias => true;
     }
 
     private readonly string databaseName = Guid.NewGuid().ToString();

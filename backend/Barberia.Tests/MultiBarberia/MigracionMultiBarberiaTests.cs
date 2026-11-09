@@ -47,6 +47,8 @@ public sealed class MigracionMultiBarberiaTests(PostgresFixture postgres) : ICla
         public bool IsBarbero => false;
         public bool IsCliente => false;
         public Guid? BarberoId => null;
+        public Guid? BarberiaId => null;
+        public bool VeTodasLasBarberias => true;
     }
 
     private async Task MigrarAsync(string? hasta = null)

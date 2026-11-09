@@ -338,6 +338,11 @@ public class AvailabilityService : IAvailabilityService
 
     public async Task<List<BarberDayOffDto>> GetDaysOffAsync(Guid barberId, CancellationToken cancellationToken)
     {
+        if (!await dbContext.Barberos.AnyAsync(x => x.Id == barberId, cancellationToken))
+        {
+            throw new NotFoundException("El barbero no existe.");
+        }
+
         var colombiaZone = TimeZoneInfo.FindSystemTimeZoneById("America/Bogota");
         var hoy = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(timeProvider.GetUtcNow(), colombiaZone).DateTime);
 

@@ -53,6 +53,10 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
 
     private Guid? CurrentBarberoId => currentUserService.BarberoId;
 
+    private Guid? CurrentBarberiaId => currentUserService.BarberiaId;
+
+    private bool TodasLasBarberias => currentUserService.VeTodasLasBarberias;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -142,11 +146,7 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
             entity.Property(x => x.Precio).HasPrecision(12, 2).IsRequired();
             entity.Property(x => x.FotoUrl).HasMaxLength(500);
 
-            entity.HasQueryFilter(x =>
-                BypassTenantFilter ||
-                CurrentRole == Roles.Cliente ||
-                CurrentRole == Roles.AdminBarberia ||
-                CurrentRole == Roles.Barbero);
+            entity.HasQueryFilter(x => TodasLasBarberias || x.BarberiaId == CurrentBarberiaId);
         });
     }
 
@@ -181,11 +181,7 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
                 .Metadata.SetValueComparer(especialidadesComparer);
             entity.Property(x => x.Especialidades).HasColumnType("jsonb");
 
-            entity.HasQueryFilter(x =>
-                BypassTenantFilter ||
-                CurrentRole == Roles.Cliente ||
-                CurrentRole == Roles.AdminBarberia ||
-                CurrentRole == Roles.Barbero);
+            entity.HasQueryFilter(x => TodasLasBarberias || x.BarberiaId == CurrentBarberiaId);
         });
     }
 
@@ -209,11 +205,7 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
                 .HasForeignKey(x => x.ServicioId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasQueryFilter(x =>
-                BypassTenantFilter ||
-                CurrentRole == Roles.Cliente ||
-                CurrentRole == Roles.AdminBarberia ||
-                CurrentRole == Roles.Barbero);
+            entity.HasQueryFilter(x => TodasLasBarberias || x.Barbero.BarberiaId == CurrentBarberiaId);
         });
     }
 
@@ -231,11 +223,7 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
                 .HasForeignKey(x => x.BarberoId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasQueryFilter(x =>
-                BypassTenantFilter ||
-                CurrentRole == Roles.Cliente ||
-                CurrentRole == Roles.AdminBarberia ||
-                CurrentRole == Roles.Barbero);
+            entity.HasQueryFilter(x => TodasLasBarberias || x.Barbero.BarberiaId == CurrentBarberiaId);
         });
     }
 
@@ -252,11 +240,7 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
                 .HasForeignKey(x => x.BarberoId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasQueryFilter(x =>
-                BypassTenantFilter ||
-                CurrentRole == Roles.Cliente ||
-                CurrentRole == Roles.AdminBarberia ||
-                CurrentRole == Roles.Barbero);
+            entity.HasQueryFilter(x => TodasLasBarberias || x.Barbero.BarberiaId == CurrentBarberiaId);
         });
     }
 
@@ -279,11 +263,7 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
                 .HasForeignKey(x => x.BarberId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasQueryFilter(x =>
-                BypassTenantFilter ||
-                CurrentRole == Roles.Cliente ||
-                CurrentRole == Roles.AdminBarberia ||
-                CurrentRole == Roles.Barbero);
+            entity.HasQueryFilter(x => TodasLasBarberias || x.Barber.BarberiaId == CurrentBarberiaId);
         });
     }
 
@@ -305,11 +285,7 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
                 .HasForeignKey(x => x.BarberId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasQueryFilter(x =>
-                BypassTenantFilter ||
-                CurrentRole == Roles.Cliente ||
-                CurrentRole == Roles.AdminBarberia ||
-                CurrentRole == Roles.Barbero);
+            entity.HasQueryFilter(x => TodasLasBarberias || x.Barber.BarberiaId == CurrentBarberiaId);
         });
     }
 
@@ -349,9 +325,10 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
                 .HasFilter("\"Rol\" = 'Admin'");
 
             entity.HasQueryFilter(x =>
-                BypassTenantFilter ||
-                CurrentRole == Roles.AdminBarberia ||
-                ((CurrentRole == Roles.Barbero || CurrentRole == Roles.Cliente) && CurrentUserId != null && x.Id == CurrentUserId));
+                (TodasLasBarberias || x.BarberiaId == CurrentBarberiaId) &&
+                (BypassTenantFilter ||
+                 CurrentRole == Roles.AdminBarberia ||
+                 ((CurrentRole == Roles.Barbero || CurrentRole == Roles.Cliente) && CurrentUserId != null && x.Id == CurrentUserId)));
         });
     }
 
@@ -387,14 +364,15 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasQueryFilter(x =>
-                BypassTenantFilter ||
-                CurrentRole == Roles.AdminBarberia ||
-                (CurrentRole == Roles.Barbero && CurrentBarberoId != null && x.BarberoId == CurrentBarberoId) ||
-                (CurrentRole == Roles.Cliente && CurrentUserId != null && x.ClienteId == CurrentUserId));
+                (TodasLasBarberias || x.BarberiaId == CurrentBarberiaId) &&
+                (BypassTenantFilter ||
+                 CurrentRole == Roles.AdminBarberia ||
+                 (CurrentRole == Roles.Barbero && CurrentBarberoId != null && x.BarberoId == CurrentBarberoId) ||
+                 (CurrentRole == Roles.Cliente && CurrentUserId != null && x.ClienteId == CurrentUserId)));
         });
     }
 
-    private static void ConfigureCodigoRecuperacion(ModelBuilder modelBuilder)
+    private void ConfigureCodigoRecuperacion(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<CodigoRecuperacion>(entity =>
         {
@@ -402,6 +380,7 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
 
             entity.Property(x => x.CodigoHash).HasMaxLength(100).IsRequired();
             entity.HasIndex(x => new { x.ClienteId, x.Activo });
+            entity.HasQueryFilter(x => TodasLasBarberias || x.Cliente!.BarberiaId == CurrentBarberiaId);
 
             // Sin filtro de tenant: solo se usa en el flujo anónimo de recuperación.
             entity.HasOne(x => x.Cliente)
@@ -428,10 +407,11 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasQueryFilter(x =>
-                BypassTenantFilter ||
+                (TodasLasBarberias || x.Barbero.BarberiaId == CurrentBarberiaId) &&
+                (BypassTenantFilter ||
                 (CurrentRole == Roles.Cliente && CurrentUserId != null && x.ClienteId == CurrentUserId) ||
                 (CurrentRole == Roles.Barbero && CurrentBarberoId != null && x.BarberoId == CurrentBarberoId) ||
-                CurrentRole == Roles.AdminBarberia);
+                CurrentRole == Roles.AdminBarberia));
 
             entity.HasOne(x => x.Barbero)
                 .WithMany(x => x.Reviews)

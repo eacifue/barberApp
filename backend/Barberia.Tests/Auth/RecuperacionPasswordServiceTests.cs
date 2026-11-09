@@ -31,12 +31,18 @@ public sealed class RecuperacionPasswordServiceTests : GestionTestBase
     private readonly Guid clienteId = Guid.NewGuid();
     private readonly Guid barberiaId = Guid.NewGuid();
 
-    private sealed class FakeBarberiaContexto(Guid id) : IBarberiaContexto
+    private sealed class FakeBarberiaContexto(Guid? id) : IBarberiaContexto
     {
-        public Task<Guid> ObtenerIdAsync(CancellationToken cancellationToken) => Task.FromResult(id);
+        public Task<Guid> ObtenerIdAsync(CancellationToken cancellationToken) =>
+            id is { } x ? Task.FromResult(x) : throw new ValidationException("Elige la barbería.");
+
+        public Task<Guid?> ObtenerIdSiHayAsync(CancellationToken cancellationToken) => Task.FromResult(id);
     }
 
-    private RecuperacionPasswordService NewService() => new(NewContext(), correo, Clock, new FakeBarberiaContexto(barberiaId));
+    /// <summary>Recuperar desde el panel: la petición no trae barbería.</summary>
+    private bool sinBarberia;
+
+    private RecuperacionPasswordService NewService() => new(NewContext(), correo, Clock, new FakeBarberiaContexto(sinBarberia ? null : barberiaId));
 
     private async Task SembrarAsync(bool activo = true)
     {
@@ -207,5 +213,33 @@ public sealed class RecuperacionPasswordServiceTests : GestionTestBase
         await using var ctx = NewContext();
         var ajena = await ctx.Clientes.AsNoTracking().SingleAsync(x => x.Id == ajenaId);
         Assert.True(BCrypt.Net.BCrypt.Verify("ajena123", ajena.PasswordHash));
+    }
+
+    [Fact]
+    public async Task Sin_barberia_y_con_una_sola_cuenta_el_codigo_llega_y_sirve()
+    {
+        await SembrarAsync();
+        sinBarberia = true;
+
+        await Solicitar();
+        await Restablecer(correo.UltimoCodigo, "nueva123");
+
+        Assert.True(BCrypt.Net.BCrypt.Verify("nueva123", await HashActualAsync()));
+    }
+
+    [Fact]
+    public async Task Sin_barberia_y_con_el_correo_en_dos_barberias_no_envia_nada()
+    {
+        await SembrarAsync();
+        await using (var seed = NewContext())
+        {
+            seed.Clientes.Add(new Cliente { BarberiaId = Guid.NewGuid(), Nombre = "Laura", Apellido = "Otra", Correo = Correo, PasswordHash = "x" });
+            await seed.SaveChangesAsync();
+        }
+        sinBarberia = true;
+
+        await Solicitar();
+
+        Assert.Empty(correo.Enviados);
     }
 }

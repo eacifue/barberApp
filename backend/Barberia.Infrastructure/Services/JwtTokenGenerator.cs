@@ -42,6 +42,11 @@ public class JwtTokenGenerator : IJwtTokenGenerator
             claims.Add(new Claim("barberoId", cliente.BarberoId.Value.ToString()));
         }
 
+        if (cliente.BarberiaId.HasValue)
+        {
+            claims.Add(new Claim("barberiaId", cliente.BarberiaId.Value.ToString()));
+        }
+
         var credentials = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
             SecurityAlgorithms.HmacSha256);

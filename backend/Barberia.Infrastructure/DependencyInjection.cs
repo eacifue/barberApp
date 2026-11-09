@@ -36,7 +36,7 @@ public static class DependencyInjection
         services.AddScoped<IBarberiaDbContext>(provider => provider.GetRequiredService<BarberiaDbContext>());
         services.AddScoped<ICacheService, RedisCacheService>();
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
-        services.AddScoped<IBarberiaContexto, BarberiaUnicaContexto>();
+        services.AddScoped<IBarberiaContexto, BarberiaDeLaPeticion>();
         services.AddScoped<INotificationService, FirebasePushNotificationService>();
 
         if (!string.IsNullOrWhiteSpace(configuration["Smtp:Host"]))

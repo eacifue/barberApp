@@ -380,7 +380,6 @@ public class BarberoService : IBarberoService
     public async Task<BarberoDto> ActivarAsync(Guid id, CancellationToken cancellationToken)
     {
         var barbero = await dbContext.Barberos
-            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         if (barbero is null)
