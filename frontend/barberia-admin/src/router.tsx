@@ -3,6 +3,7 @@ import { Navigate, createBrowserRouter } from 'react-router-dom'
 import { AdminGuard, AuthGuard, GuestGuard, StaffGuard } from './routeGuards'
 import { AppLayout } from './components/layout/AppLayout'
 import { LoginPage } from './features/auth/LoginPage'
+import { RecuperarPage } from './features/auth/RecuperarPage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
 import { BarberiasList } from './features/barberias/BarberiasList'
 import { BarberosList } from './features/barberos/BarberosList'
@@ -17,6 +18,7 @@ export const router = createBrowserRouter([
     element: <GuestGuard />,
     children: [
       { path: '/login', element: <LoginPage /> },
+      { path: '/recuperar', element: <RecuperarPage /> },
     ],
   },
   {

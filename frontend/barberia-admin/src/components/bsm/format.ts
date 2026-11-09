@@ -42,6 +42,13 @@ export function formatDecimal(n: number, digits = 1): string {
   return n.toFixed(digits).replace('.', ',')
 }
 
+/** `301 141 9610`: agrupa 3-3-4 un celular colombiano (acepta +57); otros números quedan igual. */
+export function formatPhone(raw?: string | null): string {
+  const d = String(raw ?? '').replace(/\D/g, '')
+  const local = d.length === 12 && d.startsWith('57') ? d.slice(2) : d
+  return local.length === 10 ? `${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}` : String(raw ?? '')
+}
+
 /** `jueves 12 de noviembre` */
 export function formatLongDate(d: Date): string {
   return `${WEEKDAYS[d.getDay()]} ${d.getDate()} de ${MONTHS[d.getMonth()]}`

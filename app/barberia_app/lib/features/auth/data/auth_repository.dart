@@ -96,6 +96,27 @@ class AuthRepository {
     }
   }
 
+  /// Pide un código de 6 dígitos por correo. La API responde igual exista o no la cuenta.
+  Future<void> solicitarCodigo(String correo) async {
+    await _apiClient.post<Map<String, dynamic>>(
+      ApiEndpoints.recuperar,
+      data: {'correo': correo.trim()},
+      fromJson: (json) => json,
+    );
+  }
+
+  /// Cambia la contraseña con el código recibido. Un código inválido llega como [ValidationException].
+  Future<void> restablecer({required String correo, required String codigo, required String nuevaPassword}) async {
+    final response = await _apiClient.post<Map<String, dynamic>>(
+      ApiEndpoints.restablecer,
+      data: {'correo': correo.trim(), 'codigo': codigo.trim(), 'nuevaPassword': nuevaPassword},
+      fromJson: (json) => json,
+    );
+    if (!response.success) {
+      throw ValidationException(response.message.isEmpty ? 'El código no es válido o ya venció. Pide uno nuevo.' : response.message);
+    }
+  }
+
   Future<void> logout() async {
     try {
       await _apiClient.post<Map<String, dynamic>>(

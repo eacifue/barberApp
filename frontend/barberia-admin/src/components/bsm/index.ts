@@ -16,5 +16,5 @@ export type { AgendaColumn, AgendaItem, BottomNavAction, NavItem, NavSection } f
 export { useDelayedFlag } from './hooks'
 export { SERVICE_ICON, SLOT_ADMIN, STATUS, statusOf } from './constants'
 export type { AppointmentStatus, ServiceType, SlotState, Tone } from './constants'
-export { cx, formatCOP, formatDecimal, formatDuration, formatLongDate, formatShortDate, formatTime, initials, parseHM } from './format'
+export { cx, formatCOP, formatDecimal, formatDuration, formatPhone, formatLongDate, formatShortDate, formatTime, initials, parseHM } from './format'
 export type { IconName } from './icons'

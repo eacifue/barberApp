@@ -115,11 +115,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
-                            onPressed: () => showBsmToast(
-                              context,
-                              'Muy pronto podrás recuperarla desde la app. Mientras tanto, escríbenos a la barbería.',
-                              tone: BsmToastTone.info,
-                            ),
+                            onPressed: _cargando ? null : () => context.go('/recuperar', extra: _correo.text.trim()),
                             child: const Text('¿Olvidaste tu contraseña?'),
                           ),
                         ),

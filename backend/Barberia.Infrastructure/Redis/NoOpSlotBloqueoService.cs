@@ -30,4 +30,14 @@ public class NoOpSlotBloqueoService : ISlotBloqueoService
     {
         return Task.FromResult(0);
     }
+
+    public Task<IReadOnlyList<BloqueoActivoDto>> ListarActivosAsync(CancellationToken cancellationToken)
+    {
+        return Task.FromResult<IReadOnlyList<BloqueoActivoDto>>([]);
+    }
+
+    public Task<BloqueoActivoDto?> LiberarSinTokenAsync(Guid barberoId, DateOnly fecha, TimeOnly horaInicio, CancellationToken cancellationToken)
+    {
+        return Task.FromResult<BloqueoActivoDto?>(null);
+    }
 }

@@ -267,6 +267,8 @@ function Seccion({ titulo, ayuda, children }: { titulo: string; ayuda?: ReactNod
 }
 
 function Vista({ form }: { form: Form }) {
+  // Si la foto no carga (enlace roto), la tarjeta muestra el emblema como en la app.
+  const [fallida, setFallida] = useState<string | null>(null)
   const hoy = new Date().getDay()
   const ahora = nowHHMM()
   const abierto = form.activa && !form.diasDescanso.includes(hoy) && ahora >= form.horaApertura && ahora < form.horaCierre
@@ -277,7 +279,11 @@ function Vista({ form }: { form: Form }) {
   return (
     <div className="overflow-hidden rounded-lg border border-line bg-surface">
       <div className="flex aspect-[16/9] items-center justify-center bg-brass-soft">
-        {esUrl(form.fotoPortada) ? <img src={form.fotoPortada!.trim()} alt="" className="h-full w-full object-cover" /> : <Logo variant="emblem" height={56} />}
+        {esUrl(form.fotoPortada) && fallida !== form.fotoPortada!.trim() ? (
+          <img src={form.fotoPortada!.trim()} alt="" className="h-full w-full object-cover" onError={() => setFallida(form.fotoPortada!.trim())} />
+        ) : (
+          <Logo variant="emblem" height={56} />
+        )}
       </div>
       <div className="flex flex-col gap-3 p-4">
         <div>

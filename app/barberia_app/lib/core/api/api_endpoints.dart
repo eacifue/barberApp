@@ -3,6 +3,8 @@ class ApiEndpoints {
 
   static const String login = '/auth/login';
   static const String registro = '/auth/registro';
+  static const String recuperar = '/auth/recuperar';
+  static const String restablecer = '/auth/restablecer';
   static const String authFcmToken = '/auth/fcm-token';
   static const String authLogout = '/auth/logout';
 
