@@ -1,394 +1,317 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../core/errors/exceptions.dart';
-import '../../../../shared/widgets/error_widget.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/format/formato.dart';
+import '../../../../shared/widgets/bsm/bsm.dart';
 import '../../data/admin_repository.dart';
 import '../../data/models/admin_barberia_model.dart';
 import '../providers/admin_barberias_provider.dart';
+import '../widgets/admin_kit.dart';
 
-const _diasSemana = [
-  'Lunes',
-  'Martes',
-  'Miercoles',
-  'Jueves',
-  'Viernes',
-  'Sabado',
-  'Domingo',
+/// Nombres del enum `DiaSemana` del backend, de lunes a domingo.
+const _dias = [
+  ('Lunes', 'Lun'),
+  ('Martes', 'Mar'),
+  ('Miercoles', 'Mié'),
+  ('Jueves', 'Jue'),
+  ('Viernes', 'Vie'),
+  ('Sabado', 'Sáb'),
+  ('Domingo', 'Dom'),
 ];
 
-/// La app solo maneja una barbería, así que esta pestaña es un formulario de
-/// configuración de "Mi barbería" — ver/editar, sin crear ni eliminar.
-class AdminBarberiasTab extends ConsumerStatefulWidget {
+final _horas = [
+  for (var m = 5 * 60; m <= 23 * 60; m += 30) '${(m ~/ 60).toString().padLeft(2, '0')}:${(m % 60).toString().padLeft(2, '0')}',
+];
+
+String _hhmm(String v) => v.length >= 5 ? v.substring(0, 5) : v;
+int _min(String hhmm) => int.parse(hhmm.substring(0, 2)) * 60 + int.parse(hhmm.substring(3, 5));
+String _hora(String hhmm) => Formato.horaDe(int.parse(hhmm.substring(0, 2)), int.parse(hhmm.substring(3, 5)));
+
+/// «Mi negocio» (design/pantallas/panel-web/Mi-negocio): la app maneja una sola
+/// barbería, así que es un formulario de configuración, sin crear ni eliminar.
+class AdminBarberiasTab extends ConsumerWidget {
   const AdminBarberiasTab({super.key});
 
   @override
-  ConsumerState<AdminBarberiasTab> createState() => _AdminBarberiasTabState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(adminBarberiasProvider);
+    return async.when(
+      loading: () => const AdminLoading(),
+      error: (e, _) => AdminError(title: 'No pudimos cargar tu barbería', error: e, onRetry: () => ref.invalidate(adminBarberiasProvider)),
+      data: (lista) => lista.isEmpty
+          ? const BsmEmptyState(icon: LucideIcons.store, title: 'No hay una barbería configurada', body: 'Créala desde la carga inicial de datos o contacta a soporte.')
+          : _NegocioForm(key: ValueKey(lista.first.id), barberia: lista.first),
+    );
+  }
 }
 
-class _AdminBarberiasTabState extends ConsumerState<AdminBarberiasTab> {
-  final _formKey = GlobalKey<FormState>();
-  final _nombreController = TextEditingController();
-  final _telefonoController = TextEditingController();
-  final _correoController = TextEditingController();
-  final _direccionController = TextEditingController();
-  final _ciudadController = TextEditingController();
-  final _departamentoController = TextEditingController();
-  final _horaAperturaController = TextEditingController();
-  final _horaCierreController = TextEditingController();
-  final _latitudController = TextEditingController();
-  final _longitudController = TextEditingController();
+class _NegocioForm extends ConsumerStatefulWidget {
+  const _NegocioForm({super.key, required this.barberia});
 
-  String? _loadedId;
-  bool _activa = true;
-  Set<String> _diasDescanso = {};
+  final AdminBarberiaModel barberia;
+
+  @override
+  ConsumerState<_NegocioForm> createState() => _NegocioFormState();
+}
+
+class _NegocioFormState extends ConsumerState<_NegocioForm> {
+  final _formKey = GlobalKey<FormState>();
+  late final AdminBarberiaModel b = widget.barberia;
+  late final _nombre = TextEditingController(text: b.nombre);
+  late final _slogan = TextEditingController(text: b.slogan);
+  late final _descripcion = TextEditingController(text: b.descripcion);
+  late final _foto = TextEditingController(text: b.fotoPortada);
+  late final _telefono = TextEditingController(text: b.telefono);
+  late final _correo = TextEditingController(text: b.correo);
+  late final _web = TextEditingController(text: b.sitioWeb);
+  late final _direccion = TextEditingController(text: b.direccion);
+  late final _ciudad = TextEditingController(text: b.ciudad);
+  late final _departamento = TextEditingController(text: b.departamento);
+  late final _lat = TextEditingController(text: b.latitud == 0 ? '' : '${b.latitud}');
+  late final _lng = TextEditingController(text: b.longitud == 0 ? '' : '${b.longitud}');
+  late String _abre = _horas.contains(_hhmm(b.horaApertura)) ? _hhmm(b.horaApertura) : '09:00';
+  late String _cierra = _horas.contains(_hhmm(b.horaCierre)) ? _hhmm(b.horaCierre) : '20:00';
+  late final Set<String> _descanso = {...b.diasDescanso};
+  late bool _activa = b.activa;
+  String? _errorHorario;
   bool _saving = false;
+
+  List<TextEditingController> get _controllers => [_nombre, _slogan, _descripcion, _foto, _telefono, _correo, _web, _direccion, _ciudad, _departamento, _lat, _lng];
 
   @override
   void dispose() {
-    _nombreController.dispose();
-    _telefonoController.dispose();
-    _correoController.dispose();
-    _direccionController.dispose();
-    _ciudadController.dispose();
-    _departamentoController.dispose();
-    _horaAperturaController.dispose();
-    _horaCierreController.dispose();
-    _latitudController.dispose();
-    _longitudController.dispose();
+    for (final c in _controllers) {
+      c.dispose();
+    }
     super.dispose();
   }
 
-  void _hydrate(AdminBarberiaModel barberia) {
-    if (_loadedId == barberia.id) {
+  double? _coord(String v) => double.tryParse(v.trim().replaceAll(',', '.'));
+
+  Future<void> _guardar() async {
+    final valido = _formKey.currentState?.validate() ?? false;
+    setState(() {
+      _errorHorario = _min(_abre) >= _min(_cierra)
+          ? 'El cierre debe ser después de la apertura.'
+          : (_descanso.length == 7 ? 'Deja al menos un día abierto.' : null);
+    });
+    if (!valido || _errorHorario != null) {
+      showBsmToast(context, 'Revisa los campos marcados antes de guardar.', tone: BsmToastTone.warning);
       return;
     }
-    _loadedId = barberia.id;
-    _nombreController.text = barberia.nombre;
-    _telefonoController.text = barberia.telefono;
-    _correoController.text = barberia.correo;
-    _direccionController.text = barberia.direccion;
-    _ciudadController.text = barberia.ciudad;
-    _departamentoController.text = barberia.departamento;
-    _horaAperturaController.text = _toHm(barberia.horaApertura);
-    _horaCierreController.text = _toHm(barberia.horaCierre);
-    _latitudController.text = barberia.latitud == 0
-        ? ''
-        : barberia.latitud.toString();
-    _longitudController.text = barberia.longitud == 0
-        ? ''
-        : barberia.longitud.toString();
-    _activa = barberia.activa;
-    _diasDescanso = barberia.diasDescanso.toSet();
-  }
-
-  static String _toHm(String horaHms) {
-    return horaHms.length >= 5 ? horaHms.substring(0, 5) : horaHms;
-  }
-
-  String? _validateHora(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Requerido';
+    if (!_activa && b.activa) {
+      final ok = await showBsmConfirm(
+        context,
+        title: '¿Ocultar la barbería en la app?',
+        body: 'Las citas ya agendadas se mantienen, pero nadie podrá reservar hasta que la actives de nuevo.',
+        confirmLabel: 'Sí, ocultar barbería',
+        icon: LucideIcons.eyeOff,
+      );
+      if (!ok || !mounted) return;
     }
-    if (!RegExp(r'^\d{2}:\d{2}$').hasMatch(value.trim())) {
-      return 'Formato HH:mm';
-    }
-    return null;
-  }
-
-  Future<void> _pickTime(TextEditingController controller) async {
-    final parts = controller.text.split(':');
-    final initial = parts.length == 2
-        ? TimeOfDay(
-            hour: int.tryParse(parts[0]) ?? 9,
-            minute: int.tryParse(parts[1]) ?? 0,
-          )
-        : const TimeOfDay(hour: 9, minute: 0);
-    final picked = await showTimePicker(context: context, initialTime: initial);
-    if (picked != null) {
-      controller.text =
-          '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-    }
-  }
-
-  Future<void> _save() async {
-    if (!(_formKey.currentState?.validate() ?? false)) {
-      return;
-    }
-    final id = _loadedId;
-    if (id == null) {
-      return;
-    }
-
+    setState(() => _saving = true);
     final payload = {
-      'nombre': _nombreController.text.trim(),
-      'descripcion': '',
-      'slogan': '',
-      'telefono': _telefonoController.text.trim(),
-      'correo': _correoController.text.trim(),
-      'sitioWeb': '',
-      'direccion': _direccionController.text.trim(),
-      'ciudad': _ciudadController.text.trim(),
-      'departamento': _departamentoController.text.trim(),
-      'latitud': double.tryParse(_latitudController.text.trim()) ?? 0,
-      'longitud': double.tryParse(_longitudController.text.trim()) ?? 0,
-      'fotoPortada': '',
-      'horaApertura': '${_horaAperturaController.text.trim()}:00',
-      'horaCierre': '${_horaCierreController.text.trim()}:00',
-      'diasDescanso': _diasDescanso.toList(),
+      ...b.toUpsertJson(),
+      'nombre': _nombre.text.trim(),
+      'slogan': _slogan.text.trim(),
+      'descripcion': _descripcion.text.trim(),
+      'fotoPortada': _foto.text.trim(),
+      'telefono': _telefono.text.trim(),
+      'correo': _correo.text.trim(),
+      'sitioWeb': _web.text.trim(),
+      'direccion': _direccion.text.trim(),
+      'ciudad': _ciudad.text.trim(),
+      'departamento': _departamento.text.trim(),
+      'latitud': _coord(_lat.text) ?? 0,
+      'longitud': _coord(_lng.text) ?? 0,
+      'horaApertura': '$_abre:00',
+      'horaCierre': '$_cierra:00',
+      'diasDescanso': [for (final d in _dias) if (_descanso.contains(d.$1)) d.$1],
       'activa': _activa,
     };
-
-    setState(() => _saving = true);
     try {
-      await ref.read(adminRepositoryProvider).updateBarberia(id, payload);
+      await ref.read(adminRepositoryProvider).updateBarberia(b.id, payload);
+      if (!mounted) return;
+      setState(() => _saving = false);
+      showBsmToast(context, 'Cambios guardados. Tus clientes ya los ven en la app.');
       ref.invalidate(adminBarberiasProvider);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Barbería actualizada correctamente.')),
-        );
-      }
-    } on AppException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No pudimos guardar los cambios. Intenta de nuevo.'),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _saving = false);
-      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      adminToastError(context, e, 'No pudimos guardar los cambios. Inténtalo de nuevo.');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final barberiasAsync = ref.watch(adminBarberiasProvider);
+    final p = context.palette;
+    const gap = SizedBox(height: AppSpace.s4);
+    final opcionesHora = [for (final h in _horas) BsmOption(h, _hora(h))];
 
-    return barberiasAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) => BarberiaErrorWidget(
-        message: error is AppException
-            ? error.message
-            : 'No pudimos cargar tu barbería.',
-        onRetry: () => ref.invalidate(adminBarberiasProvider),
-      ),
-      data: (items) {
-        if (items.isEmpty) {
-          return const Center(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Text(
-                'No hay una barbería configurada. Contacta a soporte.',
-                textAlign: TextAlign.center,
-              ),
-            ),
-          );
-        }
-
-        _hydrate(items.first);
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Mi barbería',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Esta información es la que ven tus clientes en la app.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _nombreController,
-                  decoration: const InputDecoration(labelText: 'Nombre'),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Requerido'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _telefonoController,
-                  decoration: const InputDecoration(labelText: 'Teléfono'),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Requerido'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _correoController,
-                  decoration: const InputDecoration(labelText: 'Correo'),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Requerido'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _direccionController,
-                  decoration: const InputDecoration(labelText: 'Dirección'),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Requerido'
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _ciudadController,
-                        decoration: const InputDecoration(labelText: 'Ciudad'),
-                        validator: (value) =>
-                            (value == null || value.trim().isEmpty)
-                            ? 'Requerido'
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _departamentoController,
-                        decoration: const InputDecoration(
-                          labelText: 'Departamento',
-                        ),
-                        validator: (value) =>
-                            (value == null || value.trim().isEmpty)
-                            ? 'Requerido'
-                            : null,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'Horario de atención',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _horaAperturaController,
-                        decoration: const InputDecoration(
-                          labelText: 'Apertura',
-                        ),
-                        readOnly: true,
-                        validator: _validateHora,
-                        onTap: () => _pickTime(_horaAperturaController),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _horaCierreController,
-                        decoration: const InputDecoration(labelText: 'Cierre'),
-                        readOnly: true,
-                        validator: _validateHora,
-                        onTap: () => _pickTime(_horaCierreController),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Días de descanso',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    for (final dia in _diasSemana)
-                      FilterChip(
-                        label: Text(dia),
-                        selected: _diasDescanso.contains(dia),
-                        onSelected: (selected) => setState(() {
-                          if (selected) {
-                            _diasDescanso.add(dia);
-                          } else {
-                            _diasDescanso.remove(dia);
-                          }
-                        }),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'Ubicación en el mapa',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _latitudController,
-                        decoration: const InputDecoration(
-                          labelText: 'Latitud (opcional)',
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                          signed: true,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _longitudController,
-                        decoration: const InputDecoration(
-                          labelText: 'Longitud (opcional)',
-                        ),
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                          signed: true,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                SwitchListTile.adaptive(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Activa'),
-                  value: _activa,
-                  onChanged: (value) => setState(() => _activa = value),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: _saving ? null : _save,
-                    child: _saving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Guardar cambios'),
-                  ),
-                ),
-              ],
-            ),
+    return Form(
+      key: _formKey,
+      child: ListView(
+        padding: const EdgeInsets.all(AppSpace.s4),
+        children: [
+          const AdminHeader(title: 'Tu barbería', subtitle: 'Datos visibles para tus clientes en la app.'),
+          _Seccion(
+            titulo: 'Identidad',
+            ayuda: 'Lo primero que ven tus clientes en Inicio.',
+            children: [
+              BsmTextField(controller: _nombre, label: 'Nombre', validator: (v) => AdminValida.requerido(v, 'Escribe el nombre de la barbería.')),
+              gap,
+              BsmTextField(controller: _slogan, label: 'Slogan', optional: true, hint: 'Una frase corta bajo el nombre.'),
+              gap,
+              BsmTextField(controller: _descripcion, label: 'Descripción', optional: true, maxLines: 3),
+              gap,
+              BsmTextField(controller: _foto, label: 'Foto de portada', optional: true, icon: LucideIcons.imagePlus, placeholder: 'https://…', hint: 'Una foto horizontal del local.', keyboardType: TextInputType.url, validator: AdminValida.url),
+            ],
           ),
-        );
-      },
+          _Seccion(
+            titulo: 'Contacto',
+            ayuda: 'Alimenta los botones «Llamar» y «WhatsApp» de la app.',
+            children: [
+              BsmTextField(controller: _telefono, label: 'Teléfono / WhatsApp', keyboardType: TextInputType.phone, validator: AdminValida.telefono),
+              gap,
+              BsmTextField(controller: _correo, label: 'Correo', keyboardType: TextInputType.emailAddress, validator: AdminValida.correo),
+              gap,
+              BsmTextField(controller: _web, label: 'Sitio web', optional: true, placeholder: 'https://…', keyboardType: TextInputType.url, validator: AdminValida.url),
+            ],
+          ),
+          _Seccion(
+            titulo: 'Ubicación',
+            ayuda: 'Las coordenadas definen a dónde lleva «Cómo llegar».',
+            children: [
+              BsmTextField(controller: _direccion, label: 'Dirección', placeholder: 'Cra. 37 #8A-32', validator: (v) => AdminValida.requerido(v, 'Escribe la dirección del local.')),
+              gap,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: BsmTextField(controller: _ciudad, label: 'Ciudad', validator: (v) => AdminValida.requerido(v, 'Escribe la ciudad.'))),
+                  const SizedBox(width: AppSpace.s3),
+                  Expanded(child: BsmTextField(controller: _departamento, label: 'Departamento')),
+                ],
+              ),
+              gap,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: BsmTextField(
+                      controller: _lat,
+                      label: 'Latitud',
+                      placeholder: '6.2087',
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                      validator: (v) {
+                        final n = _coord(v ?? '');
+                        return (n == null || n == 0 || n.abs() > 90) ? 'Entre -90 y 90.' : null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: AppSpace.s3),
+                  Expanded(
+                    child: BsmTextField(
+                      controller: _lng,
+                      label: 'Longitud',
+                      placeholder: '-75.5676',
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                      validator: (v) {
+                        final n = _coord(v ?? '');
+                        return (n == null || n == 0 || n.abs() > 180) ? 'Entre -180 y 180.' : null;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpace.s2),
+              Text('En Google Maps, mantén presionada la entrada del local y copia las coordenadas.', style: AppTextStyles.caption.copyWith(color: p.inkMuted)),
+            ],
+          ),
+          _Seccion(
+            titulo: 'Horario de atención',
+            ayuda: 'El horario de cada barbero se ajusta en el panel web.',
+            children: [
+              Row(
+                children: [
+                  Expanded(child: BsmSelect<String>(label: 'Abre', value: _abre, options: opcionesHora, onChanged: (v) => setState(() => _abre = v ?? _abre))),
+                  const SizedBox(width: AppSpace.s3),
+                  Expanded(child: BsmSelect<String>(label: 'Cierra', value: _cierra, options: opcionesHora, onChanged: (v) => setState(() => _cierra = v ?? _cierra))),
+                ],
+              ),
+              gap,
+              Text('Días de descanso', style: AppTextStyles.labelSm.copyWith(color: p.ink)),
+              const SizedBox(height: AppSpace.s2),
+              Wrap(
+                spacing: AppSpace.s2,
+                runSpacing: AppSpace.s2,
+                children: [
+                  for (final d in _dias)
+                    BsmFilterChip(
+                      label: d.$2,
+                      selected: _descanso.contains(d.$1),
+                      onSelected: (on) => setState(() => on ? _descanso.add(d.$1) : _descanso.remove(d.$1)),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpace.s2),
+              Text(
+                _errorHorario ?? 'Marcados: la barbería no abre y la app no muestra horarios ese día.',
+                style: AppTextStyles.caption.copyWith(color: _errorHorario != null ? p.danger : p.inkMuted),
+              ),
+            ],
+          ),
+          _Seccion(
+            titulo: 'Estado',
+            children: [
+              SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                value: _activa,
+                onChanged: (v) => setState(() => _activa = v),
+                title: Text('Barbería activa', style: AppTextStyles.label.copyWith(color: p.ink)),
+                subtitle: Text(_activa ? 'Visible en la app y recibiendo reservas.' : 'Oculta en la app: nadie puede reservar.', style: AppTextStyles.body.copyWith(color: p.inkMuted)),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpace.s2),
+          BsmButton(label: _saving ? 'Guardando…' : 'Guardar cambios', icon: LucideIcons.check, block: true, size: BsmButtonSize.lg, loading: _saving, onPressed: _saving ? null : _guardar),
+          const SizedBox(height: AppSpace.s6),
+        ],
+      ),
+    );
+  }
+}
+
+class _Seccion extends StatelessWidget {
+  const _Seccion({required this.titulo, this.ayuda, required this.children});
+
+  final String titulo;
+  final String? ayuda;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpace.s4),
+      child: BsmCardFrame(
+        padding: const EdgeInsets.all(AppSpace.s4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(titulo, style: AppTextStyles.titleSm.copyWith(color: p.ink)),
+            if (ayuda != null) ...[
+              const SizedBox(height: AppSpace.s1),
+              Text(ayuda!, style: AppTextStyles.body.copyWith(color: p.inkMuted)),
+            ],
+            const SizedBox(height: AppSpace.s4),
+            ...children,
+          ],
+        ),
+      ),
     );
   }
 }

@@ -3,6 +3,7 @@ using Barberia.Application.Interfaces;
 using Barberia.Application.Interfaces.Services;
 using Barberia.Application.Interfaces.Services.Disponibilidad;
 using Barberia.Application.Interfaces.Services.Servicios;
+using Barberia.Application.Interfaces.Services.Slots;
 using Barberia.Shared;
 using Barberia.Shared.Constants;
 using Microsoft.AspNetCore.Authorization;
@@ -17,13 +18,16 @@ public class SlotsController : ControllerBase
     private readonly ICurrentUserService currentUserService;
     private readonly IServicioService servicioService;
     private readonly IDisponibilidadService disponibilidadService;
+    private readonly IReservasEnCursoService reservasEnCursoService;
 
     public SlotsController(
         ISlotBloqueoService slotBloqueoService,
         ICurrentUserService currentUserService,
         IServicioService servicioService,
-        IDisponibilidadService disponibilidadService)
+        IDisponibilidadService disponibilidadService,
+        IReservasEnCursoService reservasEnCursoService)
     {
+        this.reservasEnCursoService = reservasEnCursoService;
         this.slotBloqueoService = slotBloqueoService;
         this.currentUserService = currentUserService;
         this.servicioService = servicioService;
@@ -109,5 +113,23 @@ public class SlotsController : ControllerBase
         }
 
         return Ok(ApiResponse<object?>.Ok(null, "Slot liberado correctamente."));
+    }
+
+    /// <summary>Reservas en curso: horarios que clientes apartaron en la app y aún no confirman.</summary>
+    [HttpGet("api/v1/slots/activos")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia}")]
+    public async Task<ActionResult<ApiResponse<IReadOnlyList<ReservaEnCursoDto>>>> ListarActivosAsync(CancellationToken cancellationToken)
+    {
+        var reservas = await reservasEnCursoService.ListarAsync(cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<ReservaEnCursoDto>>.Ok(reservas, "Reservas en curso obtenidas."));
+    }
+
+    /// <summary>Recepción libera un horario apartado; el cliente recibe un aviso.</summary>
+    [HttpPost("api/v1/slots/activos/liberar")]
+    [Authorize(Roles = $"{Roles.Admin},{Roles.AdminBarberia}")]
+    public async Task<ActionResult<ApiResponse<object?>>> LiberarActivoAsync([FromBody] LiberarReservaRequest request, CancellationToken cancellationToken)
+    {
+        await reservasEnCursoService.LiberarAsync(request, cancellationToken);
+        return Ok(ApiResponse<object?>.Ok(null, "Horario liberado. Avisamos al cliente."));
     }
 }

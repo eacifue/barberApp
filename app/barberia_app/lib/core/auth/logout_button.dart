@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/data/auth_repository.dart';
+import '../../shared/widgets/bsm/bsm.dart';
 import 'auth_role_provider.dart';
 
 /// Shared "cerrar sesión" AppBar action: confirms before signing out, then
@@ -20,26 +22,14 @@ class LogoutButton extends ConsumerStatefulWidget {
 class _LogoutButtonState extends ConsumerState<LogoutButton> {
   bool _loggingOut = false;
 
-  Future<bool> _confirmLogout() async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Cerrar sesión'),
-            content: const Text('¿Seguro que deseas cerrar sesión?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Cerrar sesión'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
+  Future<bool> _confirmLogout() => showBsmConfirm(
+        context,
+        title: '¿Cerrar sesión?',
+        body: 'Tendrás que entrar de nuevo con tu correo y contraseña.',
+        confirmLabel: 'Cerrar sesión',
+        tone: BsmConfirmTone.info,
+        icon: LucideIcons.logOut,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -71,9 +61,9 @@ class _LogoutButtonState extends ConsumerState<LogoutButton> {
           ? const SizedBox(
               width: 18,
               height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: CircularProgressIndicator.adaptive(strokeWidth: 2),
             )
-          : const Icon(Icons.logout_rounded),
+          : const Icon(LucideIcons.logOut),
     );
   }
 }

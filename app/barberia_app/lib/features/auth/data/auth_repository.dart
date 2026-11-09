@@ -39,6 +39,8 @@ class AuthRepository {
     }
 
     await _secureStorageService.saveToken(token);
+    final nombre = (response.data!['nombreCompleto'] as String? ?? '').trim().split(RegExp(r'\s+')).first;
+    if (nombre.isNotEmpty) await _secureStorageService.saveNombre(nombre);
   }
 
   Future<void> registro({
@@ -74,6 +76,8 @@ class AuthRepository {
     }
 
     await _secureStorageService.saveToken(token);
+    final primerNombre = nombre.trim().split(RegExp(r'\s+')).first;
+    if (primerNombre.isNotEmpty) await _secureStorageService.saveNombre(primerNombre);
   }
 
   Future<void> actualizarTokenFCM(String token) async {
@@ -89,6 +93,27 @@ class AuthRepository {
             ? 'No se pudo actualizar token FCM.'
             : response.message,
       );
+    }
+  }
+
+  /// Pide un código de 6 dígitos por correo. La API responde igual exista o no la cuenta.
+  Future<void> solicitarCodigo(String correo) async {
+    await _apiClient.post<Map<String, dynamic>>(
+      ApiEndpoints.recuperar,
+      data: {'correo': correo.trim()},
+      fromJson: (json) => json,
+    );
+  }
+
+  /// Cambia la contraseña con el código recibido. Un código inválido llega como [ValidationException].
+  Future<void> restablecer({required String correo, required String codigo, required String nuevaPassword}) async {
+    final response = await _apiClient.post<Map<String, dynamic>>(
+      ApiEndpoints.restablecer,
+      data: {'correo': correo.trim(), 'codigo': codigo.trim(), 'nuevaPassword': nuevaPassword},
+      fromJson: (json) => json,
+    );
+    if (!response.success) {
+      throw ValidationException(response.message.isEmpty ? 'El código no es válido o ya venció. Pide uno nuevo.' : response.message);
     }
   }
 

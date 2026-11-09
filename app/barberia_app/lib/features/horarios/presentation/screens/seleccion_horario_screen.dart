@@ -1,626 +1,268 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import '../../../barberias/presentation/providers/barbershops_provider.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../features/citas/presentation/providers/reprogramacion_provider.dart';
 import '../../../../features/citas/presentation/providers/reserva_notifier.dart';
-import '../../../../shared/extensions/date_extensions.dart';
-import '../../../../shared/widgets/error_widget.dart';
+import '../../../../features/citas/presentation/widgets/booking_scaffold.dart';
+import '../../../../shared/format/formato.dart';
+import '../../../../shared/widgets/bsm/bsm.dart';
+import '../../../barberias/presentation/providers/barbershops_provider.dart';
 import '../../domain/slot_model.dart';
 import '../providers/disponibilidad_provider.dart';
 import '../providers/disponibilidad_state.dart';
 
+/// Paso 3 · Elige fecha y hora. Al tocar un horario se aparta 5 minutos en el
+/// servidor; la cuenta regresiva vive pegada a la barra inferior
+/// (design/pantallas/app-movil/Reserva-3-Horario y sus estados).
 class SeleccionHorarioScreen extends ConsumerStatefulWidget {
   const SeleccionHorarioScreen({super.key});
 
   @override
-  ConsumerState<SeleccionHorarioScreen> createState() =>
-      _SeleccionHorarioScreenState();
+  ConsumerState<SeleccionHorarioScreen> createState() => _SeleccionHorarioScreenState();
 }
 
-class _SeleccionHorarioScreenState
-    extends ConsumerState<SeleccionHorarioScreen> {
-  DateTime _focusedDay = DateTime.now();
-  late final ProviderSubscription<DisponibilidadState> _disponibilidadSub;
+class _SeleccionHorarioScreenState extends ConsumerState<SeleccionHorarioScreen> {
+  static const _diasVisibles = 60;
+
+  late DateTime _mes;
+  late final ProviderSubscription<DisponibilidadState> _sub;
+
+  DateTime get _hoy {
+    final n = DateTime.now();
+    return DateTime(n.year, n.month, n.day);
+  }
 
   @override
   void initState() {
     super.initState();
-    _disponibilidadSub = ref.listenManual<DisponibilidadState>(
-      disponibilidadNotifierProvider,
-      (prev, next) {
-        final before = prev?.expiracionEventoId ?? 0;
-        if (next.expiracionEventoId <= before || !mounted) {
-          return;
-        }
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) {
-            return;
-          }
-
-          showDialog<void>(
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                title: const Text('Tiempo expirado'),
-                content: const Text('El tiempo expiró. Selecciona de nuevo.'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Entendido'),
-                  ),
-                ],
-              );
-            },
-          );
-        });
-      },
-    );
+    final fecha = ref.read(disponibilidadNotifierProvider).fechaSeleccionada;
+    _mes = DateTime(fecha.year, fecha.month);
+    _sub = ref.listenManual<DisponibilidadState>(disponibilidadNotifierProvider, (prev, next) {
+      final antes = prev?.tiempoRestanteSegundos ?? 0;
+      if (antes > 60 && next.tiempoRestanteSegundos <= 60 && next.tiempoRestanteSegundos > 0) {
+        HapticFeedback.mediumImpact();
+      }
+      if (next.expiracionEventoId > (prev?.expiracionEventoId ?? 0) && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _avisarExpiracion());
+      }
+    });
   }
 
   @override
   void dispose() {
-    _disponibilidadSub.close();
+    _sub.close();
     super.dispose();
+  }
+
+  Future<void> _avisarExpiracion() async {
+    if (!mounted) return;
+    final elegirOtro = await showBsmConfirm(
+      context,
+      tone: BsmConfirmTone.info,
+      icon: LucideIcons.timer,
+      title: 'Tu horario se liberó',
+      body: 'Pasaron 5 minutos sin confirmar. Elige de nuevo; puede que siga libre.',
+      confirmLabel: 'Elegir horario',
+      cancelLabel: 'Volver al inicio',
+    );
+    if (!mounted || elegirOtro) return;
+    ref.read(reservaNotifierProvider.notifier).resetReserva();
+    ref.read(citaIdAReprogramarProvider.notifier).state = null;
+    context.go('/dashboard');
+  }
+
+  Future<void> _volver(String barberoId) async {
+    final router = GoRouter.of(context);
+    await ref.read(disponibilidadNotifierProvider.notifier).salirPantalla(barberoId: barberoId);
+    router.go('/reservar/barbero');
   }
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final reserva = ref.watch(reservaNotifierProvider);
-    final disponibilidadState = ref.watch(disponibilidadNotifierProvider);
+    final estado = ref.watch(disponibilidadNotifierProvider);
     final notifier = ref.read(disponibilidadNotifierProvider.notifier);
     final barbero = reserva.barberoSeleccionado;
     final servicio = reserva.servicioSeleccionado;
-    final slotSeleccionado = disponibilidadState.slotSeleccionado;
-
-    final barbershop = ref.watch(myBarbershopProvider).valueOrNull;
-    bool esDiaLaborable(DateTime date) {
-      if (barbershop == null) {
-        return true;
-      }
-      return barbershop.esDiaLaborable(date);
-    }
 
     if (barbero == null || servicio == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Selecciona fecha y hora')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.info_outline,
-                  color: AppColors.primary,
-                  size: 44,
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Primero selecciona un servicio y un barbero para continuar.',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () => context.go('/reservar/servicio'),
-                  child: const Text('Volver al flujo'),
-                ),
-              ],
-            ),
+      return BookingScaffold(
+        step: 3,
+        title: 'Elige fecha y hora',
+        onBack: () => context.go('/reservar/servicio'),
+        children: [
+          BsmEmptyState(
+            icon: LucideIcons.calendarClock,
+            title: 'Primero elige servicio y barbero',
+            body: 'Así te mostramos los horarios libres.',
+            actionLabel: 'Elegir servicio',
+            onAction: () => context.go('/reservar/servicio'),
           ),
-        ),
+        ],
       );
     }
 
-    final disponibilidadAsync = ref.watch(
-      disponibilidadProvider(
-        barberoId: barbero.id,
-        servicioId: servicio.id,
-        fecha: disponibilidadState.fechaSeleccionada,
-      ),
+    final barbershop = ref.watch(myBarbershopProvider).valueOrNull;
+    final ultimoDia = _hoy.add(const Duration(days: _diasVisibles));
+    bool deshabilitado(DateTime d) =>
+        d.isBefore(_hoy) || d.isAfter(ultimoDia) || (barbershop != null && !barbershop.esDiaLaborable(d));
+
+    final fecha = estado.fechaSeleccionada;
+    final slotsAsync = ref.watch(disponibilidadProvider(barberoId: barbero.id, servicioId: servicio.id, fecha: fecha));
+    final precio = barbero.servicios.where((s) => s.id == servicio.id).firstOrNull?.precio ?? servicio.precio;
+    final slot = estado.slotSeleccionado;
+
+    DateTime? proximoDiaHabil() {
+      var d = fecha.add(const Duration(days: 1));
+      while (!d.isAfter(ultimoDia)) {
+        if (!deshabilitado(d)) return d;
+        d = d.add(const Duration(days: 1));
+      }
+      return null;
+    }
+
+    Future<void> elegirFecha(DateTime d) async {
+      setState(() => _mes = DateTime(d.year, d.month));
+      await notifier.seleccionarFecha(fecha: d, barberoId: barbero.id, servicioId: servicio.id);
+    }
+
+    Future<void> elegirSlot(SlotItem item, List<SlotModel> slots) async {
+      final elegido = slots.firstWhere((s) => s.horaInicioFormateada == item.key);
+      final error = await notifier.seleccionarSlot(slot: elegido, barberoId: barbero.id, servicioId: servicio.id);
+      if (!mounted || error == null) return;
+      showBsmToast(context, 'Ese horario ya no está disponible. Elige otro.', tone: BsmToastTone.danger);
+      ref.invalidate(disponibilidadProvider(barberoId: barbero.id, servicioId: servicio.id, fecha: fecha));
+    }
+
+    final List<Widget> horarios = slotsAsync.when(
+      loading: () => const [BsmSkeleton(variant: BsmSkeletonVariant.slots), SizedBox(height: AppSpace.s4), BsmSkeleton(variant: BsmSkeletonVariant.slots)],
+      error: (error, stackTrace) => [
+        BsmBanner(
+          tone: BsmBannerTone.danger,
+          title: 'No pudimos cargar los horarios',
+          body: 'Revisa tu conexión e inténtalo de nuevo.',
+          actionLabel: 'Reintentar',
+          onAction: () => ref.invalidate(disponibilidadProvider(barberoId: barbero.id, servicioId: servicio.id, fecha: fecha)),
+        ),
+      ],
+      data: (data) {
+        final libres = data.slots.where((s) => (s.disponible && !s.bloqueadoPorRedis) || s.horaInicioFormateada == slot?.horaInicioFormateada);
+        if (libres.isEmpty) {
+          final siguiente = proximoDiaHabil();
+          return [
+            BsmEmptyState(
+              icon: LucideIcons.calendarX,
+              title: 'No hay horarios este día',
+              body: 'Prueba con otro día o con otro barbero.',
+              actionLabel: siguiente == null ? null : 'Ver el ${Formato.fechaLarga(siguiente)}',
+              actionIcon: LucideIcons.arrowRight,
+              actionVariant: BsmButtonVariant.secondary,
+              onAction: siguiente == null ? null : () => elegirFecha(siguiente),
+            ),
+          ];
+        }
+        return [
+          SlotGrid(
+            selected: slot?.horaInicioFormateada,
+            onSelect: (item) => elegirSlot(item, data.slots),
+            slots: [
+              for (final s in data.slots)
+                SlotItem(
+                  hour: s.horaInicio.hour,
+                  minute: s.horaInicio.minute,
+                  available: (s.disponible && !s.bloqueadoPorRedis) || s.horaInicioFormateada == slot?.horaInicioFormateada,
+                ),
+            ],
+          ),
+        ];
+      },
     );
 
-    Future<void> goBackAndRelease() async {
-      final router = GoRouter.of(context);
-      await notifier.salirPantalla(barberoId: barbero.id);
-      if (!mounted) {
-        return;
-      }
-      router.go('/reservar/barbero');
+    Widget? barra;
+    if (slot != null) {
+      final inicio = fechaConHora(fecha, slot.horaInicioFormateada);
+      final fin = inicio.add(Duration(minutes: servicio.duracionMinutos));
+      barra = BookingBottomBar(
+        top: BsmCountdownView(seconds: estado.tiempoRestanteSegundos, compact: true),
+        title: '${Formato.fechaResumen(fecha)} · ${Formato.hora(inicio)}',
+        subtitle: '${Formato.duracion(servicio.duracionMinutos)}, termina ${Formato.hora(fin)}',
+        label: 'Continuar',
+        loading: estado.estaBloqueando,
+        onPressed: () => context.go('/reservar/confirm'),
+      );
+    } else {
+      barra = BookingBottomBar(
+        hint: estado.estaBloqueando ? 'Apartando tu horario…' : 'Elige un horario para continuar',
+        label: 'Continuar',
+        loading: estado.estaBloqueando,
+        onPressed: null,
+      );
     }
 
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (!didPop) {
-          await goBackAndRelease();
-        }
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) _volver(barbero.id);
       },
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Selecciona fecha y hora'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded),
-            onPressed: goBackAndRelease,
-          ),
-        ),
-        bottomNavigationBar: slotSeleccionado == null
-            ? null
-            : _BottomReservaBar(
-                slot: slotSeleccionado,
-                duracionMin: servicio.duracionMinutos,
-                estaBloqueando: disponibilidadState.estaBloqueando,
-                tiempoRestante: disponibilidadState.tiempoRestanteTexto,
-                onContinuar: () => context.go('/reservar/confirm'),
-              ),
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-          children: [
-            const _ReservaProgressStep3(),
-            const SizedBox(height: 12),
-            _ContextoReservaCard(
-              barberoNombre: barbero.nombreCompleto,
-              servicioNombre: servicio.nombre,
-              duracionMin: servicio.duracionMinutos,
-            ),
-            const SizedBox(height: 12),
-            _CalendarioMensual(
-              focusedDay: _focusedDay,
-              fechaSeleccionada: disponibilidadState.fechaSeleccionada,
-              selectableDayPredicate: esDiaLaborable,
-              onFocusedChanged: (focused) =>
-                  setState(() => _focusedDay = focused),
-              onDaySelected: (selected, focused) async {
-                setState(() => _focusedDay = focused);
-                await notifier.seleccionarFecha(
-                  fecha: selected,
-                  barberoId: barbero.id,
-                  servicioId: servicio.id,
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Horarios disponibles para ${disponibilidadState.fechaSeleccionada.toHumanDate}',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 10),
-            disponibilidadAsync.when(
-              loading: () => const _LoadingSlotsGrid(),
-              error: (error, stackTrace) => BarberiaErrorWidget(
-                message: 'No pudimos cargar los horarios. Intenta nuevamente.',
-                onRetry: () => ref.refresh(
-                  disponibilidadProvider(
-                    barberoId: barbero.id,
-                    servicioId: servicio.id,
-                    fecha: disponibilidadState.fechaSeleccionada,
-                  ),
-                ),
-              ),
-              data: (data) {
-                if (data.slots.isEmpty) {
-                  return const _EmptySlots();
-                }
-
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: data.slots.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                    childAspectRatio: 2.3,
-                  ),
-                  itemBuilder: (context, index) {
-                    final slot = data.slots[index];
-                    final isSelected =
-                        disponibilidadState
-                            .slotSeleccionado
-                            ?.horaInicioFormateada ==
-                        slot.horaInicioFormateada;
-
-                    return _SlotChip(
-                      slot: slot,
-                      isSelected: isSelected,
-                      onTap: () async {
-                        final error = await notifier.seleccionarSlot(
-                          slot: slot,
-                          barberoId: barbero.id,
-                          servicioId: servicio.id,
-                        );
-
-                        if (!context.mounted) {
-                          return;
-                        }
-
-                        if (error != null) {
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(SnackBar(content: Text(error)));
-                        }
-                      },
-                    );
-                  },
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ReservaProgressStep3 extends StatelessWidget {
-  const _ReservaProgressStep3();
-
-  static const _steps = ['Servicio', 'Barbero', 'Horario', 'Confirmar'];
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Paso 3 de 4', style: Theme.of(context).textTheme.bodyMedium),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            for (var i = 0; i < _steps.length; i++) ...[
-              Expanded(
-                child: Container(
-                  height: 7,
-                  decoration: BoxDecoration(
-                    color: i <= 2
-                        ? AppColors.primary
-                        : AppColors.textMutedOf(
-                            context,
-                          ).withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(99),
-                  ),
-                ),
-              ),
-              if (i < _steps.length - 1) const SizedBox(width: 8),
-            ],
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _ContextoReservaCard extends StatelessWidget {
-  const _ContextoReservaCard({
-    required this.barberoNombre,
-    required this.servicioNombre,
-    required this.duracionMin,
-  });
-
-  final String barberoNombre;
-  final String servicioNombre;
-  final int duracionMin;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceOf(context),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
-      ),
-      child: Row(
+      child: BookingScaffold(
+        step: 3,
+        title: 'Elige fecha y hora',
+        onBack: () => _volver(barbero.id),
+        backLabel: 'Volver a barberos',
+        onStep: (n) => n == 1 ? context.go('/reservar/servicio') : _volver(barbero.id),
+        bottom: barra,
         children: [
-          const Icon(Icons.person_rounded, color: AppColors.primary),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '$barberoNombre · $servicioNombre · $duracionMin min',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CalendarioMensual extends StatelessWidget {
-  const _CalendarioMensual({
-    required this.focusedDay,
-    required this.fechaSeleccionada,
-    required this.selectableDayPredicate,
-    required this.onFocusedChanged,
-    required this.onDaySelected,
-  });
-
-  final DateTime focusedDay;
-  final DateTime fechaSeleccionada;
-  final bool Function(DateTime day) selectableDayPredicate;
-  final ValueChanged<DateTime> onFocusedChanged;
-  final void Function(DateTime selected, DateTime focused) onDaySelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final first = DateTime(now.year, now.month, now.day);
-    final last = first.add(const Duration(days: 30));
-    final safeInitial = _coerceSelectableDate(
-      date: fechaSeleccionada,
-      first: first,
-      last: last,
-      selectableDayPredicate: selectableDayPredicate,
-    );
-    final safeCurrent = _coerceSelectableDate(
-      date: focusedDay,
-      first: first,
-      last: last,
-      selectableDayPredicate: selectableDayPredicate,
-    );
-
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceOf(context).withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Text('Calendario', style: Theme.of(context).textTheme.titleLarge),
-            ],
-          ),
-          CalendarDatePicker(
-            initialDate: safeInitial,
-            currentDate: safeCurrent,
-            firstDate: first,
-            lastDate: last,
-            selectableDayPredicate: selectableDayPredicate,
-            onDateChanged: (selected) {
-              onFocusedChanged(selected);
-              onDaySelected(selected, selected);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-DateTime _coerceSelectableDate({
-  required DateTime date,
-  required DateTime first,
-  required DateTime last,
-  required bool Function(DateTime day) selectableDayPredicate,
-}) {
-  var candidate = DateTime(date.year, date.month, date.day);
-  final firstDate = DateTime(first.year, first.month, first.day);
-  final lastDate = DateTime(last.year, last.month, last.day);
-
-  if (candidate.isBefore(firstDate)) {
-    candidate = firstDate;
-  }
-  if (candidate.isAfter(lastDate)) {
-    candidate = lastDate;
-  }
-
-  while (!selectableDayPredicate(candidate) && candidate.isBefore(lastDate)) {
-    candidate = candidate.add(const Duration(days: 1));
-  }
-
-  while (!selectableDayPredicate(candidate) && candidate.isAfter(firstDate)) {
-    candidate = candidate.subtract(const Duration(days: 1));
-  }
-
-  return candidate;
-}
-
-class _SlotChip extends StatelessWidget {
-  const _SlotChip({
-    required this.slot,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final SlotModel slot;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final unavailable = !slot.disponible;
-    final blocked = slot.bloqueadoPorRedis;
-
-    Color background = AppColors.secondaryOf(context).withValues(alpha: 0.12);
-    Color textColor = AppColors.textPrimaryOf(context);
-    Widget? trailing;
-
-    if (isSelected) {
-      background = AppColors.primary.withValues(alpha: 0.12);
-      trailing = const Icon(
-        Icons.check_circle,
-        size: 14,
-        color: AppColors.primary,
-      );
-    } else if (blocked) {
-      background = AppColors.warning.withValues(alpha: 0.25);
-      textColor = AppColors.warning;
-      trailing = const SizedBox(
-        width: 12,
-        height: 12,
-        child: CircularProgressIndicator(strokeWidth: 1.8),
-      );
-    } else if (unavailable) {
-      background = AppColors.textMutedOf(context).withValues(alpha: 0.25);
-      textColor = AppColors.textMutedOf(context);
-    }
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Ink(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.transparent,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+          // Contexto: servicio + barbero, con «Cambiar».
+          Container(
+            padding: const EdgeInsets.fromLTRB(AppSpace.s3, AppSpace.s2, AppSpace.s1, AppSpace.s2),
+            decoration: BoxDecoration(color: p.surface, border: Border.all(color: p.line), borderRadius: BorderRadius.circular(AppRadius.md)),
+            child: Row(
               children: [
-                Text(
-                  slot.horaInicioFormateada,
-                  style: TextStyle(
-                    color: textColor,
-                    fontWeight: FontWeight.w700,
+                BsmAvatar(name: barbero.nombreCompleto, photoUrl: barbero.fotoUrl, size: 32),
+                const SizedBox(width: AppSpace.s3),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('${servicio.nombre} · ${Formato.duracion(servicio.duracionMinutos)}', style: AppTextStyles.label.copyWith(color: p.ink)),
+                      Text('con ${barbero.nombreCompleto} · ${Formato.dinero(precio)}', style: AppTextStyles.body.copyWith(color: p.inkMuted)),
+                    ],
                   ),
                 ),
-                if (trailing != null) ...[const SizedBox(width: 6), trailing],
+                TextButton(onPressed: () => _volver(barbero.id), child: const Text('Cambiar')),
               ],
             ),
-            if (blocked && slot.minutosRestantesBloqueo != null)
-              Text(
-                '${slot.minutosRestantesBloqueo} min',
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LoadingSlotsGrid extends StatelessWidget {
-  const _LoadingSlotsGrid();
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: 12,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-        childAspectRatio: 2.3,
-      ),
-      itemBuilder: (context, index) {
-        return Shimmer.fromColors(
-          baseColor: AppColors.backgroundOf(context),
-          highlightColor: AppColors.shimmerHighlightOf(context),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.surfaceOf(context),
-              borderRadius: BorderRadius.circular(12),
-            ),
           ),
-        );
-      },
-    );
-  }
-}
-
-class _EmptySlots extends StatelessWidget {
-  const _EmptySlots();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28),
-        child: Text(
-          'No hay horarios para este día. Prueba con otra fecha.',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
-      ),
-    );
-  }
-}
-
-class _BottomReservaBar extends StatelessWidget {
-  const _BottomReservaBar({
-    required this.slot,
-    required this.duracionMin,
-    required this.estaBloqueando,
-    required this.tiempoRestante,
-    required this.onContinuar,
-  });
-
-  final SlotModel slot;
-  final int duracionMin;
-  final bool estaBloqueando;
-  final String tiempoRestante;
-  final VoidCallback onContinuar;
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceOf(context),
-          border: Border(
-            top: BorderSide(
-              color: AppColors.textMutedOf(context).withValues(alpha: 0.22),
-            ),
+          const SizedBox(height: AppSpace.s5),
+          BsmCalendar(
+            month: _mes,
+            today: _hoy,
+            selected: fecha,
+            isDisabled: deshabilitado,
+            legend: 'Los días en gris no tienen atención.',
+            onSelect: elegirFecha,
+            onPrevMonth: !DateTime(_mes.year, _mes.month).isAfter(DateTime(_hoy.year, _hoy.month))
+                ? null
+                : () => setState(() => _mes = DateTime(_mes.year, _mes.month - 1)),
+            onNextMonth: !DateTime(_mes.year, _mes.month + 1).isAfter(ultimoDia)
+                ? () => setState(() => _mes = DateTime(_mes.year, _mes.month + 1))
+                : null,
           ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Seleccionaste las ${slot.horaInicioFormateada} · $duracionMin min',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 8),
-            if (estaBloqueando) const LinearProgressIndicator(),
-            if (estaBloqueando) const SizedBox(height: 8),
-            Text(
-              'Tiempo restante: $tiempoRestante',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: estaBloqueando ? null : onContinuar,
-                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                label: const Text('CONTINUAR'),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Este horario se reserva por 5 min mientras confirmas',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-        ),
+          const SizedBox(height: AppSpace.s5),
+          Semantics(
+            header: true,
+            child: Text('Horarios para el ${Formato.fechaLarga(fecha)}', style: AppTextStyles.title.copyWith(color: p.ink)),
+          ),
+          const SizedBox(height: AppSpace.s3),
+          ...horarios,
+        ],
       ),
     );
   }

@@ -28,5 +28,7 @@ public interface IBarberiaDbContext
 
     DbSet<Review> Reviews { get; }
 
+    DbSet<CodigoRecuperacion> CodigosRecuperacion { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

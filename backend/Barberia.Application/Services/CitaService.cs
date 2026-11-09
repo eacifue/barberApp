@@ -24,6 +24,7 @@ public class CitaService : ICitaService
     private readonly ICurrentUserService currentUserService;
     private readonly IValidator<CreateCitaRequest> createValidator;
     private readonly IMapper mapper;
+    private readonly TimeProvider timeProvider;
 
     public CitaService(
         IBarberiaDbContext dbContext,
@@ -31,7 +32,8 @@ public class CitaService : ICitaService
         INotificationService notificationService,
         ICurrentUserService currentUserService,
         IValidator<CreateCitaRequest> createValidator,
-        IMapper mapper)
+        IMapper mapper,
+        TimeProvider timeProvider)
     {
         this.dbContext = dbContext;
         this.slotBloqueoService = slotBloqueoService;
@@ -39,6 +41,7 @@ public class CitaService : ICitaService
         this.currentUserService = currentUserService;
         this.createValidator = createValidator;
         this.mapper = mapper;
+        this.timeProvider = timeProvider;
     }
 
     public async Task<CitaDto> CrearCitaAsync(CreateCitaRequest request, CancellationToken cancellationToken)
@@ -203,6 +206,45 @@ public class CitaService : ICitaService
         return MapCita(cita);
     }
 
+    public async Task<CitaDto> IniciarCitaAsync(Guid citaId, CancellationToken cancellationToken)
+    {
+        var cita = await GetCitaWithRelationsAsync(citaId, cancellationToken);
+        if (cita.Estado != EstadoCita.Confirmada)
+        {
+            throw new ConflictException("Solo se pueden iniciar citas confirmadas.");
+        }
+
+        cita.Estado = EstadoCita.EnProgreso;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return MapCita(cita);
+    }
+
+    public async Task<CitaDto> MarcarNoAsistioAsync(Guid citaId, CancellationToken cancellationToken)
+    {
+        var cita = await GetCitaWithRelationsAsync(citaId, cancellationToken);
+        if (!EstadosCancelables.Contains(cita.Estado))
+        {
+            throw new ConflictException("Solo puedes marcar «No asistió» en citas pendientes o confirmadas.");
+        }
+
+        var colombiaZone = TimeZoneInfo.FindSystemTimeZoneById("America/Bogota");
+        var ahoraLocal = TimeZoneInfo.ConvertTime(timeProvider.GetUtcNow(), colombiaZone).DateTime;
+        if (ahoraLocal < cita.FechaCita.ToDateTime(cita.HoraInicio))
+        {
+            throw new ConflictException("Podrás marcar «No asistió» desde la hora de inicio de la cita.");
+        }
+
+        cita.Estado = EstadoCita.NoShow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        await notificationService.NotificarCitaNoAsistidaClienteAsync(
+            cita.ClienteId,
+            "Te esperábamos hoy. Si quieres, reserva un nuevo horario desde la app.",
+            cancellationToken);
+
+        return MapCita(cita);
+    }
+
     public async Task<List<CitaDto>> GetByClienteAsync(Guid clienteId, CancellationToken cancellationToken)
     {
         if (currentUserService.IsCliente && currentUserService.ClienteId != clienteId)
@@ -215,6 +257,7 @@ public class CitaService : ICitaService
             .Include(x => x.Cliente)
             .Include(x => x.Barbero)
             .Include(x => x.Servicio)
+            .Include(x => x.Review)
             .Where(x => x.ClienteId == clienteId)
             .OrderByDescending(x => x.FechaCita)
             .ThenByDescending(x => x.HoraInicio)
@@ -318,13 +361,72 @@ public class CitaService : ICitaService
         return MapCita(cita);
     }
 
+    public async Task<ReviewDto> CrearReviewAsync(Guid citaId, CrearReviewRequest request, CancellationToken cancellationToken)
+    {
+        var comentario = string.IsNullOrWhiteSpace(request.Comentario) ? null : request.Comentario.Trim();
+        var errores = new List<string>();
+        if (request.Calificacion is < 1 or > 5)
+        {
+            errores.Add("La calificación debe estar entre 1 y 5 estrellas.");
+        }
+
+        if (comentario is { Length: > 500 })
+        {
+            errores.Add("El comentario puede tener máximo 500 caracteres.");
+        }
+
+        if (errores.Count > 0)
+        {
+            throw new AppValidationException("La reseña contiene errores de validación.", errores);
+        }
+
+        var cita = await GetCitaWithRelationsAsync(citaId, cancellationToken);
+
+        if (!currentUserService.IsCliente || currentUserService.ClienteId != cita.ClienteId)
+        {
+            throw new UnauthorizedException("Solo puedes calificar tus propias citas.");
+        }
+
+        if (cita.Estado != EstadoCita.Completada)
+        {
+            throw new ConflictException("Solo puedes calificar citas completadas.");
+        }
+
+        if (await dbContext.Reviews.IgnoreQueryFilters().AnyAsync(x => x.CitaId == cita.Id, cancellationToken))
+        {
+            throw new ConflictException("Ya calificaste esta cita.");
+        }
+
+        var review = new Review
+        {
+            ClienteId = cita.ClienteId,
+            BarberoId = cita.BarberoId,
+            CitaId = cita.Id,
+            Calificacion = request.Calificacion,
+            Comentario = comentario,
+        };
+        dbContext.Reviews.Add(review);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new ReviewDto
+        {
+            Id = review.Id,
+            CitaId = review.CitaId,
+            BarberoId = review.BarberoId,
+            Calificacion = review.Calificacion,
+            Comentario = review.Comentario,
+            CreatedAt = review.CreatedAt,
+        };
+    }
+
     private async Task<Cita> GetCitaWithRelationsAsync(Guid citaId, CancellationToken cancellationToken, bool asNoTracking = false)
     {
         IQueryable<Cita> query = dbContext.Citas
             .IgnoreQueryFilters()
             .Include(x => x.Cliente)
             .Include(x => x.Barbero)
-            .Include(x => x.Servicio);
+            .Include(x => x.Servicio)
+            .Include(x => x.Review);
 
         if (asNoTracking)
         {

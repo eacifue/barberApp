@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Detalle · Calificar servicio</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-iconbtn{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; position: relative; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--font-sans); display: flex; flex-direction: column;">
+  <header style="padding: 8px 16px 12px; display: flex; flex-direction: column; gap: 8px;">
+    <a href="Citas-historial.dc.html" class="bsm-iconbtn" aria-label="Volver al historial" style="margin-left: -10px;">
+      <x-import component-from-global-scope="BSM.Icon" name="arrow-left" size="24"></x-import>
+    </a>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+      <h1 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 32px; line-height: 36px;">Tu cita</h1>
+      <x-import component-from-global-scope="BSM.StatusBadge" status="Completada"></x-import>
+    </div>
+  </header>
+
+  <div style="display: flex; flex-direction: column; gap: 16px; padding: 0 16px;">
+    <div style="padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); display: flex; gap: 14px; align-items: center;">
+      <span class="bsm-service-icon"><x-import component-from-global-scope="BSM.Icon" name="scissors" size="24"></x-import></span>
+      <div style="display: flex; flex-direction: column; min-width: 0;">
+        <span style="font-size: 17px; line-height: 24px; font-weight: 600;">Corte clásico</span>
+        <span style="font-size: 14px; line-height: 20px; color: var(--ink-muted);">con Julián Restrepo · martes 28 de octubre, 6:00 p. m.</span>
+      </div>
+    </div>
+
+    <section aria-labelledby="rate-title" style="padding: 20px 16px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center;">
+      <x-import component-from-global-scope="BSM.Avatar" name="Julián Restrepo" size="{{s64}}"></x-import>
+      <h2 id="rate-title" style="margin: 0; font-size: 20px; line-height: 26px; font-weight: 600;">¿Cómo te fue con Julián?</h2>
+      <div role="radiogroup" aria-label="Calificación" style="display: flex; gap: 4px;">
+        <button type="button" role="radio" aria-checked="false" aria-label="1 estrella" style="width: 48px; height: 48px; border: 0; background: transparent; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;"><span class="bsm-star bsm-star-full"><x-import component-from-global-scope="BSM.Icon" name="star" size="32"></x-import></span></button>
+        <button type="button" role="radio" aria-checked="false" aria-label="2 estrellas" style="width: 48px; height: 48px; border: 0; background: transparent; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;"><span class="bsm-star bsm-star-full"><x-import component-from-global-scope="BSM.Icon" name="star" size="32"></x-import></span></button>
+        <button type="button" role="radio" aria-checked="false" aria-label="3 estrellas" style="width: 48px; height: 48px; border: 0; background: transparent; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;"><span class="bsm-star bsm-star-full"><x-import component-from-global-scope="BSM.Icon" name="star" size="32"></x-import></span></button>
+        <button type="button" role="radio" aria-checked="true" aria-label="4 estrellas" style="width: 48px; height: 48px; border: 0; background: transparent; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;"><span class="bsm-star bsm-star-full"><x-import component-from-global-scope="BSM.Icon" name="star" size="32"></x-import></span></button>
+        <button type="button" role="radio" aria-checked="false" aria-label="5 estrellas" style="width: 48px; height: 48px; border: 0; background: transparent; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center;"><span class="bsm-star bsm-star-empty"><x-import component-from-global-scope="BSM.Icon" name="star" size="32"></x-import></span></button>
+      </div>
+      <span style="font-size: 14px; line-height: 20px; font-weight: 600; color: var(--brass-ink);">Muy bien</span>
+      <div style="align-self: stretch; text-align: left;">
+        <x-import component-from-global-scope="BSM.Input" label="Cuéntanos más" optional="{{yes}}" multiline="{{yes}}" placeholder="¿Qué te gustó? ¿Qué mejorarías?" hint="Tu reseña aparecerá en el perfil de Julián."></x-import>
+      </div>
+    </section>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 4px; padding: 12px 16px 24px; background: var(--surface); border-top: 1px solid var(--line);">
+    <x-import component-from-global-scope="BSM.Button" size="lg" block="{{yes}}">Enviar reseña</x-import>
+    <x-import component-from-global-scope="BSM.Button" variant="ghost" icon="rotate-ccw" block="{{yes}}">Reservar de nuevo</x-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: this.props.dark ? 'dark' : 'light', yes: true, s64: 64 };
+  }
+}
+</script>
+</body>
+</html>

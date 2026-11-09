@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Panel · Mi negocio</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn,a.bsm-iconbtn{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="min-height: 1400px; position: relative; display: flex; flex-wrap: wrap; align-items: stretch; background: var(--bg); color: var(--ink); font-family: var(--font-sans);">
+  <div style="flex: 0 0 264px; display: flex;">
+    <x-import component-from-global-scope="BSM.Sidebar" active="Mi negocio" sections="{{sections}}" user="{{user}}"></x-import>
+  </div>
+
+  <main style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column;">
+    <x-import component-from-global-scope="BSM.Topbar" title="Mi negocio" unread="{{yes}}" theme="{{theme}}"></x-import>
+
+    <div style="flex: 1; padding: 24px 32px 32px; display: flex; flex-direction: column; gap: 20px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <h2 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 24px; line-height: 30px;">Tu barbería</h2>
+          <p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted);">Datos de tu barbería visibles para tus clientes en la app.</p>
+        </div>
+        <span style="margin-left: auto;"><x-import component-from-global-scope="BSM.Badge" tone="success" icon="circle-check">Barbería activa</x-import></span>
+      </div>
+
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 24px;">
+        <div style="flex: 1 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+
+          <section aria-labelledby="s-ident" style="padding: 20px 24px 24px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <h3 id="s-ident" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 600;">Identidad</h3>
+              <span style="font-size: 13px; line-height: 18px; color: var(--ink-muted);">Lo primero que ven tus clientes en Inicio.</span>
+            </div>
+            <div class="bsm-field">
+              <span class="bsm-field-label">Foto de portada</span>
+              <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px;">
+                <div role="img" aria-label="Foto de portada actual" style="flex: 0 0 240px; height: 120px; border-radius: var(--radius-sm); background: var(--surface-sunken); display: flex; align-items: center; justify-content: center; text-align: center; padding: 8px; box-sizing: border-box; color: var(--ink-muted); font-size: 13px; line-height: 18px;">[Foto de portada de la barbería]</div>
+                <div style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+                  <span style="font-size: 13px; line-height: 18px; color: var(--ink-muted);">Una foto horizontal del local. Se recorta en la parte superior de la tarjeta de Inicio.</span>
+                  <span style="display: flex; gap: 8px;">
+                    <x-import component-from-global-scope="BSM.Button" variant="secondary" size="sm" icon="image-plus">Cambiar foto</x-import>
+                    <x-import component-from-global-scope="BSM.Button" variant="danger-ghost" size="sm" icon="trash-2">Quitar</x-import>
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;">
+              <x-import component-from-global-scope="BSM.Input" label="Nombre" default-value="BarberShop Medellín"></x-import>
+              <x-import component-from-global-scope="BSM.Input" label="Slogan" optional="{{yes}}" placeholder="[Slogan de la barbería]" hint="Una frase corta, debajo del nombre."></x-import>
+            </div>
+            <x-import component-from-global-scope="BSM.Input" label="Descripción" multiline="{{yes}}" optional="{{yes}}" placeholder="[Descripción de la barbería]" hint="Cuéntales qué los espera: estilo, ambiente, especialidades."></x-import>
+          </section>
+
+          <section aria-labelledby="s-contacto" style="padding: 20px 24px 24px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <h3 id="s-contacto" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 600;">Contacto</h3>
+              <span style="font-size: 13px; line-height: 18px; color: var(--ink-muted);">Alimenta los botones «Llamar» y «WhatsApp» de la app.</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px;">
+              <x-import component-from-global-scope="BSM.Input" label="Teléfono" type="tel" icon="phone" placeholder="[Teléfono]"></x-import>
+              <x-import component-from-global-scope="BSM.Input" label="Correo" type="email" icon="mail" placeholder="[Correo de la barbería]"></x-import>
+              <x-import component-from-global-scope="BSM.Input" label="Sitio web" optional="{{yes}}" icon="globe" placeholder="[Sitio web]"></x-import>
+            </div>
+          </section>
+
+          <section aria-labelledby="s-ubicacion" style="padding: 20px 24px 24px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <h3 id="s-ubicacion" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 600;">Ubicación</h3>
+              <span style="font-size: 13px; line-height: 18px; color: var(--ink-muted);">El pin del mapa define a dónde lleva «Cómo llegar».</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px;">
+              <x-import component-from-global-scope="BSM.Select" label="País" options="{{countries}}" default-value="Colombia"></x-import>
+              <x-import component-from-global-scope="BSM.Select" label="Departamento" options="{{departments}}" default-value="Antioquia"></x-import>
+              <x-import component-from-global-scope="BSM.Input" label="Ciudad" default-value="Medellín"></x-import>
+            </div>
+            <x-import component-from-global-scope="BSM.Input" label="Dirección" icon="map-pin" placeholder="[Dirección de la barbería], El Poblado"></x-import>
+            <div style="position: relative; height: 200px; border-radius: var(--radius-sm); background: var(--surface-sunken); display: flex; align-items: center; justify-content: center; color: var(--ink-muted); font-size: 13px; line-height: 18px;">
+              <span>[Mapa: arrastra el pin hasta la entrada del local]</span>
+              <span style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -100%); color: var(--oxblood);"><x-import component-from-global-scope="BSM.Icon" name="map-pin" size="32" label="Ubicación de la barbería"></x-import></span>
+              <span style="position: absolute; right: 12px; bottom: 12px;"><x-import component-from-global-scope="BSM.Button" variant="secondary" size="sm" icon="navigation">Ubicar con la dirección</x-import></span>
+            </div>
+          </section>
+
+          <section aria-labelledby="s-horario" style="padding: 20px 24px 24px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <h3 id="s-horario" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 600;">Horario de atención</h3>
+              <span style="font-size: 13px; line-height: 18px; color: var(--ink-muted);">El horario de cada barbero se ajusta en <a href="Barberos.dc.html" style="font-weight: 600;">Barberos</a>.</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; max-width: 420px;">
+              <x-import component-from-global-scope="BSM.Select" label="Abre" options="{{hours}}" default-value="9:00 a. m."></x-import>
+              <x-import component-from-global-scope="BSM.Select" label="Cierra" options="{{hours}}" default-value="8:00 p. m."></x-import>
+            </div>
+            <div class="bsm-field">
+              <span class="bsm-field-label" id="l-descanso">Días de descanso</span>
+              <div role="group" aria-labelledby="l-descanso" class="bsm-chip-row">
+                <sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+                  <x-import component-from-global-scope="BSM.Chip" selected="{{d.off}}" icon="{{d.icon}}" aria-pressed="{{d.pressed}}">{{d.label}}</x-import>
+                </sc-for>
+              </div>
+              <span class="bsm-field-msg">Marcados: la barbería no abre y la app no muestra horarios ese día.</span>
+            </div>
+          </section>
+
+          <section aria-labelledby="s-estado" style="padding: 20px 24px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); display: flex; flex-direction: column; gap: 12px;">
+            <h3 id="s-estado" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 600;">Estado</h3>
+            <x-import component-from-global-scope="BSM.Switch" label="Barbería activa" hint="Si la desactivas, deja de aparecer en la app y nadie puede reservar." default-checked="{{yes}}"></x-import>
+          </section>
+        </div>
+
+        <aside aria-label="Vista previa en la app" style="flex: 0 1 360px; min-width: 300px; position: sticky; top: 24px; display: flex; flex-direction: column; gap: 10px;">
+          <span class="bsm-overline">Así se ve en la app</span>
+          <div style="border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); overflow: hidden; box-shadow: var(--shadow-sm);">
+            <div role="img" aria-label="Foto de portada de la barbería" style="height: 150px; background: var(--surface-sunken); display: flex; align-items: center; justify-content: center; color: var(--ink-muted); font-size: 13px; line-height: 18px;">[Foto de portada de la barbería]</div>
+            <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-family: var(--font-display); font-size: 24px; line-height: 30px;">BarberShop Medellín</span>
+                <span style="font-size: 15px; line-height: 22px; color: var(--ink-muted);">[Slogan de la barbería]</span>
+              </div>
+              <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <span style="color: var(--brass-ink); padding-top: 2px;"><x-import component-from-global-scope="BSM.Icon" name="clock" size="20"></x-import></span>
+                <span style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+                  <span style="font-size: 15px; line-height: 20px; font-weight: 600;">Abierto hasta las 8:00 p. m.</span>
+                  <span style="font-size: 14px; line-height: 20px; color: var(--ink-muted);">Lunes a sábado, 9:00 a. m. – 8:00 p. m. · Domingo cerrado</span>
+                </span>
+              </div>
+              <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <span style="color: var(--brass-ink); padding-top: 2px;"><x-import component-from-global-scope="BSM.Icon" name="map-pin" size="20"></x-import></span>
+                <span style="flex: 1; display: flex; flex-direction: column;">
+                  <span style="font-size: 15px; line-height: 20px; font-weight: 600;">El Poblado, Medellín</span>
+                  <span style="font-size: 14px; line-height: 20px; color: var(--ink-muted);">[Dirección de la barbería]</span>
+                </span>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+                <x-import component-from-global-scope="BSM.Button" variant="secondary" icon="phone" tabindex="-1">Llamar</x-import>
+                <x-import component-from-global-scope="BSM.Button" variant="secondary" icon="message-circle" tabindex="-1">WhatsApp</x-import>
+              </div>
+              <x-import component-from-global-scope="BSM.Button" icon="navigation" block="{{yes}}" tabindex="-1">Cómo llegar</x-import>
+            </div>
+          </div>
+          <span style="font-size: 13px; line-height: 18px; color: var(--ink-muted);">Se actualiza mientras editas. Los clientes la ven cuando guardas.</span>
+        </aside>
+      </div>
+    </div>
+
+    <div style="position: sticky; bottom: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 32px; background: var(--surface-raised); border-top: 1px solid var(--line); box-shadow: var(--shadow-md);">
+      <span style="flex: 1; display: flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; color: var(--ink-muted);">
+        <span style="color: var(--warning);"><x-import component-from-global-scope="BSM.Icon" name="circle-alert" size="20"></x-import></span>
+        Tienes cambios sin guardar.
+      </span>
+      <x-import component-from-global-scope="BSM.Button" variant="ghost">Descartar</x-import>
+      <x-import component-from-global-scope="BSM.Button" icon="check">Guardar cambios</x-import>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"$preview":{"width":1440,"height":1400}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const hours = [];
+    for (let h = 6; h <= 22; h++) for (const m of ['00', '30']) {
+      if (h === 22 && m === '30') continue;
+      const h12 = ((h + 11) % 12) + 1;
+      hours.push(h12 + ':' + m + (h < 12 ? ' a. m.' : ' p. m.'));
+    }
+    const day = (label, off) => ({ label, off, pressed: off ? 'true' : 'false', icon: off ? 'check' : '' });
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      yes: true, no: false,
+      user: { name: 'Camila Arango', role: 'Administrador' },
+      sections: [
+        { title: 'Principal', items: [{ icon: 'layout-dashboard', label: 'Dashboard' }] },
+        { title: 'Mi barbería', items: [{ icon: 'calendar-days', label: 'Agenda', count: 4 }, { icon: 'clock', label: 'Disponibilidad' }, { icon: 'users', label: 'Clientes' }, { icon: 'scissors', label: 'Barberos' }, { icon: 'clipboard-list', label: 'Servicios' }] },
+        { title: 'Administración', items: [{ icon: 'store', label: 'Mi negocio' }, { icon: 'user-cog', label: 'Usuarios' }] }
+      ],
+      countries: ['Colombia', 'México', 'Argentina', 'Chile', 'Perú', 'Ecuador', 'Venezuela'],
+      departments: ['Amazonas', 'Antioquia', 'Arauca', 'Atlántico', 'Bogotá D. C.', 'Bolívar', 'Boyacá', 'Caldas', 'Caquetá', 'Casanare', 'Cauca', 'Cesar', 'Chocó', 'Córdoba', 'Cundinamarca', 'Guainía', 'Guaviare', 'Huila', 'La Guajira', 'Magdalena', 'Meta', 'Nariño', 'Norte de Santander', 'Putumayo', 'Quindío', 'Risaralda', 'San Andrés y Providencia', 'Santander', 'Sucre', 'Tolima', 'Valle del Cauca', 'Vaupés', 'Vichada'],
+      hours,
+      days: [day('Lunes', false), day('Martes', false), day('Miércoles', false), day('Jueves', false), day('Viernes', false), day('Sábado', false), day('Domingo', true)]
+    };
+  }
+}
+</script>
+</body>
+</html>

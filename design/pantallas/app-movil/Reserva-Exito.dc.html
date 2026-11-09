@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Reserva confirmada</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; position: relative; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--font-sans); display: flex; flex-direction: column; box-sizing: border-box; padding: 96px 24px 32px;">
+  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px;">
+    <div aria-hidden="true" style="width: 112px; height: 112px; border-radius: 50%; background: var(--brass-soft); display: flex; align-items: center; justify-content: center;">
+      <div style="width: 76px; height: 76px; border-radius: 50%; background: var(--brass); color: var(--on-brass); display: flex; align-items: center; justify-content: center;">
+        <x-import component-from-global-scope="BSM.Icon" name="check" size="40" stroke-width="{{w3}}"></x-import>
+      </div>
+    </div>
+    <h1 style="margin: 8px 0 0; font-family: var(--font-display); font-weight: 400; font-size: 40px; line-height: 44px; letter-spacing: -0.01em;">Reserva confirmada</h1>
+    <p style="margin: 0; font-size: 16px; line-height: 24px; color: var(--ink-muted); max-width: 300px;">Te enviaremos un recordatorio antes de tu cita.</p>
+
+    <div style="align-self: stretch; margin-top: 16px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); display: flex; gap: 14px; text-align: left;">
+      <div style="flex: none; width: 56px; padding: 8px 0; border-radius: var(--radius-sm); background: var(--surface-sunken); display: flex; flex-direction: column; align-items: center;">
+        <span style="font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted);">jue</span>
+        <span style="font-family: var(--font-display); font-size: 28px; line-height: 32px;">12</span>
+        <span style="font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-muted);">nov</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0;">
+        <span style="font-size: 17px; line-height: 24px; font-weight: 600;">Corte + barba</span>
+        <span style="font-size: 14px; line-height: 20px;">con Julián Restrepo</span>
+        <span style="font-size: 14px; line-height: 20px; color: var(--ink-muted); font-variant-numeric: tabular-nums;">3:00 p. m. – 3:50 p. m. · $50.000</span>
+        <span style="font-size: 14px; line-height: 20px; color: var(--ink-muted);">El Poblado, Medellín · Pago en el local</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px;">
+    <a href="Mis-citas.dc.html" class="bsm-btn bsm-btn-primary bsm-btn-lg bsm-btn-block">Ver mis citas</a>
+    <a href="Main.dc.html" class="bsm-btn bsm-btn-secondary bsm-btn-lg bsm-btn-block">Volver al inicio</a>
+    <x-import component-from-global-scope="BSM.Button" variant="ghost" icon="calendar-plus" block="{{yes}}">Añadir a mi calendario</x-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: this.props.dark ? 'dark' : 'light', yes: true, w3: 3 };
+  }
+}
+</script>
+</body>
+</html>

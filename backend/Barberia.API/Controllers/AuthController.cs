@@ -11,10 +11,34 @@ namespace Barberia.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService authService;
+    private readonly IRecuperacionPasswordService recuperacionPasswordService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IRecuperacionPasswordService recuperacionPasswordService)
     {
         this.authService = authService;
+        this.recuperacionPasswordService = recuperacionPasswordService;
+    }
+
+    /// <summary>Envía un código de 6 dígitos al correo. Responde igual exista o no la cuenta.</summary>
+    [HttpPost("api/v1/auth/recuperar")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ApiResponse<object?>>> SolicitarCodigoAsync(
+        [FromBody] SolicitarCodigoRequest request,
+        CancellationToken cancellationToken)
+    {
+        await recuperacionPasswordService.SolicitarCodigoAsync(request, cancellationToken);
+        return Ok(ApiResponse<object?>.Ok(null, "Si el correo está registrado, te enviamos un código. Revisa también la carpeta de spam."));
+    }
+
+    /// <summary>Cambia la contraseña con el código recibido por correo.</summary>
+    [HttpPost("api/v1/auth/restablecer")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ApiResponse<object?>>> RestablecerAsync(
+        [FromBody] RestablecerPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        await recuperacionPasswordService.RestablecerAsync(request, cancellationToken);
+        return Ok(ApiResponse<object?>.Ok(null, "Listo, tu contraseña cambió. Ya puedes entrar."));
     }
 
     [HttpPost("api/v1/auth/registro")]

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Reserva · Paso 3 · Fecha y hora</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn,a.bsm-iconbtn{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 1300px; position: relative; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--font-sans); display: flex; flex-direction: column;">
+  <header style="padding: 8px 16px 12px; display: flex; flex-direction: column; gap: 10px;">
+    <a href="Reserva-2-Barbero.dc.html" class="bsm-iconbtn" aria-label="Volver a barberos" style="margin-left: -10px;">
+      <x-import component-from-global-scope="BSM.Icon" name="arrow-left" size="24"></x-import>
+    </a>
+    <x-import component-from-global-scope="BSM.Stepper" current="{{step}}"></x-import>
+    <h1 style="margin: 4px 0 0; font-family: var(--font-display); font-weight: 400; font-size: 32px; line-height: 36px;">Elige fecha y hora</h1>
+  </header>
+
+  <div style="display: flex; flex-direction: column; gap: 16px; padding: 0 16px;">
+    <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface);">
+      <x-import component-from-global-scope="BSM.Avatar" name="Julián Restrepo" size="{{s32}}"></x-import>
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+        <span style="font-size: 15px; line-height: 20px; font-weight: 600;">Corte + barba · 50 min</span>
+        <span style="font-size: 13px; line-height: 18px; color: var(--ink-muted);">con Julián Restrepo · $50.000</span>
+      </div>
+      <a href="Reserva-2-Barbero.dc.html" style="font-size: 14px; line-height: 20px; font-weight: 600; padding: 12px 4px;">Cambiar</a>
+    </div>
+
+    <div style="padding: 12px 8px 8px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); display: flex; justify-content: center;">
+      <x-import component-from-global-scope="BSM.Calendar" year="{{year}}" month="{{month}}" today="{{today}}" selected="{{day}}" disabled="{{isOff}}" marks="{{marks}}" legend="• Pocos horarios libres · Domingo: la barbería descansa"></x-import>
+    </div>
+
+    <h2 style="margin: 4px 0 0; font-size: 17px; line-height: 24px; font-weight: 600;">{{dayTitle}}</h2>
+
+    <sc-if value="{{isNormal}}" hint-placeholder-val="{{yes}}">
+      <x-import component-from-global-scope="BSM.SlotGrid" slots="{{slots}}" selected="15:00" label="Horarios disponibles"></x-import>
+    </sc-if>
+    <sc-if value="{{isLoading}}" hint-placeholder-val="{{no}}">
+      <x-import component-from-global-scope="BSM.Skeleton" variant="slots" label="Cargando horarios"></x-import>
+      <x-import component-from-global-scope="BSM.Skeleton" variant="slots" label="Cargando horarios"></x-import>
+    </sc-if>
+    <sc-if value="{{isEmpty}}" hint-placeholder-val="{{no}}">
+      <x-import component-from-global-scope="BSM.EmptyState" icon="calendar-x" title="No hay horarios este día" body="Prueba con otro día o con otro barbero." action-label="Ver el sábado 14 de noviembre" action-icon="arrow-right" action-variant="secondary"></x-import>
+    </sc-if>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 8px; padding-top: 8px; background: linear-gradient(transparent, var(--bg) 16px);">
+    <sc-if value="{{isNormal}}" hint-placeholder-val="{{yes}}">
+      <div style="padding: 0 16px;">
+        <x-import component-from-global-scope="BSM.Countdown" seconds="{{seconds}}" variant="compact"></x-import>
+      </div>
+    </sc-if>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px 28px; background: var(--surface); border-top: 1px solid var(--line); box-shadow: var(--shadow-sm);">
+      <sc-if value="{{isNormal}}" hint-placeholder-val="{{yes}}">
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+          <span style="font-size: 15px; line-height: 20px; font-weight: 600; font-variant-numeric: tabular-nums;">Jue 12 nov · 3:00 p. m.</span>
+          <span style="font-size: 13px; line-height: 18px; color: var(--ink-muted);">50 min, termina 3:50 p. m.</span>
+        </div>
+        <a href="Reserva-4-Confirmar.dc.html" class="bsm-btn bsm-btn-primary bsm-btn-lg">Continuar</a>
+      </sc-if>
+      <sc-if value="{{noSlot}}" hint-placeholder-val="{{no}}">
+        <span style="flex: 1; font-size: 15px; line-height: 20px; color: var(--ink-muted);">Elige un horario para continuar</span>
+        <x-import component-from-global-scope="BSM.Button" size="lg" disabled="{{yes}}">Continuar</x-import>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"estado":{"editor":"enum","options":["normal","cargando","sin-horarios"],"default":"normal","section":"Vista"},"seconds":{"editor":"range","min":0,"max":300,"step":1,"unit":"s","default":272,"section":"Horario apartado"},"$preview":{"width":390,"height":1300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const estado = this.props.estado ?? 'normal';
+    const empty = estado === 'sin-horarios';
+    const off = { '9:30': 1, '11:00': 1, '11:30': 1, '14:00': 1, '16:30': 1, '18:00': 1 };
+    const slots = [];
+    for (let m = 9 * 60; m < 20 * 60; m += 30) {
+      const t = Math.floor(m / 60) + ':' + (m % 60 ? '30' : '00');
+      slots.push({ time: t, state: off[t] ? 'booked' : 'available' });
+    }
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      step: 3, yes: true, no: false, s32: 32,
+      year: 2026, month: 10, today: 6, day: empty ? 13 : 12,
+      isOff: (d) => d < 6 || new Date(2026, 10, d).getDay() === 0,
+      marks: { 13: 'few', 14: 'few' },
+      dayTitle: empty ? 'Horarios para el viernes 13 de noviembre' : 'Horarios para el jueves 12 de noviembre',
+      slots: slots,
+      seconds: this.props.seconds ?? 272,
+      isNormal: estado === 'normal', isLoading: estado === 'cargando', isEmpty: empty, noSlot: estado !== 'normal'
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Panel en celular · Dashboard</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; position: relative; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--font-sans); display: flex; flex-direction: column;">
+  <x-import component-from-global-scope="BSM.Topbar" compact="{{yes}}" placeholder="Buscar" unread="{{yes}}" theme="{{theme}}"></x-import>
+
+  <div style="padding: 16px 0 0; display: flex; flex-direction: column; gap: 16px;">
+    <div style="padding: 0 16px; display: flex; flex-direction: column; gap: 2px;">
+      <h1 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 28px; line-height: 32px;">Hoy en la barbería</h1>
+      <p style="margin: 0; font-size: 14px; line-height: 20px; color: var(--ink-muted);">Viernes 6 de noviembre · abierto hasta las 8:00 p. m.</p>
+    </div>
+
+    <div aria-label="Indicadores de hoy" style="display: flex; gap: 12px; padding: 0 16px; overflow: hidden;">
+      <x-import component-from-global-scope="BSM.StatCard" label="Citas de hoy" value="23" icon="calendar-days" delta="{{d15}}" delta-label="vs. viernes pasado"></x-import>
+      <x-import component-from-global-scope="BSM.StatCard" label="Ingresos estimados" value="$840.000" icon="banknote" hint="$130.000 ya cobrados"></x-import>
+    </div>
+
+    <section aria-labelledby="m-ing" style="margin: 0 16px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: baseline; justify-content: space-between;">
+        <h2 id="m-ing" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 600;">Ingresos · 7 días</h2>
+        <span style="font-size: 12px; line-height: 16px; color: var(--ink-muted);">en millones</span>
+      </div>
+      <div role="img" aria-label="Ingresos de los últimos 7 días: máximo el sábado con $1,71 M; hoy se estiman $0,84 M." style="height: 132px; display: flex; align-items: flex-end; gap: 2px;">
+        <sc-for list="{{week}}" as="d" hint-placeholder-count="7">
+          <div style="flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px;">
+            <span style="font-size: 11px; line-height: 14px; font-weight: 600; font-variant-numeric: tabular-nums;">{{d.v}}</span>
+            <div style="display: block; {{d.style}}"></div>
+            <span style="font-size: 11px; line-height: 14px; color: var(--ink-muted);">{{d.x}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section aria-labelledby="m-next" style="margin: 0 16px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); display: flex; flex-direction: column;">
+      <div style="padding: 14px 16px 8px; display: flex; align-items: baseline; justify-content: space-between;">
+        <h2 id="m-next" style="margin: 0; font-size: 17px; line-height: 24px; font-weight: 600;">Próximas citas</h2>
+        <a href="Agenda-movil.dc.html" style="font-size: 14px; line-height: 20px; font-weight: 600;">Ver agenda</a>
+      </div>
+      <sc-for list="{{next}}" as="n" hint-placeholder-count="3">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-top: 1px solid var(--line);">
+          <span style="width: 64px; font-size: 13px; line-height: 18px; font-weight: 600; font-variant-numeric: tabular-nums;">{{n.time}}</span>
+          <span style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+            <strong style="font-size: 14px; line-height: 20px; font-weight: 600;">{{n.client}}</strong>
+            <span style="font-size: 12px; line-height: 16px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{n.barber}}</span>
+          </span>
+          <x-import component-from-global-scope="BSM.StatusBadge" status="{{n.status}}" size="sm"></x-import>
+        </div>
+      </sc-for>
+    </section>
+  </div>
+
+  <div style="position: absolute; left: 16px; right: 16px; bottom: 16px;">
+    <x-import component-from-global-scope="BSM.BottomNav" floating="{{yes}}" active="Inicio" items="{{nav}}"></x-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const raw = [['sáb', 1.71], ['dom', null], ['lun', 0.87], ['mar', 0.96], ['mié', 1.09], ['jue', 1.23], ['hoy', 0.84]];
+    const week = raw.map(([x, v], i) => ({
+      x,
+      v: v === null ? '' : String(v).replace('.', ','),
+      style: 'width: 70%; max-width: 28px; box-sizing: border-box; border-radius: 4px 4px 0 0; height: ' + (v ? Math.round(v / 2 * 92) : 0) + 'px; ' +
+        (i === raw.length - 1 ? 'background: var(--brass-soft); border: 1.5px dashed var(--chart-1); border-bottom: 0;' : 'background: var(--chart-1);')
+    }));
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      yes: true, d15: 15,
+      nav: [{ icon: 'layout-dashboard', label: 'Inicio' }, { icon: 'calendar-days', label: 'Agenda' }, { icon: 'users', label: 'Clientes' }, { icon: 'menu', label: 'Más' }],
+      week: week,
+      next: [
+        { time: '11:30 a. m.', client: 'Juan Pablo Ríos', barber: 'con Julián Restrepo', status: 'Confirmada' },
+        { time: '12:00 p. m.', client: 'Martín López', barber: 'con Mateo Vélez', status: 'Pendiente' },
+        { time: '12:00 p. m.', client: 'Iván Correa', barber: 'con Santiago Ochoa', status: 'Confirmada' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

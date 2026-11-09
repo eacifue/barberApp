@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/auth/auth_role_provider.dart';
-import '../../../../core/errors/exceptions.dart';
-import '../../../../shared/widgets/app_button.dart';
-import '../../../../shared/widgets/app_card.dart';
-import '../../../../shared/widgets/app_input.dart';
+import '../../../../core/errors/error_message.dart';
+import '../../../../core/services/permiso_notificaciones.dart';
+import '../../../../core/storage/secure_storage.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/widgets/bsm/bsm.dart';
 import '../../data/auth_repository.dart';
+import 'auth_validators.dart';
 
+/// Crea tu cuenta (design/pantallas/app-movil/Registro y Registro-errores):
+/// validación por campo al salir y al enviar. Al crear la cuenta se pasa al
+/// onboarding si aún no se ha visto.
 class RegistroScreen extends ConsumerStatefulWidget {
   const RegistroScreen({super.key});
 
@@ -18,184 +26,147 @@ class RegistroScreen extends ConsumerStatefulWidget {
 }
 
 class _RegistroScreenState extends ConsumerState<RegistroScreen> {
-  final _nombreController = TextEditingController();
-  final _apellidoController = TextEditingController();
-  final _correoController = TextEditingController();
-  final _telefonoController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _loading = false;
+  final _form = GlobalKey<FormState>();
+  final _nombre = TextEditingController();
+  final _apellido = TextEditingController();
+  final _celular = TextEditingController();
+  final _correo = TextEditingController();
+  final _clave = TextEditingController();
+  bool _cargando = false;
 
   @override
   void dispose() {
-    _nombreController.dispose();
-    _apellidoController.dispose();
-    _correoController.dispose();
-    _telefonoController.dispose();
-    _passwordController.dispose();
+    for (final c in [_nombre, _apellido, _celular, _correo, _clave]) {
+      c.dispose();
+    }
     super.dispose();
+  }
+
+  Future<void> _crear() async {
+    if (!(_form.currentState?.validate() ?? false)) return;
+    setState(() => _cargando = true);
+    final router = GoRouter.of(context);
+    try {
+      await ref.read(authRepositoryProvider).registro(
+            nombre: _nombre.text.trim(),
+            apellido: _apellido.text.trim(),
+            telefono: _celular.text.replaceAll(RegExp(r'\D'), ''),
+            correo: _correo.text.trim(),
+            password: _clave.text,
+          );
+      await ref.read(permisoNotificacionesProvider).sincronizarSiAutorizado();
+      ref.invalidate(authRoleProvider);
+      final visto = await ref.read(secureStorageProvider).onboardingVisto();
+      router.go(visto ? '/dashboard' : '/bienvenida');
+    } catch (e) {
+      if (mounted) showBsmToast(context, mensajeDeError(e, 'No pudimos crear tu cuenta. Inténtalo de nuevo.'), tone: BsmToastTone.danger);
+    } finally {
+      if (mounted) setState(() => _cargando = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authRepository = ref.watch(authRepositoryProvider);
-
+    final p = context.palette;
+    const gap = SizedBox(height: AppSpace.s4);
     return Scaffold(
-      appBar: AppBar(title: const Text('Registro')),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Text(
-                'Crea tu cuenta',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 16),
-              AppCard(
-                child: Column(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(AppSpace.s4, AppSpace.s2, AppSpace.s4, AppSpace.s6),
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(tooltip: 'Volver a iniciar sesión', onPressed: () => context.go('/login'), icon: const Icon(LucideIcons.arrowLeft, size: 24)),
+                ),
+                const SizedBox(height: AppSpace.s2),
+                Semantics(header: true, child: Text('Crea tu cuenta', style: AppTextStyles.display.copyWith(color: p.ink))),
+                const SizedBox(height: AppSpace.s2),
+                Text('Solo lo necesario para tus reservas.', style: AppTextStyles.bodyLg.copyWith(color: p.inkMuted)),
+                const SizedBox(height: AppSpace.s6),
+                AutofillGroup(
+                  child: Form(
+                    key: _form,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: BsmTextField(
+                                controller: _nombre,
+                                label: 'Nombre',
+                                textInputAction: TextInputAction.next,
+                                autofillHints: const [AutofillHints.givenName],
+                                validator: (v) => AuthValidators.requerido(v, 'Escribe tu nombre.'),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpace.s3),
+                            Expanded(
+                              child: BsmTextField(
+                                controller: _apellido,
+                                label: 'Apellido',
+                                textInputAction: TextInputAction.next,
+                                autofillHints: const [AutofillHints.familyName],
+                                validator: (v) => AuthValidators.requerido(v, 'Escribe tu apellido.'),
+                              ),
+                            ),
+                          ],
+                        ),
+                        gap,
+                        BsmTextField(
+                          controller: _celular,
+                          label: 'Celular',
+                          icon: LucideIcons.phone,
+                          placeholder: '300 123 4567',
+                          hint: 'Solo para avisos de tus citas.',
+                          keyboardType: TextInputType.phone,
+                          textInputAction: TextInputAction.next,
+                          autofillHints: const [AutofillHints.telephoneNumber],
+                          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d\s+]'))],
+                          validator: AuthValidators.celular,
+                        ),
+                        gap,
+                        BsmTextField(
+                          controller: _correo,
+                          label: 'Correo electrónico',
+                          icon: LucideIcons.mail,
+                          placeholder: 'nombre@correo.co',
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          autofillHints: const [AutofillHints.email],
+                          validator: AuthValidators.correo,
+                        ),
+                        gap,
+                        BsmTextField(
+                          controller: _clave,
+                          label: 'Contraseña',
+                          revealable: true,
+                          hint: 'Mínimo 6 caracteres.',
+                          textInputAction: TextInputAction.done,
+                          autofillHints: const [AutofillHints.newPassword],
+                          onSubmitted: (_) => _crear(),
+                          validator: AuthValidators.clave,
+                        ),
+                        const SizedBox(height: AppSpace.s6),
+                        BsmButton(label: _cargando ? 'Creando cuenta…' : 'Crear cuenta', size: BsmButtonSize.lg, block: true, loading: _cargando, onPressed: _crear),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpace.s6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    AppInput(
-                      controller: _nombreController,
-                      label: 'Nombre',
-                      textInputAction: TextInputAction.next,
-                    ),
-                    const SizedBox(height: 14),
-                    AppInput(
-                      controller: _apellidoController,
-                      label: 'Apellido',
-                      textInputAction: TextInputAction.next,
-                    ),
-                    const SizedBox(height: 14),
-                    AppInput(
-                      controller: _correoController,
-                      label: 'Correo',
-                      keyboardType: TextInputType.emailAddress,
-                      autocorrect: false,
-                      textInputAction: TextInputAction.next,
-                    ),
-                    const SizedBox(height: 14),
-                    AppInput(
-                      controller: _telefonoController,
-                      label: 'Teléfono',
-                      keyboardType: TextInputType.phone,
-                      textInputAction: TextInputAction.next,
-                    ),
-                    const SizedBox(height: 14),
-                    AppInput(
-                      controller: _passwordController,
-                      label: 'Contraseña',
-                      obscureText: true,
-                      textInputAction: TextInputAction.done,
-                    ),
+                    Text('¿Ya tienes cuenta?', style: AppTextStyles.body.copyWith(color: p.inkMuted)),
+                    TextButton(onPressed: _cargando ? null : () => context.go('/login'), child: const Text('Inicia sesión')),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              AppButton(
-                label: 'Registrarme',
-                isLoading: _loading,
-                onPressed: () async {
-                  final nombre = _nombreController.text.trim();
-                  final apellido = _apellidoController.text.trim();
-                  final correo = _correoController.text.trim();
-                  final telefono = _telefonoController.text.trim();
-                  final password = _passwordController.text;
-
-                  if (nombre.isEmpty ||
-                      apellido.isEmpty ||
-                      correo.isEmpty ||
-                      telefono.isEmpty ||
-                      password.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Completa todos los campos.'),
-                      ),
-                    );
-                    return;
-                  }
-
-                  if (!correo.contains('@')) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Ingresa un correo válido.'),
-                      ),
-                    );
-                    return;
-                  }
-
-                  if (password.length < 6) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'La contraseña debe tener mínimo 6 caracteres.',
-                        ),
-                      ),
-                    );
-                    return;
-                  }
-
-                  setState(() => _loading = true);
-                  try {
-                    try {
-                      await authRepository.registro(
-                        nombre: nombre,
-                        apellido: apellido,
-                        telefono: telefono,
-                        correo: correo,
-                        password: password,
-                      );
-                    } on AppException catch (ex) {
-                      if (!context.mounted) {
-                        return;
-                      }
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text(ex.message)));
-                      return;
-                    } catch (_) {
-                      if (!context.mounted) {
-                        return;
-                      }
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'No se pudo crear la cuenta en este momento.',
-                          ),
-                        ),
-                      );
-                      return;
-                    }
-
-                    try {
-                      await FirebaseMessaging.instance.requestPermission(
-                        alert: true,
-                        badge: true,
-                        sound: true,
-                      );
-
-                      final token = await FirebaseMessaging.instance.getToken();
-                      if (token != null && token.isNotEmpty) {
-                        await authRepository.actualizarTokenFCM(token);
-                      }
-                    } catch (_) {
-                      // El registro ya fue exitoso; la notificación push es best-effort.
-                    }
-
-                    if (!context.mounted) {
-                      return;
-                    }
-
-                    ref.invalidate(authRoleProvider);
-                    context.go('/dashboard');
-                  } finally {
-                    if (mounted) {
-                      setState(() => _loading = false);
-                    }
-                  }
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

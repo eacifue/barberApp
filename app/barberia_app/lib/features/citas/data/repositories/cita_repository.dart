@@ -61,6 +61,22 @@ class CitaRepository {
     return response.data ?? const [];
   }
 
+  /// Citas de un barbero en un día (rol Barbero: su propia agenda).
+  Future<List<CitaModel>> getAgendaBarbero(String barberoId, DateTime fecha) async {
+    final dia = '${fecha.year.toString().padLeft(4, '0')}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}';
+    final response = await _apiClient.getList<List<CitaModel>>(
+      ApiEndpoints.citasPorBarbero(barberoId),
+      queryParams: {'fecha': dia},
+      fromJson: (list) => list.whereType<Map<String, dynamic>>().map(CitaModel.fromJson).toList(),
+    );
+
+    if (!response.success) {
+      throw AppException(response.message.isEmpty ? 'No se pudo cargar tu agenda.' : response.message);
+    }
+
+    return response.data ?? const [];
+  }
+
   Future<CitaModel> getCitaById(String citaId) async {
     final response = await _apiClient.get<CitaModel>(
       ApiEndpoints.citaPorId(citaId),
@@ -94,5 +110,20 @@ class CitaRepository {
     }
 
     return response.data!;
+  }
+
+  /// Califica una cita completada (1–5 estrellas, comentario opcional ≤ 500).
+  Future<void> calificarCita(String citaId, {required int calificacion, String? comentario}) async {
+    final response = await _apiClient.post<Map<String, dynamic>>(
+      ApiEndpoints.reviewCita(citaId),
+      data: {'calificacion': calificacion, 'comentario': comentario},
+      fromJson: (json) => json,
+    );
+
+    if (!response.success) {
+      throw AppException(
+        response.message.isEmpty ? 'No pudimos enviar tu reseña. Inténtalo de nuevo.' : response.message,
+      );
+    }
   }
 }

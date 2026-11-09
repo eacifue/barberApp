@@ -1,625 +1,245 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
+import {
+  Avatar,
+  Badge,
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  IconButton,
+  Rating,
+  Select,
+  Skeleton,
+  Table,
+  type TableColumn,
+} from '../../components/bsm'
+import { PageHeader } from '../../components/shared/PageHeader'
 import { useBarberias } from '../../hooks/useBarberias'
-import { useTenantBarberia } from '../../hooks/useTenantBarberia'
-import { useAvailability } from '../../hooks/useAvailability'
 import { useBarberos } from '../../hooks/useBarberos'
 import { useServicios } from '../../hooks/useServicios'
+import { useTenantBarberia } from '../../hooks/useTenantBarberia'
+import { barberoService } from '../../services/barberoService'
 import { citaService } from '../../services/citaService'
-import type { AvailabilityDay, BarberAvailabilityInput } from '../../types/availability'
-import type { Barbero, BarberoUpsertInput } from '../../types/barbero'
-import { PageHeader } from '../../components/shared/PageHeader'
-import { Avatar } from '../../components/ui/Avatar'
-import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { DataTable } from '../../components/ui/DataTable'
-import { FormInput } from '../../components/ui/FormInput'
-import { Modal } from '../../components/ui/Modal'
 import { toast } from '../../stores/toastStore'
+import type { Barbero } from '../../types/barbero'
+import { cuentaParaIngresos, hhmm, mensajeDeError, todayIso } from '../citas/agendaUtils'
+import { BarberoEditor } from './BarberoEditor'
 
-const initialForm: BarberoUpsertInput = {
-  nombre: '',
-  apellido: '',
-  telefono: '',
-  correo: '',
-  biografia: '',
-  añosExperiencia: 0,
-  especialidades: [],
-  tokenFCM: '',
-  disponible: true,
-  activo: true,
-  servicioIds: [],
+type Estado = 'Disponible' | 'No disponible' | 'Inactivo'
+const ESTADO_UI: Record<Estado, { tone: 'success' | 'warning' | 'neutral'; icon: 'circle-check' | 'calendar-x' | 'ban' }> = {
+  Disponible: { tone: 'success', icon: 'circle-check' },
+  'No disponible': { tone: 'warning', icon: 'calendar-x' },
+  Inactivo: { tone: 'neutral', icon: 'ban' },
 }
+const estadoDe = (b: Barbero): Estado => (!b.activo ? 'Inactivo' : b.disponible ? 'Disponible' : 'No disponible')
 
-const dayConfig: Array<{ key: AvailabilityDay; label: string }> = [
-  { key: 'Monday', label: 'Lunes' },
-  { key: 'Tuesday', label: 'Martes' },
-  { key: 'Wednesday', label: 'Miercoles' },
-  { key: 'Thursday', label: 'Jueves' },
-  { key: 'Friday', label: 'Viernes' },
-  { key: 'Saturday', label: 'Sabado' },
-  { key: 'Sunday', label: 'Domingo' },
-]
-
+/**
+ * Equipo (design/pantallas/panel-web/Barberos): tabla con estado y citas de hoy,
+ * editor en modal con servicios, horario y días libres.
+ */
 export function BarberosList() {
-  const { effectiveBarberiaId, tenantError } = useTenantBarberia()
+  const queryClient = useQueryClient()
+  const { effectiveBarberiaId } = useTenantBarberia()
+  const barberiaId = effectiveBarberiaId ?? ''
+  const { barberosQuery, removeMutation } = useBarberos(barberiaId, true)
+  const { serviciosQuery } = useServicios(barberiaId)
   const { barberiasQuery } = useBarberias()
-  const barberias = barberiasQuery.data ?? []
-
-  const { barberosQuery, createMutation, updateMutation, removeMutation } = useBarberos(effectiveBarberiaId ?? '')
-
-  const [openModal, setOpenModal] = useState(false)
-  const [editing, setEditing] = useState<Barbero | null>(null)
-  const [form, setForm] = useState<BarberoUpsertInput>(initialForm)
-  const [specialityInput, setSpecialityInput] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [confirmTarget, setConfirmTarget] = useState<Barbero | null>(null)
-  const [openAvailabilityModal, setOpenAvailabilityModal] = useState(false)
-  const [availabilityTarget, setAvailabilityTarget] = useState<Barbero | null>(null)
-  const [availabilityRows, setAvailabilityRows] = useState<BarberAvailabilityInput[]>([])
-  const [dayOffDate, setDayOffDate] = useState('')
-  const [dayOffReason, setDayOffReason] = useState('')
-
-  const { serviciosQuery } = useServicios(effectiveBarberiaId ?? '')
-  const { availabilityQuery, upsertAvailabilityMutation, addDayOffMutation } = useAvailability(
-    availabilityTarget?.id ?? '',
-  )
-
-  const todayIso = useMemo(() => new Date().toISOString().slice(0, 10), [])
+  const barberia = barberiasQuery.data?.find((b) => b.id === barberiaId) ?? barberiasQuery.data?.[0]
+  const hoy = todayIso()
   const citasHoyQuery = useQuery({
-    queryKey: ['barberos-citas-hoy', todayIso],
-    queryFn: () => citaService.getAdminList({ date: todayIso, page: 1, pageSize: 250 }),
+    queryKey: ['barberos', 'citas-hoy', hoy],
+    queryFn: () => citaService.getAdminList({ date: hoy, page: 1, pageSize: 200 }),
+    refetchInterval: 120_000,
   })
-  const citasHoyPorBarbero = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const cita of citasHoyQuery.data ?? []) {
-      map.set(cita.barberoId, (map.get(cita.barberoId) ?? 0) + 1)
-    }
-    return map
+
+  const [filtro, setFiltro] = useState<Estado | 'Todos'>('Todos')
+  const [editando, setEditando] = useState<Barbero | 'nuevo' | null>(null)
+  const [desactivar, setDesactivar] = useState<Barbero | null>(null)
+  const [activando, setActivando] = useState<string | null>(null)
+
+  const barberos = useMemo(
+    () => (barberosQuery.data ?? []).slice().sort((a, b) => Number(b.activo) - Number(a.activo) || `${a.nombre} ${a.apellido}`.localeCompare(`${b.nombre} ${b.apellido}`)),
+    [barberosQuery.data],
+  )
+  const citasHoy = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const c of citasHoyQuery.data ?? []) if (cuentaParaIngresos(c)) m.set(c.barbero.id, (m.get(c.barbero.id) ?? 0) + 1)
+    return m
   }, [citasHoyQuery.data])
+  const visibles = barberos.filter((b) => filtro === 'Todos' || estadoDe(b) === filtro)
+  const activos = barberos.filter((b) => b.activo)
+  const trabajanHoy = activos.filter((b) => (citasHoy.get(b.id) ?? 0) > 0).length
 
-  const barberos = barberosQuery.data ?? []
-  const servicios = serviciosQuery.data ?? []
-  const isSaving = createMutation.isPending || updateMutation.isPending
-
-  const selectedBarberiaName = useMemo(() => {
-    return barberias.find((b) => b.id === effectiveBarberiaId)?.nombre ?? '-'
-  }, [barberias, effectiveBarberiaId])
-
-  const resetForm = () => {
-    setOpenModal(false)
-    setEditing(null)
-    setForm(initialForm)
-    setSpecialityInput('')
-    setError(null)
-  }
-
-  const openCreateModal = () => {
-    setEditing(null)
-    setForm(initialForm)
-    setSpecialityInput('')
-    setError(null)
-    setOpenModal(true)
-  }
-
-  const openEditModal = (barbero: Barbero) => {
-    setEditing(barbero)
-    setForm({
-      nombre: barbero.nombre,
-      apellido: barbero.apellido,
-      telefono: barbero.telefono,
-      correo: barbero.correo,
-      biografia: barbero.biografia ?? '',
-      añosExperiencia: barbero.añosExperiencia,
-      especialidades: barbero.especialidades ?? [],
-      tokenFCM: barbero.tokenFCM ?? '',
-      disponible: barbero.disponible,
-      activo: barbero.activo,
-      servicioIds: (barbero.servicios ?? []).map((servicio) => servicio.id),
-    })
-    setSpecialityInput('')
-    setError(null)
-    setOpenModal(true)
-  }
-
-  const addSpeciality = (value: string) => {
-    const normalized = value.trim()
-    if (!normalized) return
-    if (form.especialidades.includes(normalized)) return
-    setForm((prev) => ({ ...prev, especialidades: [...prev.especialidades, normalized] }))
-    setSpecialityInput('')
-  }
-
-  const removeSpeciality = (value: string) => {
-    setForm((prev) => ({
-      ...prev,
-      especialidades: prev.especialidades.filter((item) => item !== value),
-    }))
-  }
-
-  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setError(null)
-
-    if (!form.nombre.trim() || !form.apellido.trim() || !form.correo.trim()) {
-      setError('Completa los campos obligatorios: Nombre, Apellido y Correo.')
-      return
-    }
-
-    if (!/^\d{7,15}$/.test(form.telefono.trim())) {
-      setError('El teléfono debe contener solo dígitos y tener entre 7 y 15 caracteres.')
-      return
-    }
-
-    if (form.servicioIds.length === 0) {
-      setError('Debes asociar al menos un servicio.')
-      return
-    }
-
+  const activar = async (b: Barbero) => {
+    setActivando(b.id)
     try {
-      if (editing) {
-        await updateMutation.mutateAsync({ id: editing.id, data: form })
-        toast.success(`Barbero "${form.nombre} ${form.apellido}" actualizado correctamente.`)
-      } else {
-        await createMutation.mutateAsync(form)
-        toast.success(`Barbero "${form.nombre} ${form.apellido}" creado correctamente.`)
-      }
-      resetForm()
-    } catch {
-      setError('No se pudo guardar el barbero. Verifica datos e intenta de nuevo.')
-    }
-  }
-
-  const onDelete = (barbero: Barbero) => {
-    setConfirmTarget(barbero)
-  }
-
-  const openAvailability = (barbero: Barbero) => {
-    setAvailabilityTarget(barbero)
-    setOpenAvailabilityModal(true)
-    setDayOffDate('')
-    setDayOffReason('')
-  }
-
-  useEffect(() => {
-    if (!openAvailabilityModal) return
-
-    const current = availabilityQuery.data ?? []
-    const rows = dayConfig.map((item) => {
-      const found = current.find((x) => x.dayOfWeek === item.key)
-      return {
-        dayOfWeek: item.key,
-        isActive: found?.isActive ?? (item.key !== 'Saturday' && item.key !== 'Sunday'),
-        startTime: found?.startTime ?? '09:00',
-        endTime: found?.endTime ?? '18:00',
-      }
-    })
-    setAvailabilityRows(rows)
-  }, [availabilityQuery.data, openAvailabilityModal])
-
-  const saveAvailability = async () => {
-    if (!availabilityTarget) return
-
-    const hasInvalid = availabilityRows.some((row) => row.isActive && (!row.startTime || !row.endTime || row.startTime >= row.endTime))
-    if (hasInvalid) {
-      toast.error('Hay horarios invalidos. Verifica hora de inicio y fin.')
-      return
-    }
-
-    await upsertAvailabilityMutation.mutateAsync({ availability: availabilityRows })
-    toast.success(`Disponibilidad actualizada para ${availabilityTarget.nombre} ${availabilityTarget.apellido}.`)
-  }
-
-  const saveDayOff = async () => {
-    if (!availabilityTarget || !dayOffDate) {
-      toast.warning('Selecciona una fecha para marcar dia no disponible.')
-      return
-    }
-
-    await addDayOffMutation.mutateAsync({
-      date: dayOffDate,
-      reason: dayOffReason.trim() || undefined,
-    })
-
-    setDayOffDate('')
-    setDayOffReason('')
-    toast.success('Dia no disponible registrado correctamente.')
-  }
-
-  const handleConfirmDelete = async () => {
-    if (!confirmTarget) return
-    try {
-      await removeMutation.mutateAsync(confirmTarget.id)
-      toast.success(`Barbero "${confirmTarget.nombre} ${confirmTarget.apellido}" eliminado.`)
-    } catch {
-      toast.error('No se pudo eliminar el barbero. Intenta de nuevo.')
+      const actualizado = await barberoService.activate(b.id)
+      await queryClient.invalidateQueries({ queryKey: ['barberos'] })
+      toast.success('Barbero activado. Confirma los servicios que presta.')
+      setEditando(actualizado)
+    } catch (err) {
+      toast.error(mensajeDeError(err, 'No pudimos activar al barbero.'))
     } finally {
-      setConfirmTarget(null)
+      setActivando(null)
     }
   }
+  const confirmarDesactivar = async () => {
+    if (!desactivar) return
+    try {
+      await removeMutation.mutateAsync(desactivar.id)
+      toast.success(`${desactivar.nombre} quedó desactivado`)
+      setDesactivar(null)
+      setEditando(null)
+    } catch (err) {
+      toast.error(mensajeDeError(err, 'No pudimos desactivar al barbero.'))
+    }
+  }
+
+  const columnas: TableColumn<Barbero>[] = [
+    {
+      key: 'barbero',
+      label: 'Barbero',
+      render: (b) => (
+        <span className="flex items-center gap-3 text-left">
+          <Avatar name={`${b.nombre} ${b.apellido}`} src={b.fotoUrl} size={40} status={b.activo ? (b.disponible ? 'on' : 'off') : undefined} />
+          <span className="flex min-w-0 flex-col">
+            <strong className="text-label-sm text-ink">
+              {b.nombre} {b.apellido}
+            </strong>
+            <span className="flex items-center gap-1 text-caption text-ink-muted">
+              <Rating value={b.ratingPromedio || null} compact size={12} />
+              <span>· {b.añosExperiencia === 1 ? '1 año' : `${b.añosExperiencia} años`}</span>
+            </span>
+          </span>
+        </span>
+      ),
+    },
+    {
+      key: 'especialidades',
+      label: 'Especialidades',
+      render: (b) =>
+        b.especialidades.length ? (
+          <span className="flex flex-wrap gap-1">
+            {b.especialidades.slice(0, 3).map((t) => (
+              <Badge key={t}>{t}</Badge>
+            ))}
+            {b.especialidades.length > 3 && <span className="text-caption text-ink-muted">+{b.especialidades.length - 3}</span>}
+          </span>
+        ) : (
+          <span className="text-ink-muted">—</span>
+        ),
+    },
+    { key: 'servicios', label: 'Servicios', align: 'right', render: (b) => b.servicios?.length ?? 0 },
+    {
+      key: 'estado',
+      label: 'Estado',
+      render: (b) => {
+        const e = estadoDe(b)
+        return (
+          <Badge tone={ESTADO_UI[e].tone} icon={ESTADO_UI[e].icon}>
+            {e}
+          </Badge>
+        )
+      },
+    },
+    { key: 'hoy', label: 'Citas hoy', align: 'right', render: (b) => (b.activo ? (citasHoyQuery.isLoading ? '…' : (citasHoy.get(b.id) ?? 0)) : '—') },
+    {
+      key: 'acciones',
+      label: 'Acciones',
+      align: 'right',
+      render: (b) => (
+        <span className="inline-flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {b.activo ? (
+            <>
+              <IconButton icon="pencil" size="sm" label={`Editar a ${b.nombre}`} onClick={() => setEditando(b)} />
+              <IconButton icon="ban" size="sm" label={`Desactivar a ${b.nombre}`} onClick={() => setDesactivar(b)} />
+            </>
+          ) : (
+            <Button variant="secondary" size="sm" icon="rotate-ccw" loading={activando === b.id} onClick={() => void activar(b)}>
+              Activar
+            </Button>
+          )}
+        </span>
+      ),
+    },
+  ]
+
+  const resumen = barberosQuery.isLoading
+    ? 'Cargando el equipo…'
+    : `${activos.length === 1 ? '1 barbero' : `${activos.length} barberos`}${citasHoyQuery.isSuccess ? ` · ${trabajanHoy} con citas hoy` : ''}`
 
   return (
-    <section className="relative">
-      {tenantError ? (
-        <div className="mb-4 rounded-lg border border-[var(--danger)]/25 bg-[var(--danger-soft)] px-4 py-3 text-sm text-[var(--danger)]">
-          {tenantError}
-        </div>
-      ) : null}
-
+    <div className="mx-auto flex max-w-[1200px] flex-col gap-5 px-4 py-5 md:px-6 lg:px-8">
       <PageHeader
-        title="Barberos"
-        subtitle="Administracion del equipo, perfiles y experiencia"
-        actions={<Button onClick={openCreateModal}>Agregar barbero</Button>}
+        title="Equipo"
+        subtitle={resumen}
+        actions={
+          <Button icon="plus" onClick={() => setEditando('nuevo')}>
+            Nuevo barbero
+          </Button>
+        }
       />
 
-      <DataTable<Barbero>
-        loading={barberosQuery.isLoading || barberiasQuery.isLoading}
-        emptyMessage="No hay barberos para la barberia seleccionada"
-        columns={[
-          {
-            key: 'perfil',
-            header: 'Nombre',
-            width: '1.7fr',
-            render: (row) => (
-              <div className="flex items-center gap-2.5">
-                <Avatar
-                  fotoUrl={row.fotoUrl}
-                  nombre={row.nombre}
-                  apellido={row.apellido}
-                  size="md"
-                  dashedFallback
-                />
-                <div>
-                  <p className="text-sm text-color-strong">{row.nombre} {row.apellido}</p>
-                  <p className="text-xs text-[var(--gold-l)]">Rating {row.ratingPromedio.toFixed(1)}</p>
-                </div>
-              </div>
-            ),
-          },
-          {
-            key: 'especialidades',
-            header: 'Especialidades',
-            width: '1.5fr',
-            render: (row) => {
-              const visible = row.especialidades.slice(0, 2)
-              const hidden = row.especialidades.length - visible.length
+      <div className="w-full max-w-[240px]">
+        <Select
+          aria-label="Filtrar por estado"
+          value={filtro}
+          onChange={(e) => setFiltro(e.target.value as Estado | 'Todos')}
+          options={[
+            { value: 'Todos', label: 'Todos los estados' },
+            { value: 'Disponible', label: 'Disponible' },
+            { value: 'No disponible', label: 'No disponible' },
+            { value: 'Inactivo', label: 'Inactivo' },
+          ]}
+        />
+      </div>
 
-              return (
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {visible.map((item) => (
-                    <span
-                      key={item}
-                      className="rounded-full bg-[rgba(184,134,11,.12)] px-2 py-0.5 text-xs text-[var(--gold-l)]"
-                    >
-                      {item}
-                    </span>
-                  ))}
-                  {hidden > 0 ? (
-                    <span className="rounded-full bg-[rgba(184,134,11,.12)] px-2 py-0.5 text-xs text-[var(--gold-l)]">
-                      +{hidden} mas
-                    </span>
-                  ) : null}
-                </div>
-              )
-            },
-          },
-          {
-            key: 'barberiaNombre',
-            header: 'Barberia',
-            width: '1fr',
-            render: () => selectedBarberiaName,
-          },
-          {
-            key: 'citasHoy',
-            header: 'Citas hoy',
-            width: '0.8fr',
-            render: (row) =>
-              citasHoyQuery.isLoading ? (
-                <span className="inline-block h-3.5 w-5 animate-pulse rounded bg-[var(--surface-hover)]" aria-hidden="true" />
-              ) : (
-                citasHoyPorBarbero.get(row.id) ?? 0
-              ),
-          },
-          {
-            key: 'estado',
-            header: 'Estado',
-            width: '1fr',
-            render: (row) => {
-              if (!row.activo) return <Badge variant="danger" dot>Inactivo</Badge>
-              return row.disponible ? (
-                <Badge variant="success" dot>Disponible</Badge>
-              ) : (
-                <Badge variant="warning" dot>No disponible</Badge>
-              )
-            },
-          },
-          {
-            key: 'acciones',
-            header: 'Acciones',
-            width: '1fr',
-            render: (row) => (
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="ghost" onClick={() => openEditModal(row)}>
-                  Editar
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => openAvailability(row)}>
-                  Disponibilidad
-                </Button>
-                <Button
-                  size="sm"
-                  variant="danger"
-                  onClick={() => onDelete(row)}
-                  loading={removeMutation.isPending}
-                >
-                  Eliminar
-                </Button>
-              </div>
-            ),
-          },
-        ]}
-        data={barberos}
+      <Table
+        caption="Equipo de barberos"
+        columns={columnas}
+        rows={visibles}
+        rowKey={(b) => b.id}
+        onRowClick={(b) => (b.activo ? setEditando(b) : undefined)}
+        state={
+          barberosQuery.isError ? (
+            <EmptyState tone="error" title="No pudimos cargar el equipo" body="Revisa tu conexión e inténtalo de nuevo." actionLabel="Reintentar" actionIcon="refresh-cw" actionVariant="secondary" onAction={() => void barberosQuery.refetch()} />
+          ) : barberosQuery.isLoading ? (
+            <Skeleton variant="row" rows={5} label="Cargando el equipo" />
+          ) : visibles.length === 0 ? (
+            barberos.length ? (
+              <EmptyState icon="users" title="Nadie con ese estado" body="Elige otro estado para ver al resto del equipo." actionLabel="Ver todos" actionVariant="secondary" onAction={() => setFiltro('Todos')} />
+            ) : (
+              <EmptyState icon="scissors" title="Aún no tienes barberos" body="Agrega el primero con sus servicios y horario para que los clientes puedan reservar." actionLabel="Nuevo barbero" actionIcon="plus" onAction={() => setEditando('nuevo')} />
+            )
+          ) : undefined
+        }
       />
 
-      <Modal open={openModal} onClose={resetForm} title={editing ? 'Editar barbero' : 'Nuevo barbero'} size="md">
-        <form className="space-y-4" onSubmit={onSubmit}>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <FormInput
-              label="Nombre"
-              required
-              value={form.nombre}
-              onChange={(e) => setForm((prev) => ({ ...prev, nombre: e.target.value }))}
-            />
-            <FormInput
-              label="Apellido"
-              required
-              value={form.apellido}
-              onChange={(e) => setForm((prev) => ({ ...prev, apellido: e.target.value }))}
-            />
-            <FormInput
-              label="Correo"
-              type="email"
-              required
-              value={form.correo}
-              onChange={(e) => setForm((prev) => ({ ...prev, correo: e.target.value }))}
-            />
-            <FormInput
-              label="Telefono"
-              required
-              value={form.telefono}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, telefono: e.target.value.replace(/\D/g, '') }))
-              }
-            />
-            <FormInput
-              label="Anios experiencia"
-              type="number"
-              min={0}
-              value={form.añosExperiencia}
-              onChange={(e) => setForm((prev) => ({ ...prev, añosExperiencia: Number(e.target.value || 0) }))}
-            />
-
-            <div className="md:col-span-2">
-              <p className="mb-1.5 text-[10px] uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                Servicios asociados *
-              </p>
-              <div className="rounded-md border border-[0.5px] border-[var(--border2)] bg-[var(--surface3)] px-2 py-2">
-                {servicios.length === 0 ? (
-                  <p className="text-xs text-color-muted">
-                    No hay servicios activos para la barbería seleccionada.
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2">
-                    {servicios.map((servicio) => {
-                      const checked = form.servicioIds.includes(servicio.id)
-                      return (
-                        <label
-                          key={servicio.id}
-                          className="inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm text-color-base hover:bg-white/5"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={(e) => {
-                              setForm((prev) => ({
-                                ...prev,
-                                servicioIds: e.target.checked
-                                  ? [...prev.servicioIds, servicio.id]
-                                  : prev.servicioIds.filter((id) => id !== servicio.id),
-                              }))
-                            }}
-                          />
-                          <span>{servicio.nombre}</span>
-                        </label>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="md:col-span-2">
-              <p className="mb-1.5 text-[10px] uppercase tracking-[0.08em] text-[var(--text-muted)]">Especialidades</p>
-              <div className="rounded-md border border-[0.5px] border-[var(--border2)] bg-[var(--surface3)] px-2 py-2">
-                <div className="mb-2 flex flex-wrap gap-1.5">
-                  {form.especialidades.map((item) => (
-                    <button
-                      type="button"
-                      key={item}
-                      onClick={() => removeSpeciality(item)}
-                      className="rounded-full bg-[rgba(184,134,11,.12)] px-2 py-0.5 text-xs text-[var(--gold-l)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
-                      title="Quitar"
-                    >
-                      {item} x
-                    </button>
-                  ))}
-                </div>
-                <input
-                  value={specialityInput}
-                  onChange={(e) => setSpecialityInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ',') {
-                      e.preventDefault()
-                      addSpeciality(specialityInput)
-                    }
-                  }}
-                  onBlur={() => addSpeciality(specialityInput)}
-                  placeholder="Escribe y presiona Enter"
-                  className="form-control w-full rounded-md border-none bg-transparent px-0 text-sm outline-none"
-                />
-              </div>
-            </div>
-
-            <label className="md:col-span-2 flex flex-col gap-1.5">
-              <span className="form-label text-[10px] uppercase tracking-[0.08em]">Biografia</span>
-              <textarea
-                value={form.biografia ?? ''}
-                onChange={(e) => setForm((prev) => ({ ...prev, biografia: e.target.value }))}
-                className="form-control min-h-24 rounded-md px-3 py-2 outline-none"
-              />
-            </label>
-
-            <label className="form-check-label inline-flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={form.disponible}
-                onChange={(e) => setForm((prev) => ({ ...prev, disponible: e.target.checked }))}
-              />
-              Disponible
-            </label>
-
-            <label className="form-check-label inline-flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={form.activo}
-                onChange={(e) => setForm((prev) => ({ ...prev, activo: e.target.checked }))}
-              />
-              Activo
-            </label>
-          </div>
-
-          {error ? <p className="form-message-error text-sm">{error}</p> : null}
-
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={resetForm}>
-              Cancelar
-            </Button>
-            <Button type="submit" loading={isSaving}>
-              {editing ? 'Guardar cambios' : 'Crear barbero'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
+      {editando && (
+        <BarberoEditor
+          barbero={editando === 'nuevo' ? null : editando}
+          barberiaId={barberiaId}
+          servicios={serviciosQuery.data ?? []}
+          apertura={barberia?.horaApertura ? hhmm(barberia.horaApertura) : '09:00'}
+          cierre={barberia?.horaCierre ? hhmm(barberia.horaCierre) : '20:00'}
+          diasDescanso={barberia?.diasDescanso ?? []}
+          onClose={() => setEditando(null)}
+          onDesactivar={setDesactivar}
+        />
+      )}
 
       <ConfirmDialog
-        open={confirmTarget !== null}
-        onClose={() => setConfirmTarget(null)}
-        onConfirm={handleConfirmDelete}
+        open={desactivar != null}
+        tone="danger"
+        icon="ban"
+        title={`¿Desactivar a ${desactivar?.nombre ?? ''}?`}
+        body="Deja de aparecer en la app y no recibe nuevas reservas. Sus citas ya agendadas se mantienen. Al activarlo de nuevo tendrás que confirmar sus servicios."
+        confirmLabel="Desactivar barbero"
         loading={removeMutation.isPending}
-        variant="danger"
-        title="Eliminar barbero"
-        message={`¿Estás seguro de que deseas eliminar a "${confirmTarget?.nombre} ${confirmTarget?.apellido}"? Esta acción no se puede deshacer.`}
+        onCancel={() => setDesactivar(null)}
+        onConfirm={() => void confirmarDesactivar()}
       />
-
-      <Modal
-        open={openAvailabilityModal}
-        onClose={() => {
-          setOpenAvailabilityModal(false)
-          setAvailabilityTarget(null)
-          setAvailabilityRows([])
-        }}
-        title={`Disponibilidad de ${availabilityTarget?.nombre ?? ''} ${availabilityTarget?.apellido ?? ''}`}
-        size="md"
-      >
-        <div className="space-y-4">
-          <div className="rounded-md border border-[0.5px] border-[var(--border2)] bg-[var(--surface3)] p-3">
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-[var(--text-muted)]">Horario semanal</p>
-            <div className="space-y-2">
-              {dayConfig.map((day) => {
-                const row = availabilityRows.find((x) => x.dayOfWeek === day.key)
-                if (!row) return null
-
-                return (
-                  <div key={day.key} className="grid grid-cols-12 items-center gap-2 rounded-md bg-[var(--surface-hover)] p-2">
-                    <div className="col-span-3 text-sm text-color-base">{day.label}</div>
-                    <label className="col-span-2 inline-flex items-center gap-1 text-xs text-color-muted">
-                      <input
-                        type="checkbox"
-                        checked={row.isActive}
-                        onChange={(e) => {
-                          setAvailabilityRows((prev) =>
-                            prev.map((item) =>
-                              item.dayOfWeek === day.key ? { ...item, isActive: e.target.checked } : item,
-                            ),
-                          )
-                        }}
-                      />
-                      Activo
-                    </label>
-                    <div className="col-span-3">
-                      <FormInput
-                        label="Inicio"
-                        type="time"
-                        value={row.startTime ?? ''}
-                        onChange={(e) => {
-                          const value = e.target.value
-                          setAvailabilityRows((prev) =>
-                            prev.map((item) =>
-                              item.dayOfWeek === day.key ? { ...item, startTime: value } : item,
-                            ),
-                          )
-                        }}
-                        disabled={!row.isActive}
-                      />
-                    </div>
-                    <div className="col-span-3">
-                      <FormInput
-                        label="Fin"
-                        type="time"
-                        value={row.endTime ?? ''}
-                        onChange={(e) => {
-                          const value = e.target.value
-                          setAvailabilityRows((prev) =>
-                            prev.map((item) =>
-                              item.dayOfWeek === day.key ? { ...item, endTime: value } : item,
-                            ),
-                          )
-                        }}
-                        disabled={!row.isActive}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            <div className="mt-3 flex justify-end">
-              <Button onClick={saveAvailability} loading={upsertAvailabilityMutation.isPending}>
-                Guardar horario
-              </Button>
-            </div>
-          </div>
-
-          <div className="rounded-md border border-[0.5px] border-[var(--border2)] bg-[var(--surface3)] p-3">
-            <p className="mb-2 text-xs uppercase tracking-[0.08em] text-[var(--text-muted)]">Dias no disponibles</p>
-            <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-              <FormInput label="Fecha" type="date" value={dayOffDate} onChange={(e) => setDayOffDate(e.target.value)} />
-              <FormInput
-                label="Motivo (opcional)"
-                value={dayOffReason}
-                onChange={(e) => setDayOffReason(e.target.value)}
-                placeholder="Vacaciones, incapacidad, etc"
-              />
-            </div>
-            <div className="mt-3 flex justify-end">
-              <Button onClick={saveDayOff} loading={addDayOffMutation.isPending}>
-                Guardar dia no disponible
-              </Button>
-            </div>
-          </div>
-        </div>
-      </Modal>
-    </section>
+    </div>
   )
 }

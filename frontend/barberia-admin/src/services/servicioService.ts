@@ -63,8 +63,11 @@ function toApiPayload(data: ServicioUpsertInput) {
 }
 
 export const servicioService = {
-  async getByBarberia(barberiaId: string): Promise<Servicio[]> {
-    const response = await http.get<ServicioApi[] | ApiLikeResponse<ServicioApi[]>>(`/v1/barberias/${barberiaId}/servicios`)
+  /** Con `incluirInactivos` (solo panel) también llegan los desactivados. */
+  async getByBarberia(barberiaId: string, incluirInactivos = false): Promise<Servicio[]> {
+    const response = await http.get<ServicioApi[] | ApiLikeResponse<ServicioApi[]>>(`/v1/barberias/${barberiaId}/servicios`, {
+      params: incluirInactivos ? { incluirInactivos: true } : undefined,
+    })
     const payload = unwrap(response.data) ?? []
     return payload.map((item) => normalizeServicio(item))
   },
@@ -81,6 +84,12 @@ export const servicioService = {
 
   async update(id: string, data: ServicioUpsertInput): Promise<Servicio> {
     const response = await http.put<ServicioApi | ApiLikeResponse<ServicioApi>>(`/v1/servicios/${id}`, toApiPayload(data))
+    return normalizeServicio(unwrap(response.data))
+  },
+
+  /** Vuelve a ofrecer un servicio desactivado. */
+  async activate(id: string): Promise<Servicio> {
+    const response = await http.put<ServicioApi | ApiLikeResponse<ServicioApi>>(`/v1/servicios/${id}/activar`)
     return normalizeServicio(unwrap(response.data))
   },
 

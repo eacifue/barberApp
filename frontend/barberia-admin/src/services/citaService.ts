@@ -68,6 +68,18 @@ export const citaService = {
     return unwrap(response.data)
   },
 
+  /** Confirmada → En progreso. */
+  async start(id: string): Promise<Cita> {
+    const response = await http.put<Cita | ApiLikeResponse<Cita>>(`/v1/citas/${id}/iniciar`)
+    return unwrap(response.data)
+  },
+
+  /** Pendiente o Confirmada → No asistió (desde la hora de inicio). */
+  async noShow(id: string): Promise<Cita> {
+    const response = await http.put<Cita | ApiLikeResponse<Cita>>(`/v1/citas/${id}/no-asistio`)
+    return unwrap(response.data)
+  },
+
   async cancel(id: string, payload: CitaCancelInput): Promise<Cita> {
     const response = await http.put<Cita | ApiLikeResponse<Cita>>(`/v1/citas/${id}/cancelar`, payload)
     return unwrap(response.data)

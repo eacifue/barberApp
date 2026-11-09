@@ -1,44 +1,24 @@
-import { Navigate, Outlet, createBrowserRouter } from 'react-router-dom'
+import { Navigate, createBrowserRouter } from 'react-router-dom'
 
-import { useAuthStore } from './stores/authStore'
+import { AdminGuard, AuthGuard, GuestGuard, StaffGuard } from './routeGuards'
 import { AppLayout } from './components/layout/AppLayout'
 import { LoginPage } from './features/auth/LoginPage'
+import { RecuperarPage } from './features/auth/RecuperarPage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
 import { BarberiasList } from './features/barberias/BarberiasList'
 import { BarberosList } from './features/barberos/BarberosList'
 import { ServiciosList } from './features/servicios/ServiciosList'
 import { ClientesList } from './features/clientes/ClientesList'
-import { AppointmentsScheduler } from './features/citas/AppointmentsScheduler'
+import { AgendaPage } from './features/citas/AgendaPage'
 import { DisponibilidadPage } from './features/disponibilidad/DisponibilidadPage'
-import { SlotsRedisPage } from './features/slots/SlotsRedisPage'
 import { UsersPage } from './features/users/UsersPage'
-
-/** Protege las rutas privadas: redirige a /login si no hay token */
-function AuthGuard() {
-  const token = useAuthStore((s) => s.token)
-  if (!token) return <Navigate to="/login" replace />
-  return <Outlet />
-}
-
-/** Redirige al dashboard si ya está autenticado */
-function GuestGuard() {
-  const token = useAuthStore((s) => s.token)
-  if (token) return <Navigate to="/dashboard" replace />
-  return <Outlet />
-}
-
-/** Solo Admin puede acceder */
-function AdminGuard() {
-  const usuario = useAuthStore((s) => s.usuario)
-  if (usuario?.rol !== 'Admin') return <Navigate to="/dashboard" replace />
-  return <Outlet />
-}
 
 export const router = createBrowserRouter([
   {
     element: <GuestGuard />,
     children: [
       { path: '/login', element: <LoginPage /> },
+      { path: '/recuperar', element: <RecuperarPage /> },
     ],
   },
   {
@@ -50,16 +30,22 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="/dashboard" replace /> },
           { path: 'dashboard', element: <DashboardPage /> },
-          { path: 'barberias', element: <BarberiasList /> },
-          { path: 'barberos', element: <BarberosList /> },
-          { path: 'servicios', element: <ServiciosList /> },
-          { path: 'clientes', element: <ClientesList /> },
-          { path: 'citas', element: <AppointmentsScheduler /> },
-          { path: 'disponibilidad', element: <DisponibilidadPage /> },
-          { path: 'slots', element: <SlotsRedisPage /> },
+          { path: 'citas', element: <AgendaPage /> },
           {
+            element: <StaffGuard />,
+            children: [
+              { path: 'barberos', element: <BarberosList /> },
+              { path: 'servicios', element: <ServiciosList /> },
+              { path: 'clientes', element: <ClientesList /> },
+              { path: 'disponibilidad', element: <DisponibilidadPage /> },
+              { path: 'slots', element: <Navigate to="/disponibilidad?vista=reservas" replace /> },
+            ],
+          },
+          {
+            // Guardar Mi negocio y gestionar cuentas exige rol Admin en la API.
             element: <AdminGuard />,
             children: [
+              { path: 'barberias', element: <BarberiasList /> },
               { path: 'usuarios', element: <UsersPage /> },
             ],
           },
@@ -67,6 +53,10 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  // Galería de componentes del sistema de diseño: solo en desarrollo.
+  ...(import.meta.env.DEV
+    ? [{ path: '/_componentes', lazy: async () => ({ Component: (await import('./features/dev/ComponentesPage')).ComponentesPage }) }]
+    : []),
   // Ruta desconocida: va a login para que el guard decida
   { path: '*', element: <Navigate to="/login" replace /> },
 ])

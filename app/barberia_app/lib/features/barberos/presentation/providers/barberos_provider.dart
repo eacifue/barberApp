@@ -18,3 +18,9 @@ Future<List<BarberoModel>> barberosPorServicio(
   final repository = ref.watch(barberoRepositoryProvider);
   return repository.getBarberosPorServicio(servicioId);
 }
+
+/// Barberos activos de la barbería (Inicio · «Nuestros barberos»).
+final barberosDeLaBarberiaProvider = FutureProvider.family<List<BarberoModel>, String>((ref, barberiaId) async {
+  final barberos = await ref.watch(barberoRepositoryProvider).getBarberosPorBarberia(barberiaId);
+  return barberos.where((b) => b.activo).toList();
+});

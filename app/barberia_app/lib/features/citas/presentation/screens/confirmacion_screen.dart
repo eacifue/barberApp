@@ -1,19 +1,29 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../core/errors/exceptions.dart';
+import '../../../../core/errors/error_message.dart';
+import '../../../../core/services/permiso_notificaciones.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../barberias/presentation/providers/barbershops_provider.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../features/horarios/presentation/providers/disponibilidad_provider.dart';
+import '../../../../features/horarios/presentation/providers/disponibilidad_state.dart';
+import '../../../../shared/format/formato.dart';
+import '../../../../shared/widgets/bsm/bsm.dart';
+import '../../../barberias/presentation/providers/barbershops_provider.dart';
 import '../../domain/models/cita_model.dart';
 import '../providers/citas_provider.dart';
 import '../providers/reprogramacion_provider.dart';
 import '../providers/reserva_notifier.dart';
-import '../../../../shared/widgets/app_button.dart';
-import '../../../../shared/widgets/error_widget.dart';
+import '../widgets/booking_scaffold.dart';
 
+/// Paso 4 · Confirma tu reserva: cuenta regresiva arriba, resumen, nota
+/// opcional y «Reservar ahora» en la barra fija. En reprogramación, aviso
+/// `info` y «Confirmar nuevo horario» (design/pantallas/app-movil/Reserva-4-Confirmar).
 class ConfirmacionScreen extends ConsumerStatefulWidget {
   const ConfirmacionScreen({super.key});
 
@@ -22,44 +32,129 @@ class ConfirmacionScreen extends ConsumerStatefulWidget {
 }
 
 class _ConfirmacionScreenState extends ConsumerState<ConfirmacionScreen> {
-  final _notasController = TextEditingController();
-  bool _loading = false;
+  final _notas = TextEditingController();
+  bool _enviando = false;
+  late final ProviderSubscription<DisponibilidadState> _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    _sub = ref.listenManual<DisponibilidadState>(disponibilidadNotifierProvider, (prev, next) {
+      if (next.expiracionEventoId > (prev?.expiracionEventoId ?? 0) && mounted && !_enviando) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _avisarExpiracion());
+      }
+    });
+  }
 
   @override
   void dispose() {
-    _notasController.dispose();
+    _sub.close();
+    _notas.dispose();
     super.dispose();
   }
 
-  Future<bool> _confirmarSalida() async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('¿Salir de la confirmación?'),
-            content: const Text('Tu horario temporal podría liberarse.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Continuar aquí'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Salir'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+  Future<void> _avisarExpiracion() async {
+    if (!mounted) return;
+    await showBsmConfirm(
+      context,
+      tone: BsmConfirmTone.info,
+      icon: LucideIcons.timer,
+      title: 'Tu horario se liberó',
+      body: 'Pasaron 5 minutos sin confirmar. Elige de nuevo; puede que siga libre.',
+      confirmLabel: 'Elegir horario',
+      cancelLabel: 'Cerrar',
+    );
+    if (mounted) context.go('/reservar/horario');
+  }
+
+  Future<void> _salirSinReservar(String barberoId, DateTime inicio) async {
+    final salir = await showBsmConfirm(
+      context,
+      icon: LucideIcons.timer,
+      title: '¿Salir sin reservar?',
+      body: 'Tu horario apartado del ${Formato.fechaLarga(inicio)} a las ${Formato.hora(inicio)} se liberará y otra persona podrá tomarlo.',
+      confirmLabel: 'Salir',
+      cancelLabel: 'Seguir reservando',
+    );
+    if (!salir || !mounted) return;
+    final router = GoRouter.of(context);
+    await ref.read(disponibilidadNotifierProvider.notifier).salirPantalla(barberoId: barberoId);
+    ref.read(reservaNotifierProvider.notifier).resetReserva();
+    ref.read(citaIdAReprogramarProvider.notifier).state = null;
+    router.go('/dashboard');
+  }
+
+  Future<void> _reservar({
+    required String barberiaId,
+    required String barberoId,
+    required String servicioId,
+    required DateTime fecha,
+    required String hora,
+    required String token,
+    required String? citaAnterior,
+  }) async {
+    setState(() => _enviando = true);
+    final router = GoRouter.of(context);
+    final repo = ref.read(citaRepositoryProvider);
+    try {
+      final notas = _notas.text.trim();
+      final cita = await repo.crearCita(
+        CrearCitaRequestModel(
+          barberoId: barberoId,
+          servicioId: servicioId,
+          fechaCita: fecha,
+          horaInicio: hora,
+          tokenRedisBloqueo: token,
+          notas: notas.isEmpty ? null : notas,
+        ),
+      );
+
+      ref.invalidate(misCitasProvider(barberiaId));
+      await ref.read(disponibilidadNotifierProvider.notifier).salirPantalla(barberoId: barberoId);
+      ref.read(reservaNotifierProvider.notifier).resetReserva();
+
+      if (citaAnterior != null) {
+        try {
+          await repo.cancelarCita(citaAnterior, motivo: 'Reprogramada por el cliente');
+          ref.invalidate(citaByIdProvider(citaAnterior));
+        } catch (_) {
+          if (mounted) {
+            showBsmToast(
+              context,
+              'Tu nueva cita quedó confirmada, pero no pudimos cancelar la anterior. Cancélala desde Mis citas.',
+              tone: BsmToastTone.warning,
+            );
+          }
+        } finally {
+          ref.read(citaIdAReprogramarProvider.notifier).state = null;
+        }
+      }
+
+      // Si en el onboarding eligió «Ahora no», este es el momento de ofrecer los recordatorios.
+      unawaited(ref.read(permisoNotificacionesProvider).pedirSiPospuesto());
+      router.go('/reservar/exito', extra: cita);
+    } catch (e) {
+      if (!mounted) return;
+      if (esErrorDeValidacion(e)) {
+        // En este paso, la validación casi siempre es «otro cliente tomó el horario».
+        showBsmToast(context, 'Ese horario ya no está disponible. Elige otro.', tone: BsmToastTone.danger);
+        router.go('/reservar/horario');
+      } else {
+        showBsmToast(context, mensajeDeError(e, 'No pudimos confirmar tu reserva. Inténtalo de nuevo.'), tone: BsmToastTone.danger);
+      }
+    } finally {
+      if (mounted) setState(() => _enviando = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final reserva = ref.watch(reservaNotifierProvider);
-    final horarioState = ref.watch(disponibilidadNotifierProvider);
-    final citaRepo = ref.watch(citaRepositoryProvider);
-    final router = GoRouter.of(context);
+    final estado = ref.watch(disponibilidadNotifierProvider);
     final barbershopAsync = ref.watch(myBarbershopProvider);
-    final citaIdAReprogramar = ref.watch(citaIdAReprogramarProvider);
+    final citaAnteriorId = ref.watch(citaIdAReprogramarProvider);
+    final citaAnterior = citaAnteriorId == null ? null : ref.watch(citaByIdProvider(citaAnteriorId)).valueOrNull;
 
     final servicio = reserva.servicioSeleccionado;
     final barbero = reserva.barberoSeleccionado;
@@ -67,393 +162,143 @@ class _ConfirmacionScreenState extends ConsumerState<ConfirmacionScreen> {
     final fecha = reserva.fechaSeleccionada;
     final token = reserva.tokenBloqueo;
 
-    if (servicio == null ||
-        barbero == null ||
-        slot == null ||
-        fecha == null ||
-        token == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Confirma tu reserva')),
-        body: Center(
-          child: ElevatedButton(
-            onPressed: () => context.go('/reservar/servicio'),
-            child: const Text('Completar flujo de reserva'),
+    if (servicio == null || barbero == null || slot == null || fecha == null || token == null) {
+      return BookingScaffold(
+        step: 4,
+        title: 'Confirma tu reserva',
+        onBack: () => context.go('/reservar/horario'),
+        children: [
+          BsmEmptyState(
+            icon: LucideIcons.calendarClock,
+            title: 'Tu reserva no está completa',
+            body: 'Elige servicio, barbero y horario para confirmar.',
+            actionLabel: 'Elegir servicio',
+            onAction: () => context.go('/reservar/servicio'),
           ),
-        ),
+        ],
       );
     }
 
-    return barbershopAsync.when(
-      loading: () => Scaffold(
-        appBar: AppBar(title: const Text('Confirma tu reserva')),
-        body: const Center(child: CircularProgressIndicator()),
-      ),
-      error: (error, stackTrace) => Scaffold(
-        appBar: AppBar(title: const Text('Confirma tu reserva')),
-        body: BarberiaErrorWidget(
-          message: 'No pudimos cargar la información de tu barbería.',
-          onRetry: () => ref.refresh(myBarbershopProvider),
-        ),
-      ),
-      data: (barbershop) {
-        if (barbershop == null) {
-          return Scaffold(
-            appBar: AppBar(title: const Text('Confirma tu reserva')),
-            body: const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'No hay una barbería configurada. Contacta al administrador.',
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          );
-        }
+    final barbershop = barbershopAsync.valueOrNull;
+    final precio = barbero.servicios.where((s) => s.id == servicio.id).firstOrNull?.precio ?? servicio.precio;
+    final inicio = fechaConHora(fecha, slot.horaInicioFormateada);
+    final fin = inicio.add(Duration(minutes: servicio.duracionMinutos));
+    final reprogramando = citaAnteriorId != null;
 
-        final barberiaId = barbershop.id;
-        final fechaLarga = DateFormat(
-          "EEEE d 'de' MMMM, y",
-          'es_CO',
-        ).format(fecha);
-        final isUrgent =
-            horarioState.tiempoRestanteSegundos > 0 &&
-            horarioState.tiempoRestanteSegundos < 60;
-
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Confirma tu reserva'),
-            automaticallyImplyLeading: false,
-            actions: [
-              IconButton(
-                onPressed: () async {
-                  final salir = await _confirmarSalida();
-                  if (!salir || !context.mounted) {
-                    return;
-                  }
-                  await ref
-                      .read(disponibilidadNotifierProvider.notifier)
-                      .salirPantalla(barberoId: barbero.id);
-                  ref.read(reservaNotifierProvider.notifier).resetReserva();
-                  ref.read(citaIdAReprogramarProvider.notifier).state = null;
-                  if (!context.mounted) {
-                    return;
-                  }
-                  router.go('/dashboard');
-                },
-                icon: const Icon(Icons.close),
-              ),
-            ],
-          ),
-          body: PopScope(
-            canPop: false,
-            onPopInvokedWithResult: (didPop, result) async {
-              if (didPop) {
-                return;
-              }
-              final salir = await _confirmarSalida();
-              if (!salir || !context.mounted) {
-                return;
-              }
-              await ref
-                  .read(disponibilidadNotifierProvider.notifier)
-                  .salirPantalla(barberoId: barbero.id);
-              ref.read(reservaNotifierProvider.notifier).resetReserva();
-              ref.read(citaIdAReprogramarProvider.notifier).state = null;
-              if (!context.mounted) {
-                return;
-              }
-              router.go('/dashboard');
-            },
-            child: ListView(
-              padding: const EdgeInsets.all(16),
+    final resumen = SummaryCard(
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Overline('Servicio'),
+            const SizedBox(height: AppSpace.s1),
+            Row(
               children: [
-                if (citaIdAReprogramar != null) ...[
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.event_repeat_rounded,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Estás reprogramando tu cita. Al confirmar, la anterior se cancelará automáticamente.',
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                ],
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceOf(context),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.textMutedOf(
-                        context,
-                      ).withValues(alpha: 0.2),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _Section(
-                        title: 'SERVICIO',
-                        child: Text(
-                          '${servicio.nombre} · ${servicio.duracionMinutos} minutos',
-                        ),
-                      ),
-                      _Section(
-                        title: 'BARBERO',
-                        child: Text(
-                          '${barbero.nombreCompleto} · ${barbero.ratingText}',
-                        ),
-                      ),
-                      _Section(
-                        title: 'FECHA Y HORA',
-                        child: Text(
-                          '$fechaLarga\n${slot.horaInicioFormateada} — ${slot.horaFinFormateada}',
-                        ),
-                      ),
-                      _Section(
-                        title: 'PRECIO',
-                        footer: Text(
-                          'Pago en el local',
-                          style: TextStyle(
-                            color: AppColors.textMutedOf(context),
-                          ),
-                        ),
-                        child: Text(
-                          NumberFormat.currency(
-                            locale: 'es_CO',
-                            symbol: r'$',
-                            decimalDigits: 0,
-                          ).format(servicio.precio),
-                        ),
-                      ),
-                      if (horarioState.tiempoRestanteSegundos > 0)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 8),
-                            LinearProgressIndicator(
-                              value: horarioState.tiempoRestanteSegundos / 300,
-                              color: isUrgent
-                                  ? AppColors.error
-                                  : AppColors.primary,
-                              backgroundColor: AppColors.textMutedOf(
-                                context,
-                              ).withValues(alpha: 0.2),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Completa tu reserva en: ${horarioState.tiempoRestanteTexto}',
-                              style: TextStyle(
-                                color: isUrgent
-                                    ? AppColors.error
-                                    : AppColors.primary,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: _notasController,
-                  minLines: 2,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    hintText: 'Alguna nota para el barbero (opcional)',
-                  ),
-                ),
-                const SizedBox(height: 18),
-                AppButton(
-                  label: 'Reservar ahora',
-                  isLoading: _loading,
-                  onPressed: () async {
-                    setState(() => _loading = true);
-                    try {
-                      final cita = await citaRepo.crearCita(
-                        CrearCitaRequestModel(
-                          barberoId: barbero.id,
-                          servicioId: servicio.id,
-                          fechaCita: fecha,
-                          horaInicio: slot.horaInicioFormateada,
-                          tokenRedisBloqueo: token,
-                          notas: _notasController.text.trim().isEmpty
-                              ? null
-                              : _notasController.text.trim(),
-                        ),
-                      );
-
-                      ref.invalidate(misCitasProvider(barberiaId));
-                      await ref
-                          .read(disponibilidadNotifierProvider.notifier)
-                          .salirPantalla(barberoId: barbero.id);
-                      ref.read(reservaNotifierProvider.notifier).resetReserva();
-
-                      if (citaIdAReprogramar != null) {
-                        try {
-                          await citaRepo.cancelarCita(
-                            citaIdAReprogramar,
-                            motivo: 'Reprogramada por el cliente',
-                          );
-                          ref.invalidate(citaByIdProvider(citaIdAReprogramar));
-                        } catch (_) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Tu nueva cita quedó confirmada, pero no pudimos '
-                                  'cancelar la anterior automáticamente. '
-                                  'Cancélala manualmente si sigue apareciendo activa.',
-                                ),
-                              ),
-                            );
-                          }
-                        } finally {
-                          ref.read(citaIdAReprogramarProvider.notifier).state =
-                              null;
-                        }
-                      }
-
-                      if (!context.mounted) {
-                        return;
-                      }
-                      router.go('/reservar/exito', extra: cita);
-                    } on ValidationException catch (ex) {
-                      // Validation failures from the backend at this step are
-                      // almost always "this slot is no longer available" — send
-                      // the user back to pick a new time instead of retrying
-                      // the same (now invalid) confirmation.
-                      if (!context.mounted) {
-                        return;
-                      }
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text(ex.message)));
-                      router.go('/reservar/horario');
-                    } on AppException catch (ex) {
-                      if (!context.mounted) {
-                        return;
-                      }
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text(ex.message)));
-                    } catch (_) {
-                      if (!context.mounted) {
-                        return;
-                      }
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'No pudimos confirmar la cita. Intenta de nuevo.',
-                          ),
-                        ),
-                      );
-                    } finally {
-                      if (mounted) {
-                        setState(() => _loading = false);
-                      }
-                    }
-                  },
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: _loading
-                      ? null
-                      : () async {
-                          final confirmado =
-                              await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Cancelar reserva'),
-                                  content: const Text(
-                                    '¿Seguro que deseas cancelar este proceso?',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, false),
-                                      child: const Text('No'),
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, true),
-                                      child: const Text('Sí, cancelar'),
-                                    ),
-                                  ],
-                                ),
-                              ) ??
-                              false;
-                          if (!confirmado || !context.mounted) {
-                            return;
-                          }
-                          await ref
-                              .read(disponibilidadNotifierProvider.notifier)
-                              .salirPantalla(barberoId: barbero.id);
-                          ref
-                              .read(reservaNotifierProvider.notifier)
-                              .resetReserva();
-                          ref.read(citaIdAReprogramarProvider.notifier).state =
-                              null;
-                          if (!context.mounted) {
-                            return;
-                          }
-                          router.go('/dashboard');
-                        },
-                  child: const Text('Cancelar'),
-                ),
+                Expanded(child: Text(servicio.nombre, style: AppTextStyles.titleSm.copyWith(color: p.ink))),
+                Text(Formato.duracion(servicio.duracionMinutos), style: AppTextStyles.body.copyWith(color: p.inkMuted)),
               ],
             ),
+          ],
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Overline('Barbero'),
+            const SizedBox(height: AppSpace.s2),
+            Row(
+              children: [
+                BsmAvatar(name: barbero.nombreCompleto, photoUrl: barbero.fotoUrl, size: 32),
+                const SizedBox(width: AppSpace.s3),
+                Expanded(child: Text(barbero.nombreCompleto, style: AppTextStyles.label.copyWith(color: p.ink))),
+                BsmRating(value: barbero.ratingPromedio > 0 ? barbero.ratingPromedio : null, compact: true),
+              ],
+            ),
+          ],
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Overline('Fecha y hora'),
+            const SizedBox(height: AppSpace.s1),
+            Text(capitalizar(Formato.fechaLarga(inicio)), style: AppTextStyles.titleSm.copyWith(color: p.ink)),
+            Text(Formato.rango(inicio, fin), style: AppTextStyles.body.copyWith(color: p.inkMuted)),
+          ],
+        ),
+        if (barbershop != null)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Overline('Lugar'),
+              const SizedBox(height: AppSpace.s1),
+              Text('${barbershop.nombre} · ${barbershop.direccionCompleta}', style: AppTextStyles.body.copyWith(color: p.ink)),
+            ],
           ),
-        );
-      },
+        Row(
+          children: [
+            Icon(LucideIcons.banknote, size: 20, color: p.inkMuted),
+            const SizedBox(width: AppSpace.s2),
+            Expanded(child: Text('Pago en el local', style: AppTextStyles.body.copyWith(color: p.inkMuted))),
+            Text(Formato.dinero(precio), style: AppTextStyles.title.copyWith(color: p.ink, fontFeatures: const [FontFeature.tabularFigures()])),
+          ],
+        ),
+      ],
     );
-  }
-}
 
-class _Section extends StatelessWidget {
-  const _Section({required this.title, this.footer, required this.child});
+    String? cuerpoReprogramacion() {
+      if (citaAnterior == null) return 'Al confirmar, la anterior se cancela automáticamente.';
+      final anterior = fechaConHora(citaAnterior.fechaCita, citaAnterior.horaInicio);
+      return 'Al confirmar, tu cita del ${Formato.fechaLarga(anterior)} a las ${Formato.hora(anterior)} se cancela automáticamente.';
+    }
 
-  final String title;
-  final Widget child;
-  final Widget? footer;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.labelLarge?.copyWith(color: AppColors.primary),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && !_enviando) context.go('/reservar/horario');
+      },
+      child: BookingScaffold(
+        step: 4,
+        title: 'Confirma tu reserva',
+        onBack: _enviando ? null : () => context.go('/reservar/horario'),
+        backLabel: 'Volver a fecha y hora',
+        bottom: BookingBottomBar(
+          label: _enviando ? 'Reservando…' : (reprogramando ? 'Confirmar nuevo horario' : 'Reservar ahora'),
+          loading: _enviando,
+          onPressed: () => _reservar(
+            barberiaId: barbershop?.id ?? '',
+            barberoId: barbero.id,
+            servicioId: servicio.id,
+            fecha: fecha,
+            hora: slot.horaInicioFormateada,
+            token: token,
+            citaAnterior: citaAnteriorId,
           ),
-          const SizedBox(height: 4),
-          child,
-          if (footer != null) ...[const SizedBox(height: 4), footer!],
+        ),
+        children: [
+          BsmCountdownView(seconds: estado.tiempoRestanteSegundos, compact: true, label: 'Completa tu reserva en'),
+          if (reprogramando) ...[
+            const SizedBox(height: AppSpace.s4),
+            BsmBanner(icon: LucideIcons.calendarClock, title: 'Estás reprogramando tu cita', body: cuerpoReprogramacion()),
+          ],
+          const SizedBox(height: AppSpace.s4),
+          Semantics(label: 'Resumen de la reserva', container: true, child: resumen),
+          const SizedBox(height: AppSpace.s5),
+          BsmTextField(
+            controller: _notas,
+            label: 'Alguna nota para el barbero',
+            optional: true,
+            maxLines: 3,
+            placeholder: 'Ej.: degradado bajo, no tocar la barba',
+            textInputAction: TextInputAction.newline,
+          ),
+          const SizedBox(height: AppSpace.s4),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: BsmButton(
+              label: 'Cancelar reserva',
+              variant: BsmButtonVariant.dangerGhost,
+              onPressed: _enviando ? null : () => _salirSinReservar(barbero.id, inicio),
+            ),
+          ),
         ],
       ),
     );

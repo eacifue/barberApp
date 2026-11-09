@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Reserva · Paso 4 · Confirmar</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn,a.bsm-iconbtn{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 920px; position: relative; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--font-sans); display: flex; flex-direction: column;">
+  <header style="padding: 8px 16px 12px; display: flex; flex-direction: column; gap: 10px;">
+    <a href="Reserva-3-Horario.dc.html" class="bsm-iconbtn" aria-label="Volver a fecha y hora" style="margin-left: -10px;">
+      <x-import component-from-global-scope="BSM.Icon" name="arrow-left" size="24"></x-import>
+    </a>
+    <x-import component-from-global-scope="BSM.Stepper" current="{{step}}"></x-import>
+    <h1 style="margin: 4px 0 0; font-family: var(--font-display); font-weight: 400; font-size: 32px; line-height: 36px;">Confirma tu reserva</h1>
+  </header>
+
+  <div style="display: flex; flex-direction: column; gap: 16px; padding: 0 16px;">
+    <x-import component-from-global-scope="BSM.Countdown" seconds="{{seconds}}" variant="compact" label="Completa tu reserva en"></x-import>
+
+    <sc-if value="{{reprog}}" hint-placeholder-val="{{no}}">
+      <x-import component-from-global-scope="BSM.Banner" tone="info" icon="calendar-clock" title="Estás reprogramando tu cita">Al confirmar, tu cita del martes 10 de noviembre a las 5:00 p. m. se cancela automáticamente.</x-import>
+    </sc-if>
+
+    <section aria-label="Resumen de la reserva" style="border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); display: flex; flex-direction: column;">
+      <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--line);">
+        <span class="bsm-overline">Servicio</span>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;">
+          <span style="font-size: 17px; line-height: 24px; font-weight: 600;">Corte + barba</span>
+          <span style="font-size: 14px; line-height: 20px; color: var(--ink-muted);">50 min</span>
+        </div>
+      </div>
+      <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid var(--line);">
+        <span class="bsm-overline">Barbero</span>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <x-import component-from-global-scope="BSM.Avatar" name="Julián Restrepo" size="{{s32}}"></x-import>
+          <span style="flex: 1; font-size: 16px; line-height: 24px; font-weight: 600;">Julián Restrepo</span>
+          <x-import component-from-global-scope="BSM.Rating" value="{{r49}}" count="{{c212}}" compact="{{yes}}"></x-import>
+        </div>
+      </div>
+      <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--line);">
+        <span class="bsm-overline">Fecha y hora</span>
+        <span style="font-size: 16px; line-height: 24px; font-weight: 600;">Jueves 12 de noviembre</span>
+        <span style="font-size: 14px; line-height: 20px; color: var(--ink-muted); font-variant-numeric: tabular-nums;">3:00 p. m. – 3:50 p. m.</span>
+      </div>
+      <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--line);">
+        <span class="bsm-overline">Lugar</span>
+        <span style="font-size: 16px; line-height: 24px;">BarberShop Medellín · El Poblado, Medellín</span>
+      </div>
+      <div style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--brass-soft); border-radius: 0 0 var(--radius-md) var(--radius-md);">
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 14px; line-height: 20px; color: var(--ink);">
+          <x-import component-from-global-scope="BSM.Icon" name="banknote" size="20"></x-import>
+          Pago en el local
+        </span>
+        <span style="font-size: 20px; line-height: 26px; font-weight: 600; font-variant-numeric: tabular-nums;">$50.000</span>
+      </div>
+    </section>
+
+    <x-import component-from-global-scope="BSM.Input" label="Alguna nota para el barbero" optional="{{yes}}" multiline="{{yes}}" placeholder="Ej.: degradado bajo, no tocar la barba"></x-import>
+
+    <a href="Confirmar-salir.dc.html" class="bsm-btn bsm-btn-danger-ghost" style="align-self: center;">Cancelar reserva</a>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 16px 28px; background: var(--surface); border-top: 1px solid var(--line); box-shadow: var(--shadow-sm);">
+    <sc-if value="{{notReprog}}" hint-placeholder-val="{{yes}}">
+      <a href="Reserva-Exito.dc.html" class="bsm-btn bsm-btn-primary bsm-btn-lg bsm-btn-block">Reservar ahora</a>
+    </sc-if>
+    <sc-if value="{{reprog}}" hint-placeholder-val="{{no}}">
+      <a href="Reserva-Exito.dc.html" class="bsm-btn bsm-btn-primary bsm-btn-lg bsm-btn-block">Confirmar nuevo horario</a>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"reprogramar":{"editor":"boolean","default":false,"section":"Vista"},"seconds":{"editor":"range","min":0,"max":300,"step":1,"unit":"s","default":225,"section":"Horario apartado"},"$preview":{"width":390,"height":920}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const reprog = !!this.props.reprogramar;
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      step: 4, yes: true, no: false, s32: 32, r49: 4.9, c212: 212,
+      seconds: this.props.seconds ?? 225,
+      reprog: reprog, notReprog: !reprog
+    };
+  }
+}
+</script>
+</body>
+</html>

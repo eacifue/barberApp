@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react'
-import { Eye, EyeOff, MoonStar, SunMedium } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useQueryClient } from '@tanstack/react-query'
 
-import { useTheme } from '../../components/theme/ThemeProvider'
+import { Banner, Button, Input } from '../../components/bsm'
+import { AuthLayout } from './AuthLayout'
 import { useAuthStore } from '../../stores/authStore'
+import { toast } from '../../stores/toastStore'
 import { http } from '../../services/http'
 
 type AuthPayload = {
@@ -23,51 +24,61 @@ type ApiResponse<T> = {
   errors: string[]
 }
 
+type Rechazo = { title: string; body: string }
+
+const ROLES_PANEL = new Set(['Admin', 'AdministradorBarberia', 'Barbero'])
+
+/**
+ * Login del panel: panel de marca sobre `carbon` y formulario
+ * (design/pantallas/panel-web/Login-panel, Login-panel-error, Login-panel-movil).
+ */
 export function LoginPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { theme, toggleTheme } = useTheme()
   const login = useAuthStore((s) => s.login)
   const logout = useAuthStore((s) => s.logout)
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [errores, setErrores] = useState<{ email?: string; password?: string }>({})
+  const [rechazo, setRechazo] = useState<Rechazo | null>(null)
   const [loading, setLoading] = useState(false)
+
+  const validar = () => {
+    const next: typeof errores = {}
+    if (!email.trim()) next.email = 'Escribe tu correo.'
+    else if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email.trim())) next.email = 'Ingresa un correo válido, por ejemplo nombre@correo.co.'
+    if (!password) next.password = 'Escribe tu contraseña.'
+    setErrores(next)
+    return Object.keys(next).length === 0
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    setError(null)
+    setRechazo(null)
+    if (!validar()) return
     setLoading(true)
     try {
-      const res = await http.post<ApiResponse<AuthPayload>>('/v1/auth/login', {
-        correo: email,
-        password,
-      })
-
+      const res = await http.post<ApiResponse<AuthPayload>>('/v1/auth/login', { correo: email.trim(), password })
       const payload = res.data?.data
-      if (!res.data?.success || !payload?.token) {
-        throw new Error(res.data?.message || 'No se pudo iniciar sesión')
+      if (!res.data?.success || !payload?.token) throw new Error(res.data?.message || 'No se pudo iniciar sesión')
+
+      if (!ROLES_PANEL.has(payload.rol)) {
+        setRechazo({ title: 'Esta cuenta es de cliente', body: 'Las reservas se hacen desde la app BarberShop Medellín.' })
+        return
       }
 
       // Limpiar sesión anterior antes de guardar la nueva
       queryClient.clear()
       logout()
-
-      login(payload.token, {
-        id: payload.clienteId,
-        nombre: payload.nombreCompleto,
-        rol: payload.rol,
-        barberoId: payload.barberoId,
-      })
+      login(payload.token, { id: payload.clienteId, nombre: payload.nombreCompleto, rol: payload.rol, barberoId: payload.barberoId })
       navigate('/dashboard', { replace: true })
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const apiMessage = (error.response?.data as { message?: string } | undefined)?.message
-        setError(apiMessage || 'Credenciales incorrectas. Verifica tu correo y contraseña.')
+      const status = axios.isAxiosError(error) ? error.response?.status : undefined
+      if (status === 401 || status === 400) {
+        setRechazo({ title: 'Credenciales incorrectas', body: 'Revisa tu correo y tu contraseña e inténtalo de nuevo.' })
       } else {
-        setError('No se pudo iniciar sesión. Inténtalo de nuevo.')
+        toast.error('No pudimos iniciar sesión. Revisa tu conexión e inténtalo de nuevo.')
       }
     } finally {
       setLoading(false)
@@ -75,83 +86,44 @@ export function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8 md:px-6">
-      <div className="absolute right-6 top-6 z-10">
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface-overlay)] text-[var(--text-base)] transition hover:border-[var(--accent)] hover:text-[var(--accent)] focus:outline-none focus:ring-2 focus:ring-[var(--focus-ring)]"
-          aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-        >
-          {theme === 'dark' ? <SunMedium className="h-4 w-4" /> : <MoonStar className="h-4 w-4" />}
-        </button>
-      </div>
-
-      <div className="surface-panel relative w-full max-w-[420px] overflow-hidden rounded-[32px] px-6 py-8 md:px-10 md:py-10">
-        <div className="mb-8 flex flex-col items-center text-center">
-          <img src="/logo-mark.svg" alt="BarberShop Medellín" className="mb-4 h-14 w-14" />
-          <p className="font-display text-2xl text-[var(--text-strong)]">BarberShop Medellín</p>
-          <p className="mt-1.5 text-sm text-[var(--text-muted)]">Ingresa con tu cuenta administrativa</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label htmlFor="email" className="form-label mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em]">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="form-control h-12 w-full rounded-2xl px-4 text-sm outline-none transition duration-200"
-              placeholder="admin@barberia.local"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="form-label mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em]">
-              Contraseña
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="form-control h-12 w-full rounded-2xl px-4 pr-12 text-sm outline-none transition duration-200"
-                placeholder="••••••••"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((current) => !current)}
-                className="absolute right-1.5 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-[var(--text-faint)] transition hover:bg-[var(--surface-hover)] hover:text-[var(--text-strong)]"
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+    <AuthLayout>
+          <form onSubmit={handleSubmit} noValidate className="flex w-full max-w-[400px] flex-col gap-4">
+            <div className="mb-2 flex flex-col gap-2">
+              <h1 className="font-display text-display text-ink">Panel de BarberShop Medellín</h1>
+              <p className="text-body-lg text-ink-muted">Ingresa con tu cuenta administrativa.</p>
             </div>
-          </div>
-
-          {error ? (
-            <p className="rounded-2xl border border-[rgba(180,79,70,0.18)] bg-[var(--danger-soft)] px-4 py-3 text-sm text-[var(--danger)]">
-              {error}
-            </p>
-          ) : null}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-2 inline-flex h-12 w-full items-center justify-center rounded-full bg-[var(--accent)] text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? 'Entrando…' : 'Entrar al panel'}
-          </button>
-        </form>
-      </div>
-    </div>
+            {rechazo && (
+              <Banner tone="danger" title={rechazo.title}>
+                {rechazo.body}
+              </Banner>
+            )}
+            <Input
+              label="Correo electrónico"
+              type="email"
+              icon="mail"
+              autoComplete="username"
+              placeholder="nombre@correo.co"
+              value={email}
+              error={errores.email}
+              onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => errores.email && validar()}
+            />
+            <Input
+              label="Contraseña"
+              revealable
+              autoComplete="current-password"
+              value={password}
+              error={errores.password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <Link to="/recuperar" state={{ correo: email.trim() }} className="bsm-link self-end">
+              ¿Olvidaste tu contraseña?
+            </Link>
+            <Button type="submit" size="lg" block loading={loading}>
+              {loading ? 'Entrando…' : 'Entrar al panel'}
+            </Button>
+            <p className="text-center text-body text-ink-muted">¿Eres cliente? Reserva desde la app BarberShop Medellín.</p>
+          </form>
+    </AuthLayout>
   )
 }

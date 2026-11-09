@@ -3,6 +3,8 @@ class ApiEndpoints {
 
   static const String login = '/auth/login';
   static const String registro = '/auth/registro';
+  static const String recuperar = '/auth/recuperar';
+  static const String restablecer = '/auth/restablecer';
   static const String authFcmToken = '/auth/fcm-token';
   static const String authLogout = '/auth/logout';
 
@@ -41,4 +43,6 @@ class ApiEndpoints {
   static String citaPorId(String citaId) => '/citas/$citaId';
 
   static String cancelarCita(String citaId) => '/citas/$citaId/cancelar';
+
+  static String reviewCita(String citaId) => '/citas/$citaId/review';
 }

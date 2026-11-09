@@ -1,342 +1,288 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
-import { useBarberias } from '../../hooks/useBarberias'
-import { useTenantBarberia } from '../../hooks/useTenantBarberia'
-import { useServicios } from '../../hooks/useServicios'
-import type { Servicio, ServicioUpsertInput } from '../../types/servicio'
-import { TipoServicio, TipoServicioLabel } from '../../types/servicio'
+import {
+  Badge,
+  Banner,
+  Button,
+  Chip,
+  ConfirmDialog,
+  EmptyState,
+  Icon,
+  IconButton,
+  Input,
+  Modal,
+  Select,
+  ServiceCard,
+  Skeleton,
+  Table,
+  SERVICE_ICON,
+  formatCOP,
+  formatDuration,
+  type ServiceType,
+  type TableColumn,
+} from '../../components/bsm'
 import { PageHeader } from '../../components/shared/PageHeader'
-import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
-import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
-import { DataTable } from '../../components/ui/DataTable'
-import { FormInput } from '../../components/ui/FormInput'
-import { FormSelect } from '../../components/ui/FormSelect'
-import { Modal } from '../../components/ui/Modal'
+import { useBarberos } from '../../hooks/useBarberos'
+import { useServicios } from '../../hooks/useServicios'
+import { useTenantBarberia } from '../../hooks/useTenantBarberia'
+import { servicioService } from '../../services/servicioService'
 import { toast } from '../../stores/toastStore'
+import { TipoServicio, TipoServicioLabel, type Servicio, type ServicioUpsertInput } from '../../types/servicio'
+import { mensajeDeError } from '../citas/agendaUtils'
+import { useQueryClient } from '@tanstack/react-query'
 
-const initialForm: ServicioUpsertInput = {
-  nombre: '',
-  descripcion: '',
-  tipo: TipoServicio.Corte,
-  duracionMinutos: 30,
-  precio: 0,
-  fotoUrl: '',
-  activo: true,
+type Form = { nombre: string; descripcion: string; tipo: TipoServicio; duracion: string; precio: string; fotoUrl: string }
+type Errores = Partial<Record<keyof Form, string>>
+
+const VACIO: Form = { nombre: '', descripcion: '', tipo: TipoServicio.Corte, duracion: '30', precio: '', fotoUrl: '' }
+const TIPOS = Object.entries(TipoServicioLabel).map(([value, label]) => ({ value: Number(value) as TipoServicio, label: label as ServiceType }))
+
+function soloDigitos(v: string) {
+  return v.replace(/\D/g, '')
 }
 
-function ScissorIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
-      <circle cx="6" cy="7" r="2.5" stroke="currentColor" strokeWidth="1.6" />
-      <circle cx="6" cy="17" r="2.5" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M8.5 8.8L20 4M8.5 15.2L20 20" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  )
+function validar(f: Form): Errores {
+  const e: Errores = {}
+  if (!f.nombre.trim()) e.nombre = 'Escribe el nombre del servicio.'
+  const d = Number(f.duracion)
+  if (!Number.isInteger(d) || d < 10 || d > 240) e.duracion = 'Ingresa una duración entre 10 y 240 minutos.'
+  else if (d % 5 !== 0) e.duracion = 'Usa pasos de 5 minutos (p. ej. 45 o 50).'
+  if (!(Number(soloDigitos(f.precio)) > 0)) e.precio = 'Ingresa un precio mayor a $0.'
+  if (f.fotoUrl.trim() && !/^https?:\/\//i.test(f.fotoUrl.trim())) e.fotoUrl = 'Usa un enlace que empiece por https://'
+  return e
 }
 
-function BeardIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
-      <path d="M4 10c0 5 3.2 8 8 8s8-3 8-8" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M7.5 10c0 2 1.5 3.2 2.8 3.2S13 12 13 10" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M11 10c0 2 1.5 3.2 2.8 3.2S16.5 12 16.5 10" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  )
-}
-
-function DropIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
-      <path d="M12 3s6 6 6 10a6 6 0 11-12 0c0-4 6-10 6-10z" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  )
-}
-
-function StarIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
-      <path d="M12 3l2.7 5.6 6.2.9-4.5 4.4 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.5-4.4 6.2-.9L12 3z" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  )
-}
-
-function RazorIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
-      <path d="M4 8h8l2 2h6v4H8l-4 4" stroke="currentColor" strokeWidth="1.6" />
-      <path d="M12 8l-1.5-2h-4" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  )
-}
-
-function getTipoStyle(tipo: TipoServicio) {
-  if (tipo === TipoServicio.Corte) return { color: '#e07060', icon: <ScissorIcon /> }
-  if (tipo === TipoServicio.Barba) return { color: '#5dba8e', icon: <BeardIcon /> }
-  if (tipo === TipoServicio.Tinte) return { color: '#5b9bd5', icon: <DropIcon /> }
-  if (tipo === TipoServicio.Combo) return { color: '#D4A017', icon: <StarIcon /> }
-  if (tipo === TipoServicio.Afeitado) return { color: '#c890e8', icon: <RazorIcon /> }
-  return { color: '#6b6b6b', icon: <StarIcon /> }
-}
-
-function formatCurrency(value: number) {
-  return `$${Math.round(value).toLocaleString('es-CO')}`
-}
-
+/**
+ * Catálogo de servicios (design/pantallas/panel-web/Servicios y Servicio-editar):
+ * filtro por tipo, tabla, edición en modal con vista previa en la app,
+ * desactivar en vez de eliminar.
+ */
 export function ServiciosList() {
-  const { effectiveBarberiaId, tenantError } = useTenantBarberia()
-  const { barberiasQuery } = useBarberias()
+  const queryClient = useQueryClient()
+  const { effectiveBarberiaId } = useTenantBarberia()
+  const { serviciosQuery, createMutation, updateMutation } = useServicios(effectiveBarberiaId ?? '', true)
+  const { barberosQuery } = useBarberos(effectiveBarberiaId ?? '')
 
-  const [confirmTarget, setConfirmTarget] = useState<Servicio | null>(null)
-  const { serviciosQuery, createMutation, updateMutation, removeMutation } = useServicios(effectiveBarberiaId ?? '')
+  const [tipo, setTipo] = useState<TipoServicio | 0>(0)
+  const [editando, setEditando] = useState<Servicio | 'nuevo' | null>(null)
+  const [form, setForm] = useState<Form>(VACIO)
+  const [errores, setErrores] = useState<Errores>({})
+  const [dirty, setDirty] = useState(false)
+  const [cambiarEstado, setCambiarEstado] = useState<Servicio | null>(null)
+  const [cambiando, setCambiando] = useState(false)
 
-  const [openModal, setOpenModal] = useState(false)
-  const [editing, setEditing] = useState<Servicio | null>(null)
-  const [form, setForm] = useState<ServicioUpsertInput>(initialForm)
-  const [error, setError] = useState<string | null>(null)
+  const servicios = useMemo(() => (serviciosQuery.data ?? []).slice().sort((a, b) => Number(b.activo) - Number(a.activo) || a.nombre.localeCompare(b.nombre)), [serviciosQuery.data])
+  const visibles = servicios.filter((s) => !tipo || s.tipo === tipo)
+  const barberosPorServicio = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const b of barberosQuery.data ?? []) for (const s of b.servicios ?? []) m.set(s.id, (m.get(s.id) ?? 0) + 1)
+    return m
+  }, [barberosQuery.data])
 
-  const servicios = serviciosQuery.data ?? []
-  const isSaving = createMutation.isPending || updateMutation.isPending
-
-  const resetForm = () => {
-    setOpenModal(false)
-    setEditing(null)
-    setForm(initialForm)
-    setError(null)
+  const abrir = (s: Servicio | 'nuevo') => {
+    setEditando(s)
+    setErrores({})
+    setDirty(false)
+    setForm(
+      s === 'nuevo'
+        ? VACIO
+        : { nombre: s.nombre, descripcion: s.descripcion ?? '', tipo: s.tipo, duracion: String(s.duracionMinutos), precio: String(Math.round(s.precio)), fotoUrl: s.fotoUrl ?? '' },
+    )
+  }
+  const set = <K extends keyof Form>(k: K, v: Form[K]) => {
+    setForm((f) => ({ ...f, [k]: v }))
+    setDirty(true)
+    if (errores[k]) setErrores((e) => ({ ...e, [k]: undefined }))
   }
 
-  const openCreateModal = () => {
-    setEditing(null)
-    setForm(initialForm)
-    setError(null)
-    setOpenModal(true)
-  }
-
-  const openEditModal = (servicio: Servicio) => {
-    setEditing(servicio)
-    setForm({
-      nombre: servicio.nombre,
-      descripcion: servicio.descripcion ?? '',
-      tipo: servicio.tipo,
-      duracionMinutos: servicio.duracionMinutos,
-      precio: servicio.precio,
-      fotoUrl: servicio.fotoUrl ?? '',
-      activo: servicio.activo,
-    })
-    setError(null)
-    setOpenModal(true)
-  }
-
-  const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setError(null)
-
-    if (!form.nombre.trim()) {
-      setError('Completa el nombre con un valor válido.')
-      return
+  const guardar = async () => {
+    const e = validar(form)
+    setErrores(e)
+    if (Object.keys(e).length) return
+    const payload: ServicioUpsertInput = {
+      nombre: form.nombre.trim(),
+      descripcion: form.descripcion.trim(),
+      tipo: form.tipo,
+      duracionMinutos: Number(form.duracion),
+      precio: Number(soloDigitos(form.precio)),
+      fotoUrl: form.fotoUrl.trim() || undefined,
+      activo: editando === 'nuevo' ? true : (editando?.activo ?? true),
     }
-
-    if (form.duracionMinutos < 10 || form.duracionMinutos > 240) {
-      setError('La duración debe estar entre 10 y 240 minutos.')
-      return
-    }
-
-    if (form.precio <= 0 || form.precio >= 1_000_000) {
-      setError('El precio debe ser mayor que cero y menor a 1.000.000.')
-      return
-    }
-
     try {
-      if (editing) {
-        await updateMutation.mutateAsync({ id: editing.id, data: form })
-        toast.success(`Servicio "${form.nombre}" actualizado correctamente.`)
-      } else {
-        await createMutation.mutateAsync(form)
-        toast.success(`Servicio "${form.nombre}" creado correctamente.`)
-      }
-      resetForm()
-    } catch {
-      setError('No se pudo guardar el servicio. Verifica datos e intenta de nuevo.')
+      if (editando === 'nuevo') await createMutation.mutateAsync(payload)
+      else if (editando) await updateMutation.mutateAsync({ id: editando.id, data: payload })
+      toast.success(editando === 'nuevo' ? 'Servicio creado' : 'Cambios guardados')
+      setEditando(null)
+    } catch (err) {
+      toast.error(mensajeDeError(err, 'No pudimos guardar el servicio. Inténtalo de nuevo.'))
     }
   }
 
-  const onDelete = (servicio: Servicio) => {
-    setConfirmTarget(servicio)
-  }
-
-  const handleConfirmDelete = async () => {
-    if (!confirmTarget) return
+  const confirmarEstado = async () => {
+    if (!cambiarEstado) return
+    setCambiando(true)
     try {
-      await removeMutation.mutateAsync(confirmTarget.id)
-      toast.success(`Servicio "${confirmTarget.nombre}" eliminado.`)
-    } catch {
-      toast.error('No se pudo eliminar el servicio. Intenta de nuevo.')
+      if (cambiarEstado.activo) await servicioService.remove(cambiarEstado.id)
+      else await servicioService.activate(cambiarEstado.id)
+      await queryClient.invalidateQueries({ queryKey: ['servicios'] })
+      toast.success(cambiarEstado.activo ? 'Servicio desactivado' : 'Servicio activado')
+      setCambiarEstado(null)
+    } catch (err) {
+      toast.error(mensajeDeError(err, 'No pudimos cambiar el estado del servicio.'))
     } finally {
-      setConfirmTarget(null)
+      setCambiando(false)
     }
   }
+
+  const columnas: TableColumn<Servicio>[] = [
+    {
+      key: 'servicio',
+      label: 'Servicio',
+      render: (s) => (
+        <span className="flex items-center gap-3 text-left">
+          <span className="bsm-service-icon !h-10 !w-10 flex-none">
+            <Icon name={SERVICE_ICON[TipoServicioLabel[s.tipo] as ServiceType] ?? 'scissors'} size={20} />
+          </span>
+          <span className="flex min-w-0 flex-col">
+            <strong className="text-label-sm text-ink">{s.nombre}</strong>
+            {s.descripcion && <span className="line-clamp-1 max-w-[320px] text-caption text-ink-muted">{s.descripcion}</span>}
+          </span>
+        </span>
+      ),
+    },
+    { key: 'tipo', label: 'Tipo', muted: true, render: (s) => TipoServicioLabel[s.tipo] },
+    { key: 'duracion', label: 'Duración', align: 'right', render: (s) => formatDuration(s.duracionMinutos) },
+    { key: 'precio', label: 'Precio', align: 'right', render: (s) => formatCOP(s.precio) },
+    { key: 'barberos', label: 'Barberos', align: 'right', render: (s) => barberosPorServicio.get(s.id) ?? 0 },
+    {
+      key: 'estado',
+      label: 'Estado',
+      render: (s) => (s.activo ? <Badge tone="success" icon="circle-check">Activo</Badge> : <Badge tone="neutral" icon="ban">Inactivo</Badge>),
+    },
+    {
+      key: 'acciones',
+      label: 'Acciones',
+      align: 'right',
+      render: (s) => (
+        <span className="inline-flex gap-1" onClick={(e) => e.stopPropagation()}>
+          <IconButton icon="pencil" size="sm" label={`Editar ${s.nombre}`} onClick={() => abrir(s)} />
+          <IconButton icon={s.activo ? 'ban' : 'rotate-ccw'} size="sm" label={`${s.activo ? 'Desactivar' : 'Activar'} ${s.nombre}`} onClick={() => setCambiarEstado(s)} />
+        </span>
+      ),
+    },
+  ]
+
+  const guardando = createMutation.isPending || updateMutation.isPending
+  const tipoLabel = TipoServicioLabel[form.tipo] as ServiceType
 
   return (
-    <section className="relative">
-      {tenantError ? (
-        <div className="mb-4 rounded-lg border border-[var(--danger)]/25 bg-[var(--danger-soft)] px-4 py-3 text-sm text-[var(--danger)]">
-          {tenantError}
-        </div>
-      ) : null}
-
+    <div className="mx-auto flex max-w-[1200px] flex-col gap-5 px-4 py-5 md:px-6 lg:px-8">
       <PageHeader
-        title="Servicios"
-        subtitle="Catalogo editable de servicios y tarifas"
-        actions={<Button onClick={openCreateModal}>Nuevo servicio</Button>}
+        title="Catálogo de servicios"
+        subtitle="Lo que los clientes pueden reservar en la app, con duración y precio general."
+        actions={
+          <Button icon="plus" onClick={() => abrir('nuevo')}>
+            Nuevo servicio
+          </Button>
+        }
       />
 
-      <DataTable<Servicio>
-        loading={serviciosQuery.isLoading || barberiasQuery.isLoading}
-        emptyMessage="No hay servicios para la barberia seleccionada"
-        columns={[
-          {
-            key: 'nombre',
-            header: 'Nombre',
-            width: '1.5fr',
-            render: (row) => {
-              const { color, icon } = getTipoStyle(row.tipo)
-              return (
-                <div className="inline-flex items-center gap-2">
-                  <span style={{ color }}>{icon}</span>
-                  <span>{row.nombre}</span>
-                </div>
-              )
-            },
-          },
-          {
-            key: 'tipo',
-            header: 'Tipo',
-            width: '1fr',
-            render: (row) => TipoServicioLabel[row.tipo],
-          },
-          {
-            key: 'duracionMinutos',
-            header: 'Duracion',
-            width: '0.9fr',
-            render: (row) => `${row.duracionMinutos} min`,
-          },
-          {
-            key: 'precio',
-            header: 'Precio',
-            width: '0.9fr',
-            render: (row) => <span className="font-semibold text-[var(--success)]">{formatCurrency(row.precio)}</span>,
-          },
-          {
-            key: 'activo',
-            header: 'Estado',
-            width: '0.9fr',
-            render: (row) => (
-              <Badge variant={row.activo ? 'success' : 'danger'} dot>
-                {row.activo ? 'Activo' : 'Inactivo'}
-              </Badge>
-            ),
-          },
-          {
-            key: 'acciones',
-            header: 'Acciones',
-            width: '1fr',
-            render: (row) => (
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="ghost" onClick={() => openEditModal(row)}>
-                  Editar
-                </Button>
-                <Button size="sm" variant="danger" onClick={() => onDelete(row)} loading={removeMutation.isPending}>
-                  Eliminar
-                </Button>
-              </div>
-            ),
-          },
-        ]}
-        data={servicios}
+      <div role="group" aria-label="Filtrar por tipo" className="bsm-chip-row">
+        <Chip selected={!tipo} count={servicios.length} onClick={() => setTipo(0)}>
+          Todos
+        </Chip>
+        {TIPOS.filter((t) => servicios.some((s) => s.tipo === t.value)).map((t) => (
+          <Chip key={t.value} selected={tipo === t.value} icon={SERVICE_ICON[t.label]} count={servicios.filter((s) => s.tipo === t.value).length} onClick={() => setTipo(t.value)}>
+            {t.label}
+          </Chip>
+        ))}
+      </div>
+
+      <Table
+        caption="Catálogo de servicios"
+        columns={columnas}
+        rows={visibles}
+        rowKey={(s) => s.id}
+        onRowClick={(s) => abrir(s)}
+        state={
+          serviciosQuery.isError ? (
+            <EmptyState tone="error" title="No pudimos cargar los servicios" body="Revisa tu conexión e inténtalo de nuevo." actionLabel="Reintentar" actionIcon="refresh-cw" actionVariant="secondary" onAction={() => void serviciosQuery.refetch()} />
+          ) : serviciosQuery.isLoading ? (
+            <Skeleton variant="row" rows={5} label="Cargando servicios" />
+          ) : visibles.length === 0 ? (
+            <EmptyState icon="scissors" title={servicios.length ? 'No hay servicios de este tipo' : 'Aún no tienes servicios'} body={servicios.length ? 'Elige otro tipo o crea uno nuevo.' : 'Crea el primero para que tus clientes puedan reservar.'} actionLabel="Nuevo servicio" actionIcon="plus" onAction={() => abrir('nuevo')} />
+          ) : undefined
+        }
       />
 
-      <Modal open={openModal} onClose={resetForm} title={editing ? 'Editar servicio' : 'Nuevo servicio'}>
-        <form className="space-y-4" onSubmit={onSubmit}>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <FormInput
-              label="Nombre"
-              required
-              value={form.nombre}
-              onChange={(e) => setForm((prev) => ({ ...prev, nombre: e.target.value }))}
-            />
-            <FormSelect
-              label="Tipo"
-              required
-              value={String(form.tipo)}
-              onChange={(e) => setForm((prev) => ({ ...prev, tipo: Number(e.target.value) as TipoServicio }))}
-              options={Object.entries(TipoServicio).map(([key, value]) => ({
-                label: key,
-                value: String(value),
-              }))}
-            />
-            <FormInput
-              label="Duracion (min)"
-              type="number"
-              required
-              min={1}
-              value={form.duracionMinutos}
-              onChange={(e) => setForm((prev) => ({ ...prev, duracionMinutos: Number(e.target.value || 0) }))}
-            />
-            <FormInput
-              label="Precio ($)"
-              type="number"
-              required
-              min={0}
-              step="1"
-              value={form.precio}
-              onChange={(e) => setForm((prev) => ({ ...prev, precio: Number(e.target.value || 0) }))}
-            />
-            <FormInput
-              label="Foto URL"
-              value={form.fotoUrl ?? ''}
-              onChange={(e) => setForm((prev) => ({ ...prev, fotoUrl: e.target.value }))}
-            />
-            <label className="form-check-label inline-flex items-center gap-2 self-end pb-2 text-sm">
-              <input
-                type="checkbox"
-                checked={form.activo}
-                onChange={(e) => setForm((prev) => ({ ...prev, activo: e.target.checked }))}
-              />
-              Estado activo
-            </label>
-
-            <label className="md:col-span-2 flex flex-col gap-1.5">
-              <span className="form-label text-[10px] uppercase tracking-[0.08em]">Descripcion</span>
-              <textarea
-                value={form.descripcion ?? ''}
-                onChange={(e) => setForm((prev) => ({ ...prev, descripcion: e.target.value }))}
-                className="form-control min-h-24 rounded-md px-3 py-2 outline-none"
-              />
-            </label>
-          </div>
-
-          {error ? <p className="form-message-error text-sm">{error}</p> : null}
-
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={resetForm}>
+      <Modal
+        open={editando != null}
+        onClose={() => setEditando(null)}
+        dirty={dirty && !guardando}
+        title={editando === 'nuevo' ? 'Nuevo servicio' : 'Editar servicio'}
+        subtitle={editando && editando !== 'nuevo' ? editando.nombre : 'Aparece en el paso 1 de la reserva.'}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setEditando(null)} disabled={guardando}>
               Cancelar
             </Button>
-            <Button type="submit" loading={isSaving}>
-              {editing ? 'Guardar cambios' : 'Crear servicio'}
+            <Button onClick={() => void guardar()} loading={guardando}>
+              {guardando ? 'Guardando…' : editando === 'nuevo' ? 'Crear servicio' : 'Guardar cambios'}
             </Button>
+          </>
+        }
+      >
+        {editando && editando !== 'nuevo' && !editando.activo && (
+          <Banner tone="warning" title="Este servicio está desactivado">
+            Los clientes no lo ven en la app. Actívalo desde la tabla cuando quieras volver a ofrecerlo.
+          </Banner>
+        )}
+        <Input label="Nombre" value={form.nombre} error={errores.nombre} onChange={(e) => set('nombre', e.target.value)} />
+        <Input label="Descripción" multiline optional value={form.descripcion} hint="Una o dos frases. Se ve en la tarjeta del servicio." onChange={(e) => set('descripcion', e.target.value)} />
+        <div className="grid gap-4 md:grid-cols-3">
+          <Select label="Tipo" value={String(form.tipo)} onChange={(e) => set('tipo', Number(e.target.value) as TipoServicio)} options={TIPOS.map((t) => ({ value: String(t.value), label: t.label }))} />
+          <Input label="Duración (min)" type="number" inputMode="numeric" min={10} max={240} step={5} value={form.duracion} hint="Entre 10 y 240." error={errores.duracion} onChange={(e) => set('duracion', e.target.value)} />
+          <Input
+            label="Precio general"
+            inputMode="numeric"
+            value={form.precio ? formatCOP(Number(soloDigitos(form.precio))) : ''}
+            placeholder="$0"
+            hint="Mayor a $0."
+            error={errores.precio}
+            onChange={(e) => set('precio', soloDigitos(e.target.value))}
+          />
+        </div>
+        <Input label="Foto" optional icon="image-plus" placeholder="https://…" value={form.fotoUrl} hint="Enlace a una foto cuadrada. Sin foto se usa el ícono del tipo de servicio." error={errores.fotoUrl} onChange={(e) => set('fotoUrl', e.target.value)} />
+        <div className="flex flex-col gap-2">
+          <span className="bsm-overline">Así se ve en la app</span>
+          <div className="max-w-[420px]">
+            <ServiceCard
+              name={form.nombre.trim() || 'Nombre del servicio'}
+              type={tipoLabel}
+              description={form.descripcion.trim() || undefined}
+              duration={Number(form.duracion) || 30}
+              price={Number(soloDigitos(form.precio)) || 0}
+              image={/^https?:\/\//i.test(form.fotoUrl.trim()) ? form.fotoUrl.trim() : undefined}
+            />
           </div>
-        </form>
+        </div>
       </Modal>
 
       <ConfirmDialog
-        open={confirmTarget !== null}
-        onClose={() => setConfirmTarget(null)}
-        onConfirm={handleConfirmDelete}
-        loading={removeMutation.isPending}
-        variant="danger"
-        title="Eliminar servicio"
-        message={`¿Estás seguro de que deseas eliminar "${confirmTarget?.nombre}"? Esta acción no se puede deshacer.`}
+        open={cambiarEstado != null}
+        tone={cambiarEstado?.activo ? 'danger' : 'info'}
+        icon={cambiarEstado?.activo ? 'ban' : 'rotate-ccw'}
+        title={cambiarEstado?.activo ? `¿Desactivar «${cambiarEstado.nombre}»?` : `¿Activar «${cambiarEstado?.nombre}»?`}
+        body={
+          cambiarEstado?.activo
+            ? 'Deja de aparecer en la app. Las citas ya agendadas se mantienen y puedes activarlo cuando quieras.'
+            : 'Volverá a aparecer en la app para los barberos que lo prestan.'
+        }
+        confirmLabel={cambiarEstado?.activo ? 'Desactivar servicio' : 'Activar servicio'}
+        loading={cambiando}
+        onCancel={() => setCambiarEstado(null)}
+        onConfirm={() => void confirmarEstado()}
       />
-    </section>
+    </div>
   )
 }

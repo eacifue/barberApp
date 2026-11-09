@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<title>Reserva · Paso 1 · Servicio</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/bsm/tokens.css">
+<link rel="stylesheet" href="ds/bsm/components/bundle.css">
+<script src="ds/bsm/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:var(--brass-ink)}a:hover{color:var(--ink)}
+a.bsm-btn{text-decoration:none}
+</style>
+</helmet>
+<div data-theme="{{theme}}" style="width: 390px; height: 844px; position: relative; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--font-sans); display: flex; flex-direction: column;">
+  <header style="padding: 20px 16px 12px; display: flex; flex-direction: column; gap: 14px;">
+    <x-import component-from-global-scope="BSM.Stepper" current="{{step}}"></x-import>
+    <h1 style="margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 32px; line-height: 36px;">¿Qué servicio deseas?</h1>
+  </header>
+
+  <sc-if value="{{ok}}" hint-placeholder-val="{{yes}}">
+    <div role="group" aria-label="Filtrar por tipo" style="display: flex; gap: 8px; padding: 0 16px 12px; overflow: hidden;">
+      <x-import component-from-global-scope="BSM.Chip" selected="{{yes}}">Todos</x-import>
+      <x-import component-from-global-scope="BSM.Chip" icon="scissors">Corte</x-import>
+      <x-import component-from-global-scope="BSM.Chip" icon="navaja">Afeitado</x-import>
+      <x-import component-from-global-scope="BSM.Chip" icon="barba">Barba</x-import>
+      <x-import component-from-global-scope="BSM.Chip" icon="layers">Combo</x-import>
+    </div>
+    <div role="radiogroup" aria-label="Servicios" style="display: flex; flex-direction: column; gap: 12px; padding: 4px 16px 0;">
+      <x-import component-from-global-scope="BSM.ServiceCard" name="Corte clásico" type="Corte" description="Tijera y máquina, lavado y peinado." duration="{{d30}}" price="{{p35}}"></x-import>
+      <x-import component-from-global-scope="BSM.ServiceCard" name="Corte + barba" type="Combo" description="Corte completo y perfilado de barba con toalla caliente." duration="{{d50}}" price="{{p50}}" tag="Popular" selected="{{yes}}"></x-import>
+      <x-import component-from-global-scope="BSM.ServiceCard" name="Afeitado con toalla caliente" type="Afeitado" description="Navaja, toalla caliente y bálsamo." duration="{{d30}}" price="{{p30}}"></x-import>
+      <x-import component-from-global-scope="BSM.ServiceCard" name="Perfilado de barba" type="Barba" description="Contorno con navaja y máquina." duration="{{d20}}" price="{{p20}}"></x-import>
+    </div>
+    <div style="position: absolute; left: 0; right: 0; bottom: 72px; display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--surface); border-top: 1px solid var(--line); box-shadow: var(--shadow-sm);">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+        <span style="font-size: 15px; line-height: 20px; font-weight: 600;">Corte + barba</span>
+        <span style="font-size: 13px; line-height: 18px; color: var(--ink-muted); font-variant-numeric: tabular-nums;">50 min · $50.000</span>
+      </div>
+      <a href="Reserva-2-Barbero.dc.html" class="bsm-btn bsm-btn-primary bsm-btn-lg">Continuar</a>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isError}}" hint-placeholder-val="{{no}}">
+    <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 0 16px 96px;">
+      <x-import component-from-global-scope="BSM.EmptyState" tone="error" icon="wifi-off" title="No pudimos cargar los servicios" body="Revisa tu conexión e inténtalo de nuevo." action-label="Reintentar" action-icon="refresh-cw" action-variant="secondary"></x-import>
+    </div>
+  </sc-if>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0;">
+    <x-import component-from-global-scope="BSM.BottomNav" active="Reservar"></x-import>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false,"section":"Vista"},"estado":{"editor":"enum","options":["normal","error"],"default":"normal","section":"Vista"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const estado = this.props.estado ?? 'normal';
+    return {
+      theme: this.props.dark ? 'dark' : 'light',
+      step: 1, yes: true, no: false,
+      ok: estado !== 'error', isError: estado === 'error',
+      d20: 20, d30: 30, d50: 50,
+      p20: 20000, p30: 30000, p35: 35000, p50: 50000
+    };
+  }
+}
+</script>
+</body>
+</html>

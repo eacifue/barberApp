@@ -3,12 +3,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { servicioService } from '../services/servicioService'
 import type { ServicioUpsertInput } from '../types/servicio'
 
-export function useServicios(barberiaId: string) {
+export function useServicios(barberiaId: string, incluirInactivos = false) {
   const queryClient = useQueryClient()
 
   const serviciosQuery = useQuery({
-    queryKey: ['servicios', barberiaId],
-    queryFn: () => servicioService.getByBarberia(barberiaId),
+    queryKey: ['servicios', barberiaId, incluirInactivos],
+    queryFn: () => servicioService.getByBarberia(barberiaId, incluirInactivos),
     enabled: Boolean(barberiaId),
   })
 

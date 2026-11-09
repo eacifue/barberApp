@@ -1,301 +1,306 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import { Avatar, Banner, Button, Icon, Input, Modal, Select, Skeleton, SlotGrid, cx, formatCOP, formatLongDate, formatTime } from '../../components/bsm'
 import { useBarberos } from '../../hooks/useBarberos'
 import { useClientes } from '../../hooks/useClientes'
 import { useTenantBarberia } from '../../hooks/useTenantBarberia'
 import { citaService } from '../../services/citaService'
-import type { SlotDisponible } from '../../types/cita'
-import { Button } from '../../components/ui/Button'
-import { FormInput } from '../../components/ui/FormInput'
-import { FormSelect } from '../../components/ui/FormSelect'
-import { Modal } from '../../components/ui/Modal'
+import { toast } from '../../stores/toastStore'
+import type { Cita } from '../../types/cita'
+import { hhmm, mensajeDeError, nombreCliente, parseIso, todayIso } from './agendaUtils'
+import { invalidarCitas } from './invalidarCitas'
 
-type CreateCitaForm = {
-  barberoId: string
-  servicioId: string
-  fechaCita: string
-  horaInicio: string
-  clienteId: string
-  notas: string
-  precioFinal: number
-}
-
-type CreateCitaModalProps = {
+type Props = {
   open: boolean
   onClose: () => void
-  /** Se llama tras crear la cita con éxito, además de cerrar el modal — útil para refrescos propios del llamador. */
+  /** Se llama tras crear la cita, además de cerrar el modal. */
   onCreated?: () => void
   initialBarberoId?: string
   initialServicioId?: string
   initialFecha?: string
   initialHora?: string
-}
-
-function todayIso() {
-  return new Date().toISOString().slice(0, 10)
-}
-
-function emptyForm(overrides: Partial<CreateCitaForm> = {}): CreateCitaForm {
-  return {
-    barberoId: '',
-    servicioId: '',
-    fechaCita: todayIso(),
-    horaInicio: '',
-    clienteId: '',
-    notas: '',
-    precioFinal: 0,
-    ...overrides,
-  }
+  /** Precarga el cliente (p. ej. desde su ficha). */
+  initialClienteId?: string
+  /** Reprogramar: precarga cliente, barbero y servicio; al crear, cancela esta cita. */
+  reprogramarDe?: Cita | null
 }
 
 /**
- * Formulario de creación de cita compartido por Agenda, Disponibilidad y el
- * historial de citas. Antes existían dos implementaciones independientes de
- * este mismo flujo (CitasList y DisponibilidadPage) que ya habían empezado a
- * divergir entre sí — ver auditoría UI/UX, hallazgo C-02.
+ * Nueva cita para clientes que llaman o llegan sin reserva: barbero, servicio,
+ * fecha, horas libres y búsqueda de cliente (design/pantallas/panel-web/Agenda-nueva-cita).
+ * Compartido por Agenda y Disponibilidad.
  */
-export function CreateCitaModal({
-  open,
-  onClose,
-  onCreated,
-  initialBarberoId,
-  initialServicioId,
-  initialFecha,
-  initialHora,
-}: CreateCitaModalProps) {
+export function CreateCitaModal({ open, onClose, onCreated, initialBarberoId, initialServicioId, initialFecha, initialHora, initialClienteId, reprogramarDe }: Props) {
   const queryClient = useQueryClient()
   const { effectiveBarberiaId } = useTenantBarberia()
-  const { clientesQuery } = useClientes()
-
-  const clientes = clientesQuery.data ?? []
-
-  const [form, setForm] = useState<CreateCitaForm>(() => emptyForm())
-  const [searchCliente, setSearchCliente] = useState('')
-  const [slotOptions, setSlotOptions] = useState<SlotDisponible[]>([])
-  const [loadingSlots, setLoadingSlots] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  // Cada vez que se abre, se re-siembra con lo que traiga el llamador:
-  // Disponibilidad pre-llena barbero/fecha/hora desde el slot en el que se
-  // hizo clic; Agenda e Historial lo abren en blanco.
-  useEffect(() => {
-    if (!open) return
-    setForm(
-      emptyForm({
-        barberoId: initialBarberoId ?? '',
-        servicioId: initialServicioId ?? '',
-        fechaCita: initialFecha ?? todayIso(),
-        horaInicio: initialHora ?? '',
-      }),
-    )
-    setSearchCliente('')
-    setSlotOptions([])
-    setError(null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open])
-
   const { barberosQuery } = useBarberos(effectiveBarberiaId ?? '')
-  const barberos = barberosQuery.data ?? []
+  const { clientesQuery } = useClientes()
+  const barberos = useMemo(() => (barberosQuery.data ?? []).filter((b) => b.activo), [barberosQuery.data])
+  const clientes = useMemo(() => (clientesQuery.data ?? []).filter((c) => c.activo), [clientesQuery.data])
 
-  useEffect(() => {
-    if (!open || barberos.length === 0) return
-    if (!barberos.find((b) => b.id === form.barberoId)) {
-      setForm((prev) => ({ ...prev, barberoId: barberos[0].id, servicioId: '', horaInicio: '' }))
-    }
-  }, [open, barberos, form.barberoId])
+  const [barberoId, setBarberoId] = useState('')
+  const [servicioId, setServicioId] = useState('')
+  const [fecha, setFecha] = useState(todayIso())
+  const [hora, setHora] = useState('')
+  const [clienteId, setClienteId] = useState('')
+  const [busqueda, setBusqueda] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [dirty, setDirty] = useState(false)
 
-  const selectedBarbero = useMemo(
-    () => barberos.find((barbero) => barbero.id === form.barberoId),
-    [barberos, form.barberoId],
-  )
-  const servicios = useMemo(() => selectedBarbero?.servicios ?? [], [selectedBarbero])
-
-  useEffect(() => {
-    if (!open || servicios.length === 0) return
-    if (!servicios.find((s) => s.id === form.servicioId)) {
-      const servicio = servicios[0]
-      setForm((prev) => ({ ...prev, servicioId: servicio.id, precioFinal: servicio.precio ?? 0, horaInicio: '' }))
-    }
-  }, [open, servicios, form.servicioId])
-
-  const loadSlots = async () => {
-    if (!form.barberoId || !form.servicioId || !form.fechaCita) return
-    setLoadingSlots(true)
-    setError(null)
-    try {
-      const disponibilidad = await citaService.getDisponibilidad(form.barberoId, form.servicioId, form.fechaCita)
-      const available = (disponibilidad.slots ?? []).filter((slot) => slot.disponible && !slot.bloqueadoPorRedis)
-      setSlotOptions(available)
-      setForm((prev) => {
-        const stillValid = available.some((slot) => slot.horaInicio === prev.horaInicio)
-        return stillValid ? prev : { ...prev, horaInicio: available[0]?.horaInicio ?? '' }
-      })
-    } catch {
-      setError('No fue posible cargar slots disponibles para el barbero.')
-      setSlotOptions([])
-    } finally {
-      setLoadingSlots(false)
+  // Cada vez que se abre se re-siembra con lo que traiga quien lo abre
+  // (ajuste durante el render, sin efecto: https://react.dev/learn/you-might-not-need-an-effect).
+  const [abiertoAntes, setAbiertoAntes] = useState(false)
+  if (open !== abiertoAntes) {
+    setAbiertoAntes(open)
+    if (open) {
+      setBarberoId(reprogramarDe?.barbero.id ?? initialBarberoId ?? '')
+      setServicioId(reprogramarDe?.servicio.id ?? initialServicioId ?? '')
+      setFecha(initialFecha ?? todayIso())
+      setHora(initialHora ?? '')
+      setClienteId(reprogramarDe?.cliente.id ?? initialClienteId ?? '')
+      setBusqueda('')
+      setError(null)
+      setDirty(false)
     }
   }
 
-  useEffect(() => {
-    if (open && form.barberoId && form.servicioId && form.fechaCita) {
-      void loadSlots()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, form.barberoId, form.servicioId, form.fechaCita])
+  // Barbero y servicio efectivos: los elegidos o, si no hay, el primero disponible.
+  const barbero = barberos.find((b) => b.id === barberoId) ?? barberos[0] ?? null
+  const barberoEf = barbero?.id ?? ''
+  const servicios = useMemo(() => barbero?.servicios ?? [], [barbero])
+  const servicio = servicios.find((s) => s.id === servicioId) ?? servicios[0] ?? null
+  const servicioEf = servicio?.id ?? ''
 
-  const clienteOptions = useMemo(() => {
-    const normalized = searchCliente.toLowerCase().trim()
-    const filtered = normalized
-      ? clientes.filter((c) => `${c.nombre} ${c.apellido} ${c.correo}`.toLowerCase().includes(normalized))
-      : clientes
-    return filtered.map((cliente) => ({
-      value: cliente.id,
-      label: `${cliente.nombre} ${cliente.apellido} - ${cliente.correo}`,
-    }))
-  }, [clientes, searchCliente])
+  const slotsQuery = useQuery({
+    queryKey: ['agenda-nueva-slots', barberoEf, servicioEf, fecha],
+    enabled: open && Boolean(barberoEf && servicioEf && fecha),
+    queryFn: () => citaService.getDisponibilidad(barberoEf, servicioEf, fecha),
+  })
+  const libres = useMemo(
+    () => (slotsQuery.data?.slots ?? []).filter((s) => s.disponible && !s.bloqueadoPorRedis).map((s) => ({ time: hhmm(s.horaInicio) })),
+    [slotsQuery.data],
+  )
+
+  const encontrados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase()
+    if (!q) return []
+    const digits = q.replace(/\D/g, '')
+    return clientes
+      .filter((c) => `${c.nombre} ${c.apellido} ${c.correo}`.toLowerCase().includes(q) || (digits.length >= 3 && c.telefono.replace(/\D/g, '').includes(digits)))
+      .slice(0, 6)
+  }, [busqueda, clientes])
+  const cliente = clientes.find((c) => c.id === clienteId) ?? null
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const bloqueado = await citaService.bloquearSlot(
-        form.barberoId,
-        form.servicioId,
-        form.fechaCita,
-        form.horaInicio,
-        form.clienteId,
-      )
-      if (!bloqueado.exitoso || !bloqueado.tokenBloqueo) {
-        throw new Error(bloqueado.mensajeError ?? 'No se pudo bloquear el slot seleccionado.')
+      const bloqueo = await citaService.bloquearSlot(barberoEf, servicioEf, fecha, hora, clienteId)
+      if (!bloqueo.exitoso || !bloqueo.tokenBloqueo) {
+        throw new Error(bloqueo.mensajeError ?? 'Ese horario acaba de ocuparse. Elige otro.')
       }
-      return citaService.create({
-        clienteId: form.clienteId,
-        barberoId: form.barberoId,
-        servicioId: form.servicioId,
-        fechaCita: form.fechaCita,
-        horaInicio: form.horaInicio,
-        tokenRedisBloqueo: bloqueado.tokenBloqueo,
-      })
+      const nueva = await citaService.create({ clienteId, barberoId: barberoEf, servicioId: servicioEf, fechaCita: fecha, horaInicio: hora, tokenRedisBloqueo: bloqueo.tokenBloqueo })
+      let anteriorCancelada = true
+      if (reprogramarDe) {
+        try {
+          await citaService.cancel(reprogramarDe.id, { citaId: reprogramarDe.id, motivo: 'Reprogramada desde la agenda' })
+        } catch {
+          anteriorCancelada = false
+        }
+      }
+      return { nueva, anteriorCancelada }
     },
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['citas-admin'] }),
-        queryClient.invalidateQueries({ queryKey: ['appointments-scheduler'] }),
-        queryClient.invalidateQueries({ queryKey: ['appointments-anchor'] }),
-        queryClient.invalidateQueries({ queryKey: ['appointments-history'] }),
-        queryClient.invalidateQueries({ queryKey: ['disponibilidad-week'] }),
-        queryClient.invalidateQueries({ queryKey: ['dashboard-citas-hoy'] }),
-        queryClient.invalidateQueries({ queryKey: ['dashboard-citas-mes'] }),
-      ])
+    onSuccess: async ({ anteriorCancelada }) => {
+      await invalidarCitas(queryClient)
+      if (reprogramarDe && !anteriorCancelada) {
+        toast.warning('La nueva cita quedó creada, pero no pudimos cancelar la anterior. Cancélala desde la agenda.')
+      } else {
+        toast.success(reprogramarDe ? 'Cita reprogramada' : 'Cita creada')
+      }
       onCreated?.()
       onClose()
     },
     onError: (err) => {
-      setError(err instanceof Error ? err.message : 'No se pudo crear la cita. Verifica permisos y datos del formulario.')
+      setError(mensajeDeError(err, 'No pudimos crear la cita. Revisa los datos e inténtalo de nuevo.'))
+      void queryClient.invalidateQueries({ queryKey: ['agenda-nueva-slots'] })
     },
   })
 
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setError(null)
+  const faltante = !barberoEf ? 'Elige un barbero.' : !servicioEf ? 'Elige un servicio.' : !hora ? 'Elige una hora de inicio.' : !clienteId ? 'Elige el cliente.' : null
 
-    if (!form.barberoId || !form.servicioId || !form.fechaCita || !form.horaInicio || !form.clienteId) {
-      setError('Completa barbero, servicio, fecha, hora y cliente.')
+  const guardar = () => {
+    setError(null)
+    if (faltante) {
+      setError(faltante)
       return
     }
-
     createMutation.mutate()
   }
 
+  const saving = createMutation.isPending
+  const titulo = reprogramarDe ? `Reprogramar cita de ${nombreCliente(reprogramarDe)}` : 'Nueva cita'
+
   return (
-    <Modal open={open} onClose={onClose} title="Crear cita" size="lg">
-      <form className="space-y-4" onSubmit={onSubmit}>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <FormSelect
-            label="Barbero"
-            required
-            value={form.barberoId}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, barberoId: e.target.value, servicioId: '', horaInicio: '' }))
-            }
-            options={barberos.map((barbero) => ({ value: barbero.id, label: `${barbero.nombre} ${barbero.apellido}` }))}
-          />
-          <FormSelect
-            label="Servicio"
-            required
-            value={form.servicioId}
-            onChange={(e) => {
-              const servicioId = e.target.value
-              const servicio = servicios.find((item) => item.id === servicioId)
-              setForm((prev) => ({ ...prev, servicioId, horaInicio: '', precioFinal: servicio?.precio ?? 0 }))
-            }}
-            options={servicios.map((servicio) => ({
-              value: servicio.id,
-              label: `${servicio.nombre} (${servicio.duracionMinutos} min)`,
-            }))}
-          />
-          <FormInput
-            label="Fecha"
-            type="date"
-            required
-            value={form.fechaCita}
-            onChange={(e) => setForm((prev) => ({ ...prev, fechaCita: e.target.value, horaInicio: '' }))}
-          />
-          <FormSelect
-            label="Hora inicio"
-            required
-            value={form.horaInicio}
-            onChange={(e) => setForm((prev) => ({ ...prev, horaInicio: e.target.value }))}
-            options={
-              slotOptions.length > 0
-                ? slotOptions.map((slot) => ({ value: slot.horaInicio, label: `${slot.horaInicio} - ${slot.horaFin}` }))
-                : [{ value: '', label: loadingSlots ? 'Cargando slots...' : 'Sin slots disponibles' }]
-            }
-          />
-          <FormInput
-            label="Buscar cliente (nombre/correo)"
-            value={searchCliente}
-            onChange={(e) => setSearchCliente(e.target.value)}
-          />
-          <div className="md:col-span-2">
-            <FormSelect
-              label="Cliente"
-              required
-              value={form.clienteId}
-              onChange={(e) => setForm((prev) => ({ ...prev, clienteId: e.target.value }))}
-              options={
-                clienteOptions.length > 0 ? clienteOptions : [{ value: '', label: 'No hay clientes para esa busqueda' }]
-              }
-            />
-          </div>
-          <label className="md:col-span-2 flex flex-col gap-1.5">
-            <span className="form-label text-[10px] uppercase tracking-[0.08em]">Notas (opcional)</span>
-            <textarea
-              value={form.notas}
-              onChange={(e) => setForm((prev) => ({ ...prev, notas: e.target.value }))}
-              className="form-control min-h-20 rounded-md px-3 py-2 outline-none"
-            />
-          </label>
-          <FormInput
-            label="Precio final"
-            value={String(form.precioFinal)}
-            readOnly
-            hint="Auto calculado desde el servicio"
-          />
-        </div>
-
-        {error ? <p className="form-message-error text-sm">{error}</p> : null}
-
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={onClose}>
+    <Modal
+      open={open}
+      onClose={onClose}
+      dirty={dirty && !saving}
+      size="lg"
+      title={titulo}
+      subtitle={reprogramarDe ? 'Elige el nuevo horario; la cita anterior se cancela al guardar.' : 'Para clientes que llaman o llegan sin reserva.'}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} disabled={saving}>
             Cancelar
           </Button>
-          <Button type="submit" loading={createMutation.isPending}>
-            Crear cita
+          <Button icon={reprogramarDe ? 'calendar-clock' : 'calendar-plus'} onClick={guardar} loading={saving}>
+            {saving ? 'Guardando…' : reprogramarDe ? 'Reprogramar cita' : 'Crear cita'}
           </Button>
-        </div>
-      </form>
+        </>
+      }
+    >
+      {error && (
+        <Banner tone="danger" title="No pudimos guardar la cita">
+          {error}
+        </Banner>
+      )}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Select
+          label="Barbero"
+          value={barberoEf}
+          disabled={Boolean(reprogramarDe)}
+          onChange={(e) => {
+            setBarberoId(e.target.value)
+            setServicioId('')
+            setHora('')
+            setDirty(true)
+          }}
+          options={barberos.map((b) => ({ value: b.id, label: `${b.nombre} ${b.apellido}`.trim() }))}
+          placeholder={barberos.length ? undefined : 'Cargando barberos…'}
+        />
+        <Select
+          label="Servicio"
+          value={servicioEf}
+          disabled={Boolean(reprogramarDe)}
+          onChange={(e) => {
+            setServicioId(e.target.value)
+            setHora('')
+            setDirty(true)
+          }}
+          options={servicios.map((s) => ({ value: s.id, label: s.nombre }))}
+          placeholder={barbero && !servicios.length ? 'Este barbero no tiene servicios' : undefined}
+        />
+      </div>
+      <Input
+        label="Fecha"
+        type="date"
+        icon="calendar"
+        min={todayIso()}
+        value={fecha}
+        hint={fecha ? formatLongDate(parseIso(fecha)) : undefined}
+        onChange={(e) => {
+          setFecha(e.target.value)
+          setHora('')
+          setDirty(true)
+        }}
+      />
+      <div className="bsm-field">
+        <span className="bsm-field-label">Hora de inicio{barbero ? ` · horarios libres de ${barbero.nombre}` : ''}</span>
+        {slotsQuery.isLoading ? (
+          <Skeleton variant="slots" label="Cargando horarios" />
+        ) : slotsQuery.isError ? (
+          <Banner tone="danger" actionLabel="Reintentar" onAction={() => void slotsQuery.refetch()}>
+            No pudimos cargar los horarios. Revisa tu conexión e inténtalo de nuevo.
+          </Banner>
+        ) : libres.length === 0 ? (
+          <p className="text-body text-ink-muted">No hay horarios libres este día. Prueba con otra fecha.</p>
+        ) : (
+          <SlotGrid
+            label="Hora de inicio"
+            slots={libres}
+            selected={hora}
+            onSelect={(s) => {
+              setHora(s.time)
+              setDirty(true)
+            }}
+          />
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {cliente ? (
+          <div className="bsm-field">
+            <span className="bsm-field-label">Cliente</span>
+            <div className="flex items-center gap-3 rounded-md border border-line-strong bg-surface px-3 py-2">
+              <Avatar name={`${cliente.nombre} ${cliente.apellido}`} src={cliente.fotoUrl} size={32} />
+              <span className="flex min-w-0 flex-1 flex-col">
+                <strong className="text-label-sm text-ink">{`${cliente.nombre} ${cliente.apellido}`.trim()}</strong>
+                <span className="truncate text-caption text-ink-muted">
+                  {[cliente.correo, cliente.telefono].filter(Boolean).join(' · ')}
+                </span>
+              </span>
+              {!reprogramarDe && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setClienteId('')
+                    setDirty(true)
+                  }}
+                >
+                  Cambiar
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <>
+            <Input
+              label="Cliente"
+              icon="search"
+              placeholder="Busca por nombre, correo o teléfono"
+              value={busqueda}
+              onChange={(e) => {
+                setBusqueda(e.target.value)
+                setDirty(true)
+              }}
+              hint={busqueda.trim() && !encontrados.length ? 'No encontramos clientes con esa búsqueda.' : undefined}
+            />
+            {encontrados.length > 0 && (
+              <div role="listbox" aria-label="Clientes encontrados" className="overflow-hidden rounded-md border border-line bg-surface">
+                {encontrados.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    role="option"
+                    aria-selected={false}
+                    className={cx('flex w-full items-center gap-3 border-b border-line px-3 py-2 text-left last:border-b-0 hover:bg-surface-sunken focus-visible:shadow-focus')}
+                    onClick={() => {
+                      setClienteId(c.id)
+                      setBusqueda('')
+                    }}
+                  >
+                    <Avatar name={`${c.nombre} ${c.apellido}`} src={c.fotoUrl} size={32} />
+                    <span className="flex min-w-0 flex-col">
+                      <strong className="text-label-sm text-ink">{`${c.nombre} ${c.apellido}`.trim()}</strong>
+                      <span className="truncate text-caption text-ink-muted">
+                        {[c.correo, c.telefono, `${c.totalCitas} ${c.totalCitas === 1 ? 'cita' : 'citas'}`].filter(Boolean).join(' · ')}
+                      </span>
+                    </span>
+                    <Icon name="chevron-right" size={16} className="ml-auto text-ink-muted" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {servicio && (
+        <p className="text-body text-ink-muted">
+          Precio de {barbero?.nombre} para este servicio: <strong className="tnum text-ink">{formatCOP(servicio.precio)}</strong> · Pago en el local
+          {hora && fecha ? ` · ${formatLongDate(parseIso(fecha))}, ${formatTime(hora)}` : ''}
+        </p>
+      )}
     </Modal>
   )
 }
