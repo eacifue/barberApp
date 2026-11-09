@@ -14,6 +14,8 @@ namespace Barberia.Application.Services;
 
 public class AuthService : IAuthService
 {
+    public const string BarberiaDesactivada = "Tu barbería está desactivada. Comunícate con el administrador.";
+
     private readonly IBarberiaDbContext dbContext;
     private readonly IJwtTokenGenerator jwtTokenGenerator;
     private readonly ICurrentUserService currentUserService;
@@ -93,6 +95,11 @@ public class AuthService : IAuthService
         }
 
         var cliente = validas[0];
+        if (cliente.BarberiaId is { } suBarberia
+            && !await dbContext.Barberias.AsNoTracking().AnyAsync(x => x.Id == suBarberia && x.Activa, cancellationToken))
+        {
+            throw new UnauthorizedException(BarberiaDesactivada);
+        }
 
         return BuildAuthResponse(cliente);
     }

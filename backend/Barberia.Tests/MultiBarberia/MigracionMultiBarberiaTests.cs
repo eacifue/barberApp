@@ -13,7 +13,7 @@ namespace Barberia.Tests.MultiBarberia;
 /// <summary>Un Postgres real (el mismo de docker-compose) para toda la clase; cada prueba usa su propia base.</summary>
 public sealed class PostgresFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer container = new PostgreSqlBuilder().WithImage("postgres:17-alpine").Build();
+    private readonly PostgreSqlContainer container = new PostgreSqlBuilder("postgres:17-alpine").Build();
 
     public Task InitializeAsync() => container.StartAsync();
 
