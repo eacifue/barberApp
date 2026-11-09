@@ -51,7 +51,10 @@ export function UsersPage() {
     return b ? `${b.nombre} ${b.apellido}` : null
   }
   const vinculados = new Set(equipo.filter((u) => u.activo && u.barberoId && (editando === 'nuevo' || u.id !== editando?.id)).map((u) => u.barberoId))
-  const rolesPermitidos: Rol[] = isAdminBarberia ? ['Barbero'] : ['Admin', 'AdministradorBarberia', 'Barbero']
+  // El SuperAdmin («Administrador») es uno solo y no es de ninguna barbería: no se crea ni se asigna
+  // desde aquí; su rol solo se muestra al ver su propia cuenta.
+  const editandoSuperAdmin = editando !== null && editando !== 'nuevo' && editando.rol === 'Admin'
+  const rolesPermitidos: Rol[] = isAdminBarberia ? ['Barbero'] : editandoSuperAdmin ? ['Admin'] : ['AdministradorBarberia', 'Barbero']
   const puedeGestionar = (u: UserDto) => !(isAdminBarberia && u.rol !== 'Barbero')
 
   const abrir = (u: UserDto | 'nuevo') => {
