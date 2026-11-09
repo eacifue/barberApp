@@ -10,6 +10,9 @@ class ApiEndpoints {
 
   static const String adminBarberias = '/admin/barberias';
   static const String adminClientes = '/admin/clientes';
+
+  /// Clientes de la barbería en curso; sirve al SuperAdmin y al administrador de barbería.
+  static const String clientes = '/clientes';
   static const String barberias = '/barberias';
 
   static String adminBarberiaById(String id) => '/admin/barberias/$id';

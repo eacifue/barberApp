@@ -33,7 +33,7 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final p = context.palette;
     final nombre = ref.watch(_nombreUsuarioProvider).valueOrNull;
-    final isAdmin = ref.watch(authRoleProvider).maybeWhen(data: JwtUtils.isAdminRole, orElse: () => false);
+    final isAdmin = ref.watch(authRoleProvider).maybeWhen(data: JwtUtils.puedeAdministrar, orElse: () => false);
     final barbershopAsync = ref.watch(myBarbershopProvider);
     final barbershop = barbershopAsync.valueOrNull;
 

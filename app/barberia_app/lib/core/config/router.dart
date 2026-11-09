@@ -71,7 +71,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (isLoggedIn && isAdminRoute) {
         final role = JwtUtils.tryGetRole(token);
-        if (!JwtUtils.isAdminRole(role)) {
+        if (!JwtUtils.puedeAdministrar(role)) {
           return '/dashboard';
         }
       }
