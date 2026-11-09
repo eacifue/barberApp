@@ -117,6 +117,11 @@ public class ServicioService : IServicioService
 
     public async Task<List<ServicioDto>> GetByBarberoAsync(Guid barberoId, CancellationToken cancellationToken)
     {
+        if (!await dbContext.Barberos.AnyAsync(x => x.Id == barberoId, cancellationToken))
+        {
+            throw new NotFoundException("El barbero no existe.");
+        }
+
         var servicios = await dbContext.BarberoServicios
             .AsNoTracking()
             .Where(x => x.BarberoId == barberoId && x.Activo && x.Servicio.Activo)
@@ -141,7 +146,6 @@ public class ServicioService : IServicioService
     public async Task<ServicioDto> ActivarAsync(Guid id, CancellationToken cancellationToken)
     {
         var servicio = await dbContext.Servicios
-            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         if (servicio is null)

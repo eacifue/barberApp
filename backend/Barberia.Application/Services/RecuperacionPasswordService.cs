@@ -104,15 +104,21 @@ public sealed class RecuperacionPasswordService(
             cancellationToken);
     }
 
-    /// <summary>La cuenta de esta barbería con ese correo, o la del SuperAdmin si no hay otra.</summary>
+    /// <summary>
+    /// Con barbería: la cuenta de esa barbería, o la del SuperAdmin. Sin barbería (desde el
+    /// panel): solo si el correo es de una única cuenta; si hay varias no se adivina.
+    /// </summary>
     private async Task<Cliente?> BuscarCuentaAsync(string correo, CancellationToken cancellationToken)
     {
-        var barberiaId = await barberiaContexto.ObtenerIdAsync(cancellationToken);
-        return await dbContext.Clientes
+        var barberiaId = await barberiaContexto.ObtenerIdSiHayAsync(cancellationToken);
+        var cuentas = await dbContext.Clientes
             .IgnoreQueryFilters()
-            .Where(x => x.Correo == correo && x.Activo && (x.BarberiaId == barberiaId || x.BarberiaId == null))
+            .Where(x => x.Correo == correo && x.Activo && (barberiaId == null || x.BarberiaId == barberiaId || x.BarberiaId == null))
             .OrderBy(x => x.BarberiaId == null)
-            .FirstOrDefaultAsync(cancellationToken);
+            .Take(2)
+            .ToListAsync(cancellationToken);
+
+        return barberiaId is null && cuentas.Count > 1 ? null : cuentas.FirstOrDefault();
     }
 
     private DateTime Ahora() => timeProvider.GetUtcNow().UtcDateTime;

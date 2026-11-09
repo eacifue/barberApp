@@ -24,6 +24,8 @@ public sealed class AsignacionBarberiaTests : GestionTestBase
     private sealed class FakeBarberiaContexto(Guid barberiaId) : IBarberiaContexto
     {
         public Task<Guid> ObtenerIdAsync(CancellationToken cancellationToken) => Task.FromResult(barberiaId);
+
+        public Task<Guid?> ObtenerIdSiHayAsync(CancellationToken cancellationToken) => Task.FromResult<Guid?>(barberiaId);
     }
 
     private readonly Guid barberiaA = Guid.NewGuid();

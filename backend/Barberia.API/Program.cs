@@ -209,3 +209,6 @@ static async Task InitializeDatabaseAsync(WebApplication app)
         }
     }
 }
+
+// Visible para WebApplicationFactory en las pruebas de integración.
+public partial class Program;

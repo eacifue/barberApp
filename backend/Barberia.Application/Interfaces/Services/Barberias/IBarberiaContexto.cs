@@ -8,4 +8,7 @@ namespace Barberia.Application.Interfaces.Services.Barberias;
 public interface IBarberiaContexto
 {
     Task<Guid> ObtenerIdAsync(CancellationToken cancellationToken);
+
+    /// <summary>La barbería si la petición trae una; null si no (por ejemplo, el login del panel).</summary>
+    Task<Guid?> ObtenerIdSiHayAsync(CancellationToken cancellationToken);
 }
