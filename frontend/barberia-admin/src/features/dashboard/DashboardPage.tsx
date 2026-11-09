@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -15,6 +15,8 @@ import type { Cita } from '../../types/cita'
 import { addDaysIso, cuentaParaIngresos, esDiaDescanso, hhmm, mensajeDeError, minutesOf, mondayOf, nombreBarbero, nombreCliente, nowHHMM, parseIso, todayIso } from '../citas/agendaUtils'
 import { invalidarCitas } from '../citas/invalidarCitas'
 import { BarList, ColumnChart, LineChart, type ColumnDatum } from './charts'
+import { DashboardConsolidado } from './DashboardConsolidado'
+import { Panel } from './Panel'
 
 const SEMANAS = 8
 const WEEKDAY_SHORT = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
@@ -27,23 +29,14 @@ function millones(n: number): string {
   return `$${Math.round(n / 1000)} mil`
 }
 
-function Panel({ title, subtitle, action, children, className }: { title: string; subtitle?: string; action?: ReactNode; children: ReactNode; className?: string }) {
-  return (
-    <section className={`bsm-card flex-col gap-4 ${className ?? ''}`} aria-label={title}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-title text-ink">{title}</h3>
-          {subtitle && <p className="text-body text-ink-muted">{subtitle}</p>}
-        </div>
-        {action}
-      </div>
-      {children}
-    </section>
-  )
+/** SuperAdmin en «Todas las barberías» ve la comparación; los demás, su barbería. */
+export function DashboardPage() {
+  const { todas } = useTenantBarberia()
+  return todas ? <DashboardConsolidado /> : <DashboardBarberia />
 }
 
 /** Hoy en la barbería: KPI, gráficas y próximas citas (design/pantallas/panel-web/Dashboard). */
-export function DashboardPage() {
+function DashboardBarberia() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const rol = useAuthStore((s) => s.usuario?.rol ?? '')
@@ -56,7 +49,7 @@ export function DashboardPage() {
 
   const { effectiveBarberiaId } = useTenantBarberia()
   const { barberiasQuery } = useBarberias()
-  const barberia = barberiasQuery.data?.[0]
+  const barberia = barberiasQuery.data?.find((b) => b.id === effectiveBarberiaId)
   const { barberosQuery } = useBarberos(esBarbero ? '' : (effectiveBarberiaId ?? ''))
   const citasQuery = useQuery({
     queryKey: ['dashboard', 'citas', desde, finMes],
@@ -99,7 +92,8 @@ export function DashboardPage() {
   const estimadoHoy = activasHoy.reduce((s, c) => s + c.precioFinal, 0)
   const cobradoHoy = citasHoy.filter((c) => c.estado === 'Completada').reduce((s, c) => s + c.precioFinal, 0)
   const disponibles = barberos.filter((b) => b.disponible).length
-  const clientesActivos = (clientesQuery.data ?? []).filter((c) => c.activo).length
+  // Igual que la lista de Clientes: las cuentas del personal no son clientes.
+  const clientesActivos = (clientesQuery.data ?? []).filter((c) => c.activo && (!c.rol || c.rol === 'Cliente')).length
   const clientesConCitaMes = new Set(citas.filter((c) => c.fechaCita.slice(0, 7) === hoy.slice(0, 7)).map((c) => c.cliente.id)).size
 
   /* Ingresos por día: últimos 14 días; cobrado = completadas, hoy = estimado. */

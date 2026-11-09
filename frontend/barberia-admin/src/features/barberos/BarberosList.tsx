@@ -45,7 +45,7 @@ export function BarberosList() {
   const { barberosQuery, removeMutation } = useBarberos(barberiaId, true)
   const { serviciosQuery } = useServicios(barberiaId)
   const { barberiasQuery } = useBarberias()
-  const barberia = barberiasQuery.data?.find((b) => b.id === barberiaId) ?? barberiasQuery.data?.[0]
+  const barberia = barberiasQuery.data?.find((b) => b.id === barberiaId)
   const hoy = todayIso()
   const citasHoyQuery = useQuery({
     queryKey: ['barberos', 'citas-hoy', hoy],

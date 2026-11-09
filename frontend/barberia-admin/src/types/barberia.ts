@@ -23,3 +23,26 @@ export interface Barberia {
 }
 
 export type BarberiaUpsertInput = Omit<Barberia, 'id' | 'totalBarberos'>
+
+/** Una fila del resumen del SuperAdmin: el mes en curso de cada barbería (hora de Colombia). */
+export interface ResumenBarberia {
+  barberiaId: string
+  nombre: string
+  activa: boolean
+  /** Sin canceladas ni «no asistió». */
+  citasMes: number
+  /** Cobrado: citas completadas. */
+  ingresosMes: number
+  clientes: number
+  barberosActivos: number
+}
+
+export interface NuevoAdministrador {
+  nombre: string
+  apellido: string
+  telefono: string
+  correo: string
+  password: string
+}
+
+export type CrearBarberiaInput = BarberiaUpsertInput & { administrador: NuevoAdministrador }

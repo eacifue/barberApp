@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+import { useTenantStore } from './tenantStore'
+
 export type AuthUsuario = {
   id: string
   nombre: string
@@ -36,6 +38,7 @@ export const useAuthStore = create<AuthState>()(
       },
       logout: () => {
         set({ token: null, usuario: null })
+        useTenantStore.getState().elegir(null)
         localStorage.removeItem('token')
         localStorage.removeItem('user')
         localStorage.removeItem('role')
