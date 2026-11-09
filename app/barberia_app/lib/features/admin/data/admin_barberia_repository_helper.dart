@@ -1,11 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'admin_repository.dart';
+import '../../barberias/presentation/providers/barberia_elegida_provider.dart';
 
-/// Devuelve el id de la primera barbería (activa o no) para simplificar
-/// la administración de barberos/servicios cuando el proyecto solo maneja 1 barbería.
+/// La barbería que se administra: la elegida en el dispositivo. Para el
+/// administrador de barbería coincide con la de su cuenta (entró con ella); el
+/// SuperAdmin opera la que eligió.
 final adminBarberiaIdProvider = FutureProvider<String?>((ref) async {
-  final barberias = await ref.watch(adminRepositoryProvider).getBarberias();
-  if (barberias.isEmpty) return null;
-  return barberias.first.id;
+  return (await ref.watch(barberiaElegidaProvider.future))?.id;
 });

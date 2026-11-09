@@ -57,6 +57,12 @@ class JwtUtils {
     return value is String && value.isNotEmpty ? value : null;
   }
 
+  /// Claim `barberiaId`: la barbería de la cuenta. El SuperAdmin no lo trae.
+  static String? tryGetBarberiaId(String token) {
+    final value = _tryDecodePayload(token)?['barberiaId'];
+    return value is String && value.isNotEmpty ? value : null;
+  }
+
   static bool isBarberoRole(String? role) => role != null && role.trim().toLowerCase() == 'barbero';
 
   static bool isAdminRole(String? role) {

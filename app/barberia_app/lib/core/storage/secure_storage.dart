@@ -12,6 +12,8 @@ class SecureStorageService {
   static const _nombreKey = 'user_nombre';
   static const _onboardingKey = 'onboarding_visto';
   static const _permisoPospuestoKey = 'notificaciones_pospuestas';
+  static const _barberiaIdKey = 'barberia_id';
+  static const _barberiaNombreKey = 'barberia_nombre';
 
   final FlutterSecureStorage _storage;
 
@@ -19,8 +21,8 @@ class SecureStorageService {
 
   Future<String?> getToken() => _storage.read(key: _tokenKey);
 
-  /// Cierra la sesión local: token y nombre del usuario. El onboarding y la
-  /// preferencia de notificaciones son del dispositivo y se conservan.
+  /// Cierra la sesión local: token y nombre del usuario. El onboarding, la
+  /// preferencia de notificaciones y la barbería elegida son del dispositivo y se conservan.
   Future<void> clearToken() async {
     await _storage.delete(key: _tokenKey);
     await _storage.delete(key: _nombreKey);
@@ -30,6 +32,22 @@ class SecureStorageService {
   Future<void> saveNombre(String nombre) => _storage.write(key: _nombreKey, value: nombre);
 
   Future<String?> getNombre() => _storage.read(key: _nombreKey);
+
+  /// La barbería donde reserva este dispositivo; va en `X-Barberia-Id`.
+  Future<void> saveBarberia({required String id, required String nombre}) async {
+    await _storage.write(key: _barberiaIdKey, value: id);
+    await _storage.write(key: _barberiaNombreKey, value: nombre);
+  }
+
+  Future<String?> getBarberiaId() => _storage.read(key: _barberiaIdKey);
+
+  Future<String?> getBarberiaNombre() => _storage.read(key: _barberiaNombreKey);
+
+  /// «Cambiar de barbería»: se vuelve a elegir al abrir la app.
+  Future<void> clearBarberia() async {
+    await _storage.delete(key: _barberiaIdKey);
+    await _storage.delete(key: _barberiaNombreKey);
+  }
 
   Future<bool> onboardingVisto() async => await _storage.read(key: _onboardingKey) == '1';
 
