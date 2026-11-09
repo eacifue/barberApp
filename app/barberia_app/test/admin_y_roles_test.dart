@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:barberia_app/core/auth/jwt_utils.dart';
 import 'package:barberia_app/features/admin/data/models/admin_barberia_model.dart';
+import 'package:barberia_app/features/admin/presentation/screens/admin_screen.dart';
 
 String _token(Map<String, dynamic> payload) {
   String b64(Object o) => base64Url.encode(utf8.encode(json.encode(o))).replaceAll('=', '');
@@ -22,6 +23,21 @@ void main() {
       final t = _token({'role': 'Cliente'});
       expect(JwtUtils.isBarberoRole(JwtUtils.tryGetRole(t)), isFalse);
       expect(JwtUtils.tryGetBarberoId(t), isNull);
+    });
+  });
+
+  group('Quién administra en la app', () {
+    test('el SuperAdmin y el administrador de barbería administran; cliente y barbero no', () {
+      expect(JwtUtils.puedeAdministrar('Admin'), isTrue);
+      expect(JwtUtils.puedeAdministrar('AdministradorBarberia'), isTrue);
+      expect(JwtUtils.puedeAdministrar('Cliente'), isFalse);
+      expect(JwtUtils.puedeAdministrar('Barbero'), isFalse);
+      expect(JwtUtils.puedeAdministrar(null), isFalse);
+    });
+
+    test('el administrador de barbería también edita «Mi negocio» (el de su barbería)', () {
+      expect(AdminScreen.pestanasPara('AdministradorBarberia').map((p) => p.label), ['Mi negocio', 'Equipo', 'Servicios', 'Clientes']);
+      expect(AdminScreen.pestanasPara('Admin').map((p) => p.label), ['Mi negocio', 'Equipo', 'Servicios', 'Clientes']);
     });
   });
 

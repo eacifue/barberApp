@@ -49,7 +49,9 @@ function navigation(rol: string, pendientes: number): NavSection[] {
       { icon: 'clipboard-list', label: 'Servicios', to: '/servicios' },
     ],
   }
-  if (rol !== 'Admin') return [principal, miBarberia]
+  if (rol !== 'Admin') {
+    return [principal, { ...miBarberia, items: [...miBarberia.items, { icon: 'store', label: 'Mi negocio', to: '/negocio' }] }]
+  }
   return [
     principal,
     miBarberia,

@@ -65,6 +65,13 @@ class JwtUtils {
 
   static bool isBarberoRole(String? role) => role != null && role.trim().toLowerCase() == 'barbero';
 
+  /// SuperAdmin o administrador de barbería (`AdministradorBarberia` en el API):
+  /// entran a «Administrar barbería».
+  static bool puedeAdministrar(String? role) {
+    final r = role?.trim().toLowerCase();
+    return r == 'admin' || r == 'administradorbarberia';
+  }
+
   static bool isAdminRole(String? role) {
     if (role == null || role.trim().isEmpty) {
       return false;

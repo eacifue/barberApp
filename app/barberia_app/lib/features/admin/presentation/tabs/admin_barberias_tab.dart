@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/auth/auth_role_provider.dart';
+import '../../../../core/auth/jwt_utils.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -269,18 +271,20 @@ class _NegocioFormState extends ConsumerState<_NegocioForm> {
               ),
             ],
           ),
-          _Seccion(
-            titulo: 'Estado',
-            children: [
-              SwitchListTile.adaptive(
-                contentPadding: EdgeInsets.zero,
-                value: _activa,
-                onChanged: (v) => setState(() => _activa = v),
-                title: Text('Barbería activa', style: AppTextStyles.label.copyWith(color: p.ink)),
-                subtitle: Text(_activa ? 'Visible en la app y recibiendo reservas.' : 'Oculta en la app: nadie puede reservar.', style: AppTextStyles.body.copyWith(color: p.inkMuted)),
-              ),
-            ],
-          ),
+          // Activar o desactivar la barbería es del SuperAdmin; el API lo ignora para los demás.
+          if (JwtUtils.isAdminRole(ref.watch(authRoleProvider).valueOrNull))
+            _Seccion(
+              titulo: 'Estado',
+              children: [
+                SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  value: _activa,
+                  onChanged: (v) => setState(() => _activa = v),
+                  title: Text('Barbería activa', style: AppTextStyles.label.copyWith(color: p.ink)),
+                  subtitle: Text(_activa ? 'Visible en la app y recibiendo reservas.' : 'Oculta en la app: nadie puede reservar.', style: AppTextStyles.body.copyWith(color: p.inkMuted)),
+                ),
+              ],
+            ),
           const SizedBox(height: AppSpace.s2),
           BsmButton(label: _saving ? 'Guardando…' : 'Guardar cambios', icon: LucideIcons.check, block: true, size: BsmButtonSize.lg, loading: _saving, onPressed: _saving ? null : _guardar),
           const SizedBox(height: AppSpace.s6),

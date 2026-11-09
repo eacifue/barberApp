@@ -60,7 +60,7 @@ class AdminRepository {
 
   Future<List<AdminClienteModel>> getClientes() async {
     final response = await _apiClient.getList<List<AdminClienteModel>>(
-      ApiEndpoints.adminClientes,
+      ApiEndpoints.clientes,
       fromJson: (list) {
         return list
             .whereType<Map<String, dynamic>>()

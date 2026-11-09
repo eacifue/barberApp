@@ -39,15 +39,16 @@ export const router = createBrowserRouter([
               { path: 'servicios', element: <ServiciosList /> },
               { path: 'clientes', element: <ClientesList /> },
               { path: 'disponibilidad', element: <DisponibilidadPage /> },
+              // Mi negocio: el SuperAdmin edita la barbería elegida; el Admin Barbería, la suya.
+              { path: 'negocio', element: <BarberiasList /> },
               { path: 'slots', element: <Navigate to="/disponibilidad?vista=reservas" replace /> },
             ],
           },
           {
-            // Guardar Mi negocio y gestionar cuentas exige rol Admin en la API.
+            // Gestionar barberías y cuentas de administrador exige rol Admin en la API.
             element: <AdminGuard />,
             children: [
               { path: 'barberias', element: <BarberiasAdminPage /> },
-              { path: 'negocio', element: <BarberiasList /> },
               { path: 'usuarios', element: <UsersPage /> },
             ],
           },
