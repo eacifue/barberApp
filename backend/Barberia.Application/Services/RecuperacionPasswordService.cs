@@ -4,6 +4,7 @@ using Barberia.Application.Exceptions;
 using Barberia.Application.Interfaces.Persistence.Context;
 using Barberia.Application.Interfaces.Services;
 using Barberia.Application.Interfaces.Services.Auth;
+using Barberia.Application.Interfaces.Services.Barberias;
 using Barberia.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,7 +18,8 @@ namespace Barberia.Application.Services;
 public sealed class RecuperacionPasswordService(
     IBarberiaDbContext dbContext,
     IEmailSender emailSender,
-    TimeProvider timeProvider) : IRecuperacionPasswordService
+    TimeProvider timeProvider,
+    IBarberiaContexto barberiaContexto) : IRecuperacionPasswordService
 {
     public static readonly TimeSpan Vigencia = TimeSpan.FromMinutes(15);
     private static readonly TimeSpan EsperaEntreCodigos = TimeSpan.FromSeconds(60);
@@ -27,7 +29,7 @@ public sealed class RecuperacionPasswordService(
     public async Task SolicitarCodigoAsync(SolicitarCodigoRequest request, CancellationToken cancellationToken)
     {
         var correo = Normalizar(request.Correo);
-        var cliente = await dbContext.Clientes.AsNoTracking().FirstOrDefaultAsync(x => x.Correo == correo && x.Activo, cancellationToken);
+        var cliente = await BuscarCuentaAsync(correo, cancellationToken);
         if (cliente is null)
         {
             return;
@@ -70,7 +72,7 @@ public sealed class RecuperacionPasswordService(
         }
 
         var correo = Normalizar(request.Correo);
-        var cliente = await dbContext.Clientes.FirstOrDefaultAsync(x => x.Correo == correo && x.Activo, cancellationToken)
+        var cliente = await BuscarCuentaAsync(correo, cancellationToken)
             ?? throw new ValidationException(CodigoInvalido);
 
         var ahora = Ahora();
@@ -100,6 +102,17 @@ public sealed class RecuperacionPasswordService(
             "Tu contraseña cambió",
             $"Hola, {cliente.Nombre}:\n\nTu contraseña se cambió hace un momento. Ya puedes entrar con la nueva.\n\nSi no fuiste tú, escríbenos o pide un código nuevo para cambiarla otra vez.\n\nBarberShop Medellín",
             cancellationToken);
+    }
+
+    /// <summary>La cuenta de esta barbería con ese correo, o la del SuperAdmin si no hay otra.</summary>
+    private async Task<Cliente?> BuscarCuentaAsync(string correo, CancellationToken cancellationToken)
+    {
+        var barberiaId = await barberiaContexto.ObtenerIdAsync(cancellationToken);
+        return await dbContext.Clientes
+            .IgnoreQueryFilters()
+            .Where(x => x.Correo == correo && x.Activo && (x.BarberiaId == barberiaId || x.BarberiaId == null))
+            .OrderBy(x => x.BarberiaId == null)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     private DateTime Ahora() => timeProvider.GetUtcNow().UtcDateTime;

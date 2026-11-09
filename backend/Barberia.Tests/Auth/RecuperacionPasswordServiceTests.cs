@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Barberia.Application.DTOs.Auth;
 using Barberia.Application.Exceptions;
 using Barberia.Application.Interfaces.Services;
+using Barberia.Application.Interfaces.Services.Barberias;
 using Barberia.Application.Services;
 using Barberia.Domain.Entities;
 using Barberia.Tests.Gestion;
@@ -28,13 +29,19 @@ public sealed class RecuperacionPasswordServiceTests : GestionTestBase
     private const string Correo = "laura@correo.co";
     private readonly FakeEmailSender correo = new();
     private readonly Guid clienteId = Guid.NewGuid();
+    private readonly Guid barberiaId = Guid.NewGuid();
 
-    private RecuperacionPasswordService NewService() => new(NewContext(), correo, Clock);
+    private sealed class FakeBarberiaContexto(Guid id) : IBarberiaContexto
+    {
+        public Task<Guid> ObtenerIdAsync(CancellationToken cancellationToken) => Task.FromResult(id);
+    }
+
+    private RecuperacionPasswordService NewService() => new(NewContext(), correo, Clock, new FakeBarberiaContexto(barberiaId));
 
     private async Task SembrarAsync(bool activo = true)
     {
         await using var seed = NewContext();
-        seed.Clientes.Add(new Cliente { Id = clienteId, Nombre = "Laura", Apellido = "Henao", Correo = Correo, PasswordHash = BCrypt.Net.BCrypt.HashPassword("vieja123"), Activo = activo });
+        seed.Clientes.Add(new Cliente { Id = clienteId, BarberiaId = barberiaId, Nombre = "Laura", Apellido = "Henao", Correo = Correo, PasswordHash = BCrypt.Net.BCrypt.HashPassword("vieja123"), Activo = activo });
         await seed.SaveChangesAsync();
     }
 
@@ -179,5 +186,26 @@ public sealed class RecuperacionPasswordServiceTests : GestionTestBase
         var ex = await Assert.ThrowsAsync<ValidationException>(() => Restablecer("123456", c: "nadie@correo.co"));
 
         Assert.Equal("El código no es válido o ya venció. Pide uno nuevo.", ex.Message);
+    }
+
+    [Fact]
+    public async Task Con_el_mismo_correo_en_otra_barberia_solo_cambia_la_cuenta_de_esta()
+    {
+        // La cuenta ajena se siembra primero para que una búsqueda solo por correo la encuentre.
+        var ajenaId = Guid.NewGuid();
+        await using (var seed = NewContext())
+        {
+            seed.Clientes.Add(new Cliente { Id = ajenaId, BarberiaId = Guid.NewGuid(), Nombre = "Laura", Apellido = "Otra", Correo = Correo, PasswordHash = BCrypt.Net.BCrypt.HashPassword("ajena123") });
+            await seed.SaveChangesAsync();
+        }
+        await SembrarAsync();
+
+        await Solicitar();
+        await Restablecer(correo.UltimoCodigo, "nueva123");
+
+        Assert.True(BCrypt.Net.BCrypt.Verify("nueva123", await HashActualAsync()));
+        await using var ctx = NewContext();
+        var ajena = await ctx.Clientes.AsNoTracking().SingleAsync(x => x.Id == ajenaId);
+        Assert.True(BCrypt.Net.BCrypt.Verify("ajena123", ajena.PasswordHash));
     }
 }

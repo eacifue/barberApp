@@ -209,6 +209,9 @@ namespace Barberia.Infrastructure.Data.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
 
+                    b.Property<Guid>("BarberiaId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Biografia")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -255,6 +258,8 @@ namespace Barberia.Infrastructure.Data.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BarberiaId");
 
                     b.ToTable("barberos", (string)null);
                 });
@@ -326,6 +331,9 @@ namespace Barberia.Infrastructure.Data.Migrations
                     b.Property<bool>("Activo")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid>("BarberiaId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("BarberoId")
                         .HasColumnType("uuid");
 
@@ -373,6 +381,8 @@ namespace Barberia.Infrastructure.Data.Migrations
 
                     b.HasIndex("ServicioId");
 
+                    b.HasIndex("BarberiaId", "FechaCita");
+
                     b.HasIndex("BarberoId", "FechaCita", "HoraInicio");
 
                     b.ToTable("citas", (string)null);
@@ -391,6 +401,9 @@ namespace Barberia.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
+
+                    b.Property<Guid?>("BarberiaId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("BarberoId")
                         .HasColumnType("uuid");
@@ -445,14 +458,22 @@ namespace Barberia.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Correo")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UX_clientes_correo_sin_barberia")
+                        .HasFilter("\"BarberiaId\" IS NULL");
 
                     b.HasIndex("Rol")
                         .IsUnique()
                         .HasDatabaseName("UX_clientes_admin_rol")
                         .HasFilter("\"Rol\" = 'Admin'");
 
-                    b.ToTable("clientes", (string)null);
+                    b.HasIndex("BarberiaId", "Correo")
+                        .IsUnique();
+
+                    b.ToTable("clientes", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_clientes_solo_superadmin_sin_barberia", "(\"Rol\" = 'Admin') = (\"BarberiaId\" IS NULL)");
+                        });
                 });
 
             modelBuilder.Entity("Barberia.Domain.Entities.CodigoRecuperacion", b =>
@@ -591,6 +612,9 @@ namespace Barberia.Infrastructure.Data.Migrations
                     b.Property<bool>("Activo")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid>("BarberiaId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -625,6 +649,8 @@ namespace Barberia.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BarberiaId");
+
                     b.ToTable("servicios", (string)null);
                 });
 
@@ -648,6 +674,15 @@ namespace Barberia.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Barber");
+                });
+
+            modelBuilder.Entity("Barberia.Domain.Entities.Barbero", b =>
+                {
+                    b.HasOne("Barberia.Domain.Entities.Barberia", null)
+                        .WithMany()
+                        .HasForeignKey("BarberiaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Barberia.Domain.Entities.BarberoServicio", b =>
@@ -682,6 +717,12 @@ namespace Barberia.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("Barberia.Domain.Entities.Cita", b =>
                 {
+                    b.HasOne("Barberia.Domain.Entities.Barberia", null)
+                        .WithMany()
+                        .HasForeignKey("BarberiaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Barberia.Domain.Entities.Barbero", "Barbero")
                         .WithMany("Citas")
                         .HasForeignKey("BarberoId")
@@ -705,6 +746,14 @@ namespace Barberia.Infrastructure.Data.Migrations
                     b.Navigation("Cliente");
 
                     b.Navigation("Servicio");
+                });
+
+            modelBuilder.Entity("Barberia.Domain.Entities.Cliente", b =>
+                {
+                    b.HasOne("Barberia.Domain.Entities.Barberia", null)
+                        .WithMany()
+                        .HasForeignKey("BarberiaId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Barberia.Domain.Entities.CodigoRecuperacion", b =>
@@ -754,6 +803,15 @@ namespace Barberia.Infrastructure.Data.Migrations
                     b.Navigation("Cita");
 
                     b.Navigation("Cliente");
+                });
+
+            modelBuilder.Entity("Barberia.Domain.Entities.Servicio", b =>
+                {
+                    b.HasOne("Barberia.Domain.Entities.Barberia", null)
+                        .WithMany()
+                        .HasForeignKey("BarberiaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Barberia.Domain.Entities.Barbero", b =>

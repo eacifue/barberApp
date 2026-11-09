@@ -4,6 +4,9 @@ namespace Barberia.Domain.Entities;
 
 public class Cliente : BaseEntity
 {
+    /// <summary>Barbería a la que pertenece. Solo el SuperAdmin (Rol = "Admin") no tiene.</summary>
+    public Guid? BarberiaId { get; set; }
+
     /// <summary>
     /// Rol del usuario dentro del sistema. Valores: "Admin", "AdministradorBarberia", "Barbero", "Cliente".
     /// </summary>

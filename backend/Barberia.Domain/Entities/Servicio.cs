@@ -5,6 +5,9 @@ namespace Barberia.Domain.Entities;
 
 public class Servicio : BaseEntity
 {
+    /// <summary>Barbería dueña del registro.</summary>
+    public Guid BarberiaId { get; set; }
+
     public string Nombre { get; set; } = string.Empty;
 
     public string Descripcion { get; set; } = string.Empty;

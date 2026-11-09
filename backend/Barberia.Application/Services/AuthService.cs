@@ -1,3 +1,4 @@
+using Barberia.Application.Interfaces.Services.Barberias;
 using Barberia.Application.DTOs.Auth;
 using Barberia.Application.Exceptions;
 using Barberia.Application.Interfaces;
@@ -19,6 +20,7 @@ public class AuthService : IAuthService
     private readonly ICacheService cacheService;
     private readonly ISlotBloqueoService slotBloqueoService;
     private readonly ILogger<AuthService> logger;
+    private readonly IBarberiaContexto barberiaContexto;
 
     public AuthService(
         IBarberiaDbContext dbContext,
@@ -26,8 +28,10 @@ public class AuthService : IAuthService
         ICurrentUserService currentUserService,
         ICacheService cacheService,
         ISlotBloqueoService slotBloqueoService,
-        ILogger<AuthService> logger)
+        ILogger<AuthService> logger,
+        IBarberiaContexto barberiaContexto)
     {
+        this.barberiaContexto = barberiaContexto;
         this.dbContext = dbContext;
         this.jwtTokenGenerator = jwtTokenGenerator;
         this.currentUserService = currentUserService;
@@ -39,7 +43,8 @@ public class AuthService : IAuthService
     public async Task<AuthResponseDto> RegistroAsync(RegistroClienteRequest request, CancellationToken cancellationToken)
     {
         var correo = request.Correo.Trim().ToLowerInvariant();
-        var existe = await dbContext.Clientes.AnyAsync(x => x.Correo == correo, cancellationToken);
+        var barberiaId = await barberiaContexto.ObtenerIdAsync(cancellationToken);
+        var existe = await dbContext.Clientes.IgnoreQueryFilters().AnyAsync(x => x.Correo == correo && x.BarberiaId == barberiaId, cancellationToken);
         if (existe)
         {
             throw new ConflictException("Ya existe un cliente registrado con ese correo.");
@@ -47,6 +52,7 @@ public class AuthService : IAuthService
 
         var cliente = new Cliente
         {
+            BarberiaId = barberiaId,
             Rol = Roles.Cliente,
             Nombre = request.Nombre.Trim(),
             Apellido = request.Apellido.Trim(),
@@ -65,9 +71,14 @@ public class AuthService : IAuthService
     public async Task<AuthResponseDto> LoginAsync(LoginRequest request, CancellationToken cancellationToken)
     {
         var correo = request.Correo.Trim().ToLowerInvariant();
+        var barberiaId = await barberiaContexto.ObtenerIdAsync(cancellationToken);
         var cliente = await dbContext.Clientes
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Correo == correo && x.Activo, cancellationToken);
+            .IgnoreQueryFilters()
+            .Where(x => x.Correo == correo && x.Activo && (x.BarberiaId == barberiaId || x.BarberiaId == null))
+            // La cuenta de la barbería va antes que la del SuperAdmin con el mismo correo.
+            .OrderBy(x => x.BarberiaId == null)
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (cliente is null || !BCrypt.Net.BCrypt.Verify(request.Password, cliente.PasswordHash))
         {

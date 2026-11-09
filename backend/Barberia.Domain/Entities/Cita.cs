@@ -5,6 +5,9 @@ namespace Barberia.Domain.Entities;
 
 public class Cita : BaseEntity
 {
+    /// <summary>Barbería dueña del registro.</summary>
+    public Guid BarberiaId { get; set; }
+
     public Guid ClienteId { get; set; }
 
     public Guid BarberoId { get; set; }

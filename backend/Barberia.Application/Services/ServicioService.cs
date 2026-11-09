@@ -1,3 +1,4 @@
+using Barberia.Application.Interfaces.Services.Barberias;
 using AutoMapper;
 using Barberia.Application.DTOs.Servicios;
 using Barberia.Application.Exceptions;
@@ -15,12 +16,15 @@ public class ServicioService : IServicioService
     private readonly IBarberiaDbContext dbContext;
     private readonly IMapper mapper;
     private readonly IValidator<CreateServicioRequest> createValidator;
+    private readonly IBarberiaContexto barberiaContexto;
 
     public ServicioService(
         IBarberiaDbContext dbContext,
         IMapper mapper,
-        IValidator<CreateServicioRequest> createValidator)
+        IValidator<CreateServicioRequest> createValidator,
+        IBarberiaContexto barberiaContexto)
     {
+        this.barberiaContexto = barberiaContexto;
         this.dbContext = dbContext;
         this.mapper = mapper;
         this.createValidator = createValidator;
@@ -57,6 +61,7 @@ public class ServicioService : IServicioService
 
         var servicio = new Servicio
         {
+            BarberiaId = await barberiaContexto.ObtenerIdAsync(cancellationToken),
             Nombre = request.Nombre.Trim(),
             Descripcion = request.Descripcion.Trim(),
             Tipo = request.Tipo,

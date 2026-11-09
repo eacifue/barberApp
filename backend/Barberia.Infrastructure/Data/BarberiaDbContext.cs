@@ -132,6 +132,9 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
         {
             entity.ToTable("servicios");
 
+            entity.HasOne<BarberiaEntity>().WithMany().HasForeignKey(x => x.BarberiaId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(x => x.BarberiaId);
+
             entity.Property(x => x.Nombre).HasMaxLength(140).IsRequired();
             entity.Property(x => x.Descripcion).HasMaxLength(1000);
             entity.Property(x => x.Tipo).HasConversion<string>().HasMaxLength(30).IsRequired();
@@ -161,6 +164,9 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
         modelBuilder.Entity<Barbero>(entity =>
         {
             entity.ToTable("barberos");
+
+            entity.HasOne<BarberiaEntity>().WithMany().HasForeignKey(x => x.BarberiaId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(x => x.BarberiaId);
 
             entity.Property(x => x.Nombre).HasMaxLength(120).IsRequired();
             entity.Property(x => x.Apellido).HasMaxLength(120).IsRequired();
@@ -311,7 +317,11 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
     {
         modelBuilder.Entity<Cliente>(entity =>
         {
-            entity.ToTable("clientes");
+            entity.ToTable("clientes", t => t.HasCheckConstraint(
+                "CK_clientes_solo_superadmin_sin_barberia",
+                "(\"Rol\" = 'Admin') = (\"BarberiaId\" IS NULL)"));
+
+            entity.HasOne<BarberiaEntity>().WithMany().HasForeignKey(x => x.BarberiaId).OnDelete(DeleteBehavior.Restrict);
 
             entity.Property(x => x.Rol)
                 .HasMaxLength(30)
@@ -328,7 +338,9 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
             entity.Property(x => x.FotoUrl).HasMaxLength(500);
             entity.Property(x => x.TokenFCM).HasMaxLength(300);
 
-            entity.HasIndex(x => x.Correo).IsUnique();
+            // El correo se repite entre barberías, nunca dentro de una. Sin barbería solo está el SuperAdmin.
+            entity.HasIndex(x => new { x.BarberiaId, x.Correo }).IsUnique();
+            entity.HasIndex(x => x.Correo).IsUnique().HasDatabaseName("UX_clientes_correo_sin_barberia").HasFilter("\"BarberiaId\" IS NULL");
 
             // Garantiza que exista como máximo 1 usuario con Rol='Admin'.
             entity.HasIndex(x => x.Rol)
@@ -348,6 +360,9 @@ public class BarberiaDbContext : DbContext, IBarberiaDbContext
         modelBuilder.Entity<Cita>(entity =>
         {
             entity.ToTable("citas");
+
+            entity.HasOne<BarberiaEntity>().WithMany().HasForeignKey(x => x.BarberiaId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(x => new { x.BarberiaId, x.FechaCita });
 
             entity.Property(x => x.Estado).HasConversion<string>().HasMaxLength(30).IsRequired();
             entity.Property(x => x.Notas).HasMaxLength(1000);

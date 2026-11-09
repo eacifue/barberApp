@@ -7,7 +7,7 @@ namespace Barberia.Tests.Gestion;
 
 public class BarberoServiceActivarTests : GestionTestBase
 {
-    private BarberoService NewService(Barberia.Infrastructure.Data.BarberiaDbContext context) => new(context, Mapper, null!, null!);
+    private BarberoService NewService(Barberia.Infrastructure.Data.BarberiaDbContext context) => new(context, Mapper, null!, null!, null!);
 
     [Fact]
     public async Task Activar_BarberoDesactivado_QuedaActivoYDisponibleSinRecuperarServicios()

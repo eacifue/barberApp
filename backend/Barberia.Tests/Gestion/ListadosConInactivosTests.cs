@@ -23,7 +23,7 @@ public class ListadosConInactivosTests : GestionTestBase
     {
         await SeedAsync();
         await using var context = NewContext();
-        var service = new ServicioService(context, Mapper, null!);
+        var service = new ServicioService(context, Mapper, null!, null!);
 
         var publico = await service.GetAllByBarberiaAsync(Guid.NewGuid(), CancellationToken.None);
         var panel = await service.GetAllByBarberiaAsync(Guid.NewGuid(), CancellationToken.None, incluirInactivos: true);
@@ -37,7 +37,7 @@ public class ListadosConInactivosTests : GestionTestBase
     {
         await SeedAsync();
         await using var context = NewContext();
-        var service = new BarberoService(context, Mapper, null!, null!);
+        var service = new BarberoService(context, Mapper, null!, null!, null!);
 
         var publico = await service.GetAllByBarberiaAsync(Guid.NewGuid(), CancellationToken.None);
         var panel = await service.GetAllByBarberiaAsync(Guid.NewGuid(), CancellationToken.None, incluirInactivos: true);
