@@ -67,6 +67,8 @@ export function Sidebar({ sections, user, onLogout, onNavigate, className }: Sid
 type TopbarProps = {
   title?: string
   search?: ReactNode
+  /** Contexto de trabajo junto a las acciones (selector de barbería del SuperAdmin). */
+  context?: ReactNode
   theme: 'light' | 'dark'
   onThemeChange: (choice: ThemeChoice) => void
   unread?: boolean
@@ -78,13 +80,14 @@ type TopbarProps = {
 }
 
 /** Título de página en Gloock, búsqueda, tema, notificaciones y cerrar sesión. */
-export function Topbar({ title, search, theme, onThemeChange, unread, onNotifications, onLogout, compact, onMenu }: TopbarProps) {
+export function Topbar({ title, search, context, theme, onThemeChange, unread, onNotifications, onLogout, compact, onMenu }: TopbarProps) {
   return (
     <header className="bsm-topbar">
       {compact && <IconButton icon="menu" label="Abrir menú" onClick={onMenu} />}
       {title && <h1 className="bsm-topbar-title">{title}</h1>}
       {search ?? <span className="flex-1" aria-hidden="true" />}
       <div className="bsm-topbar-actions">
+        {context}
         <div className="bsm-tabs bsm-tabs-segmented bsm-theme-toggle" role="radiogroup" aria-label="Tema">
           {(
             [

@@ -6,6 +6,7 @@ import { LoginPage } from './features/auth/LoginPage'
 import { RecuperarPage } from './features/auth/RecuperarPage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
 import { BarberiasList } from './features/barberias/BarberiasList'
+import { BarberiasAdminPage } from './features/barberias/BarberiasAdminPage'
 import { BarberosList } from './features/barberos/BarberosList'
 import { ServiciosList } from './features/servicios/ServiciosList'
 import { ClientesList } from './features/clientes/ClientesList'
@@ -45,7 +46,8 @@ export const router = createBrowserRouter([
             // Guardar Mi negocio y gestionar cuentas exige rol Admin en la API.
             element: <AdminGuard />,
             children: [
-              { path: 'barberias', element: <BarberiasList /> },
+              { path: 'barberias', element: <BarberiasAdminPage /> },
+              { path: 'negocio', element: <BarberiasList /> },
               { path: 'usuarios', element: <UsersPage /> },
             ],
           },

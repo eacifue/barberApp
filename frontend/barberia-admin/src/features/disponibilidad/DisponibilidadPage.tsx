@@ -64,7 +64,7 @@ function Horarios({ onVerReservas }: { onVerReservas: () => void }) {
   const { effectiveBarberiaId } = useTenantBarberia()
   const { barberosQuery } = useBarberos(effectiveBarberiaId ?? '')
   const { barberiasQuery } = useBarberias()
-  const barberia = barberiasQuery.data?.find((b) => b.id === effectiveBarberiaId) ?? barberiasQuery.data?.[0]
+  const barberia = barberiasQuery.data?.find((b) => b.id === effectiveBarberiaId)
   const barberos = useMemo(() => (barberosQuery.data ?? []).filter((b) => b.activo), [barberosQuery.data])
   const hoy = todayIso()
 

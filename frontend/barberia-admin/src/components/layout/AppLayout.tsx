@@ -7,6 +7,12 @@ import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { usePendientesHoy } from '../../hooks/usePendientesHoy'
 import { BottomNav, ConfirmDialog, Sidebar, Topbar, cx, type BottomNavAction, type NavItem, type NavSection } from '../bsm'
 import { useTheme } from '../theme/themeContext'
+import { BarberiaSelector } from './BarberiaSelector'
+import { ElegirBarberia } from './ElegirBarberia'
+import { useTenantBarberia } from '../../hooks/useTenantBarberia'
+
+/** Secciones que muestran todas las barberías juntas; el resto pide elegir una. */
+const VISTAS_CONSOLIDADAS = ['/dashboard', '/barberias']
 
 const ROUTE_TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -15,7 +21,8 @@ const ROUTE_TITLES: Record<string, string> = {
   '/clientes': 'Clientes',
   '/barberos': 'Barberos',
   '/servicios': 'Servicios',
-  '/barberias': 'Mi negocio',
+  '/barberias': 'Barberías',
+  '/negocio': 'Mi negocio',
   '/usuarios': 'Usuarios',
   '/slots': 'Reservas en curso',
 }
@@ -49,7 +56,8 @@ function navigation(rol: string, pendientes: number): NavSection[] {
     {
       title: 'Administración',
       items: [
-        { icon: 'store', label: 'Mi negocio', to: '/barberias' },
+        { icon: 'layers', label: 'Barberías', to: '/barberias' },
+        { icon: 'store', label: 'Mi negocio', to: '/negocio' },
         { icon: 'user-cog', label: 'Usuarios', to: '/usuarios' },
       ],
     },
@@ -71,6 +79,8 @@ export function AppLayout() {
   const phone = !useMediaQuery('(min-width: 768px)')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [askLogout, setAskLogout] = useState(false)
+  const { todas, isAdmin } = useTenantBarberia()
+  const pideBarberia = todas && !VISTAS_CONSOLIDADAS.includes(location.pathname)
 
   const pendientesQuery = usePendientesHoy(rol !== 'Barbero')
   const pendientes = pendientesQuery.data?.length ?? 0
@@ -132,10 +142,11 @@ export function AppLayout() {
           onThemeChange={setChoice}
           compact={!desktop}
           onMenu={() => setDrawerOpen(true)}
+          context={isAdmin ? <BarberiaSelector compact={phone} /> : undefined}
           onLogout={() => setAskLogout(true)}
         />
         <main id="contenido" className={cx('min-h-0 flex-1 overflow-y-auto', phone ? 'pb-28' : '')}>
-          <Outlet />
+          {pideBarberia ? <ElegirBarberia /> : <Outlet />}
         </main>
         {phone && (
           <div className="pointer-events-none fixed inset-x-3 bottom-3 z-30">

@@ -1,5 +1,5 @@
 import { http } from './http'
-import type { Barberia, BarberiaUpsertInput } from '../types/barberia'
+import type { Barberia, BarberiaUpsertInput, CrearBarberiaInput, ResumenBarberia } from '../types/barberia'
 
 type ApiLikeResponse<T> = {
   data?: T
@@ -74,6 +74,22 @@ export const barberiaService = {
 
   async getPublicById(id: string): Promise<Barberia> {
     const response = await http.get<RawBarberia | ApiLikeResponse<RawBarberia>>(`/v1/barberias/${id}`)
+    return normalizeBarberia(unwrap(response.data))
+  },
+
+  async resumen(): Promise<ResumenBarberia[]> {
+    const response = await http.get<ResumenBarberia[] | ApiLikeResponse<ResumenBarberia[]>>('/v1/admin/barberias/resumen')
+    return unwrap(response.data) ?? []
+  },
+
+  async crear(data: CrearBarberiaInput): Promise<Barberia> {
+    const payload = { ...data, diasDescanso: toApiDias(data.diasDescanso) }
+    const response = await http.post<RawBarberia | ApiLikeResponse<RawBarberia>>('/v1/admin/barberias', payload)
+    return normalizeBarberia(unwrap(response.data))
+  },
+
+  async cambiarEstado(id: string, activa: boolean): Promise<Barberia> {
+    const response = await http.put<RawBarberia | ApiLikeResponse<RawBarberia>>(`/v1/admin/barberias/${id}/${activa ? 'activar' : 'desactivar'}`)
     return normalizeBarberia(unwrap(response.data))
   },
 

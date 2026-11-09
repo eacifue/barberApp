@@ -2,6 +2,7 @@ import axios from 'axios'
 
 import { useAuthStore } from '../stores/authStore'
 import { toast } from '../stores/toastStore'
+import { useTenantStore } from '../stores/tenantStore'
 
 export const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5001/api',
@@ -12,6 +13,10 @@ http.interceptors.request.use((config) => {
 	const token = useAuthStore.getState().token
 	if (token) {
 		config.headers.Authorization = `Bearer ${token}`
+		// El SuperAdmin elige con qué barbería trabaja; sin elección ve todas.
+		const elegida = useTenantStore.getState().barberiaElegida
+		if (useAuthStore.getState().usuario?.rol === 'Admin' && elegida) config.headers['X-Barberia-Id'] = elegida
+		else delete config.headers['X-Barberia-Id']
 	} else {
 		// Asegurar que no quede header residual
 		delete config.headers.Authorization
@@ -31,7 +36,9 @@ http.interceptors.response.use(
 				// /login por su cuenta (sin recargar la página). El ToastContainer vive
 				// en la raíz de la app, así que el aviso sigue visible tras el cambio de ruta.
 				useAuthStore.getState().logout()
-				toast.error('Tu sesión expiró. Vuelve a iniciar sesión.')
+				// La API explica el motivo (sesión vencida, barbería desactivada…).
+				const motivo = (err.response?.data as { message?: string } | undefined)?.message
+				toast.error(motivo || 'Tu sesión expiró. Vuelve a iniciar sesión.')
 			}
 		}
 		return Promise.reject(err)

@@ -110,7 +110,7 @@ export function AgendaPage() {
 
   const { effectiveBarberiaId } = useTenantBarberia()
   const { barberiasQuery } = useBarberias()
-  const barberia = barberiasQuery.data?.[0]
+  const barberia = barberiasQuery.data?.find((b) => b.id === effectiveBarberiaId)
   const { barberosQuery } = useBarberos(esBarbero ? '' : (effectiveBarberiaId ?? ''))
   const barberos = useMemo(() => (barberosQuery.data ?? []).filter((b) => b.activo), [barberosQuery.data])
 

@@ -66,7 +66,7 @@ function validar(f: Form): Errores {
 export function BarberiasList() {
   const { barberiasQuery } = useBarberias()
   const { effectiveBarberiaId } = useTenantBarberia()
-  const barberia = barberiasQuery.data?.find((b) => b.id === effectiveBarberiaId) ?? barberiasQuery.data?.[0]
+  const barberia = barberiasQuery.data?.find((b) => b.id === effectiveBarberiaId)
 
   return (
     <div className="mx-auto flex max-w-[1200px] flex-col gap-5 px-4 py-5 md:px-6 lg:px-8">
