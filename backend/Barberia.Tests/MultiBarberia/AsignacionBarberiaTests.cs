@@ -194,6 +194,12 @@ public sealed class AsignacionBarberiaTests : GestionTestBase
     private async Task<Guid> SembrarCuentaAsync(Guid? barberiaId, string correo, string password, string rol = "Cliente")
     {
         await using var seed = NewContext();
+        // El login exige que la barbería de la cuenta exista y esté activa.
+        if (barberiaId is { } id && !await seed.Barberias.AnyAsync(x => x.Id == id))
+        {
+            seed.Barberias.Add(new Barberia.Domain.Entities.Barberia { Id = id, Nombre = "Barbería", Activa = true });
+        }
+
         var cliente = new Cliente { BarberiaId = barberiaId, Rol = rol, Nombre = "Laura", Apellido = "Henao", Correo = correo, PasswordHash = BCrypt.Net.BCrypt.HashPassword(password) };
         seed.Clientes.Add(cliente);
         await seed.SaveChangesAsync();

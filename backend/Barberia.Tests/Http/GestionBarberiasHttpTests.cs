@@ -1,0 +1,177 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
+using Barberia.Application.DTOs.Auth;
+using Barberia.Application.DTOs.Barberias;
+using Barberia.Domain.Entities;
+using Barberia.Shared;
+using Barberia.Shared.Constants;
+using Microsoft.EntityFrameworkCore;
+
+namespace Barberia.Tests.Http;
+
+// El SuperAdmin da de alta barberías (con su primer administrador), las desactiva y
+// las reactiva. Una barbería desactivada deja fuera a su gente.
+public sealed class GestionBarberiasHttpTests(ApiFactory api) : IClassFixture<ApiFactory>
+{
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+
+    private HttpClient SuperAdmin() => api.ComoUsuario(new Cliente { Rol = Roles.Admin, Correo = "admin@barberia.local", BarberiaId = null });
+
+    private static object NuevaBarberia(string correoAdmin) => new
+    {
+        nombre = "Barbería Laureles",
+        telefono = "3011419610",
+        correo = "laureles@correo.co",
+        direccion = "Cra 76 #33",
+        ciudad = "Medellín",
+        departamento = "Antioquia",
+        pais = "Colombia",
+        horaApertura = "09:00",
+        horaCierre = "19:00",
+        administrador = new { nombre = "Sara", apellido = "Gómez", telefono = "3001234567", correo = correoAdmin, password = "secreta1" },
+    };
+
+    private static async Task<T> DataAsync<T>(HttpResponseMessage respuesta, HttpStatusCode esperado)
+    {
+        Assert.True(respuesta.StatusCode == esperado, $"{(int)respuesta.StatusCode}: {await respuesta.Content.ReadAsStringAsync()}");
+        return (await respuesta.Content.ReadFromJsonAsync<ApiResponse<T>>(Json))!.Data!;
+    }
+
+    [Fact]
+    public async Task El_superadmin_crea_una_barberia_con_su_administrador_y_el_administrador_puede_entrar()
+    {
+        var correoAdmin = $"{Guid.NewGuid():N}@correo.co";
+
+        var barberia = await DataAsync<BarberiaDto>(await SuperAdmin().PostAsJsonAsync("/api/v1/admin/barberias", NuevaBarberia(correoAdmin), Json), HttpStatusCode.Created);
+
+        var login = await api.CreateClient().PostAsJsonAsync("/api/v1/auth/login", new { correo = correoAdmin, password = "secreta1" }, Json);
+        var sesion = await DataAsync<AuthResponseDto>(login, HttpStatusCode.OK);
+        Assert.Equal(Roles.AdminBarberia, sesion.Rol);
+        var cuenta = await api.ConBaseAsync(db => db.Clientes.IgnoreQueryFilters().SingleAsync(x => x.Id == sesion.ClienteId));
+        Assert.Equal(barberia.Id, cuenta.BarberiaId);
+    }
+
+    [Fact]
+    public async Task Con_un_administrador_invalido_no_se_crea_nada()
+    {
+        var antes = await api.ConBaseAsync(db => db.Barberias.CountAsync());
+
+        var respuesta = await SuperAdmin().PostAsJsonAsync("/api/v1/admin/barberias", NuevaBarberia("sin-arroba"), Json);
+
+        Assert.Equal(HttpStatusCode.BadRequest, respuesta.StatusCode);
+        Assert.Contains("correo válido", await respuesta.Content.ReadAsStringAsync());
+        Assert.Equal(antes, await api.ConBaseAsync(db => db.Barberias.CountAsync()));
+    }
+
+    [Fact]
+    public async Task Un_administrador_de_barberia_no_puede_crear_barberias()
+    {
+        var (a, _) = await DosBarberias.CrearAsync(api);
+
+        var respuesta = await api.ComoUsuario(a.Admin).PostAsJsonAsync("/api/v1/admin/barberias", NuevaBarberia($"{Guid.NewGuid():N}@correo.co"), Json);
+
+        Assert.Equal(HttpStatusCode.Forbidden, respuesta.StatusCode);
+    }
+
+    private Task<bool> ActivaAsync(Guid id) => api.ConBaseAsync(async db => (await db.Barberias.SingleAsync(x => x.Id == id)).Activa);
+
+    [Fact]
+    public async Task El_superadmin_desactiva_y_reactiva_una_barberia()
+    {
+        var (a, _) = await DosBarberias.CrearAsync(api);
+        var http = SuperAdmin();
+
+        var desactivar = await http.PutAsync($"/api/v1/admin/barberias/{a.Id}/desactivar", null);
+        var activaTrasDesactivar = await ActivaAsync(a.Id);
+        var activar = await http.PutAsync($"/api/v1/admin/barberias/{a.Id}/activar", null);
+
+        Assert.Equal(HttpStatusCode.OK, desactivar.StatusCode);
+        Assert.False(activaTrasDesactivar);
+        Assert.Equal(HttpStatusCode.OK, activar.StatusCode);
+        Assert.True(await ActivaAsync(a.Id));
+    }
+
+    [Fact]
+    public async Task Desactivar_una_barberia_que_no_existe_responde_404()
+    {
+        var respuesta = await SuperAdmin().PutAsync($"/api/v1/admin/barberias/{Guid.NewGuid()}/desactivar", null);
+
+        Assert.Equal(HttpStatusCode.NotFound, respuesta.StatusCode);
+        Assert.Contains("La barbería no existe", await respuesta.Content.ReadAsStringAsync());
+    }
+
+    private async Task DesactivarAsync(Guid id) =>
+        Assert.Equal(HttpStatusCode.OK, (await SuperAdmin().PutAsync($"/api/v1/admin/barberias/{id}/desactivar", null)).StatusCode);
+
+    [Fact]
+    public async Task En_una_barberia_desactivada_su_gente_no_puede_iniciar_sesion()
+    {
+        var (a, _) = await DosBarberias.CrearAsync(api);
+        await DesactivarAsync(a.Id);
+
+        var respuesta = await api.CreateClient().PostAsJsonAsync("/api/v1/auth/login", new { correo = a.Admin.Correo, password = "secreta1" }, Json);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, respuesta.StatusCode);
+        Assert.Contains("Tu barbería está desactivada", await respuesta.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task En_una_barberia_desactivada_las_sesiones_abiertas_dejan_de_servir()
+    {
+        var (a, _) = await DosBarberias.CrearAsync(api);
+        var cliente = api.ComoUsuario(a.Cliente);
+        await DesactivarAsync(a.Id);
+
+        var respuesta = await cliente.GetAsync("/api/v1/citas/mis-citas");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, respuesta.StatusCode);
+        Assert.Contains("Tu barbería está desactivada", await respuesta.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task El_superadmin_sigue_operando_una_barberia_desactivada()
+    {
+        var (a, _) = await DosBarberias.CrearAsync(api);
+        await DesactivarAsync(a.Id);
+        var http = SuperAdmin();
+        http.DefaultRequestHeaders.Add("X-Barberia-Id", a.Id.ToString());
+
+        var respuesta = await http.GetAsync("/api/v1/clientes");
+
+        Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
+        Assert.Contains(a.Cliente.Id.ToString(), await respuesta.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task El_listado_publico_para_elegir_barberia_solo_trae_las_activas()
+    {
+        var (a, b) = await DosBarberias.CrearAsync(api);
+        await DesactivarAsync(a.Id);
+
+        var cuerpo = await api.CreateClient().GetStringAsync("/api/v1/barberias");
+
+        Assert.Contains(b.Id.ToString(), cuerpo);
+        Assert.DoesNotContain(a.Id.ToString(), cuerpo);
+    }
+
+    [Fact]
+    public async Task El_resumen_por_barberia_sale_de_Postgres_y_es_solo_para_el_superadmin()
+    {
+        var (a, _) = await DosBarberias.CrearAsync(api);
+        // La cita sembrada es del 1 dic 2026; se pasa a hoy (Colombia) y completada para que cuente.
+        var hoy = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("America/Bogota")).DateTime);
+        await api.ConBaseAsync(db => db.Citas.IgnoreQueryFilters().Where(x => x.Id == a.Cita.Id)
+            .ExecuteUpdateAsync(s => s.SetProperty(x => x.FechaCita, hoy).SetProperty(x => x.Estado, Barberia.Domain.Enums.EstadoCita.Completada)));
+
+        var resumen = await DataAsync<List<ResumenBarberiaDto>>(await SuperAdmin().GetAsync("/api/v1/admin/barberias/resumen"), HttpStatusCode.OK);
+        var deAdminDeBarberia = await api.ComoUsuario(a.Admin).GetAsync("/api/v1/admin/barberias/resumen");
+
+        var deA = Assert.Single(resumen, x => x.BarberiaId == a.Id);
+        Assert.Equal(1, deA.CitasMes);
+        Assert.Equal(35000m, deA.IngresosMes);
+        Assert.Equal(1, deA.Clientes);
+        Assert.Equal(1, deA.BarberosActivos);
+        Assert.Equal(HttpStatusCode.Forbidden, deAdminDeBarberia.StatusCode);
+    }
+}

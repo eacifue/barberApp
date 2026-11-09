@@ -55,10 +55,21 @@ public sealed class TenantContextMiddleware
 
         // Todos menos el SuperAdmin pertenecen a una barbería. Un token sin ella es de antes del
         // paso a varias barberías: se pide iniciar sesión de nuevo.
-        if (role != Roles.Admin && !Guid.TryParse(user.FindFirstValue("barberiaId"), out _))
+        var tieneBarberia = Guid.TryParse(user.FindFirstValue("barberiaId"), out var suBarberia);
+        if (role != Roles.Admin && !tieneBarberia)
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             await context.Response.WriteAsJsonAsync(ApiResponse<object?>.Fail("Tu sesión venció. Inicia sesión de nuevo."));
+            return;
+        }
+
+        // Si desactivaron su barbería, las sesiones abiertas dejan de servir.
+        if (role != Roles.Admin
+            && !await context.RequestServices.GetRequiredService<BarberiaDbContext>().Barberias.AsNoTracking()
+                .AnyAsync(x => x.Id == suBarberia && x.Activa, context.RequestAborted))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await context.Response.WriteAsJsonAsync(ApiResponse<object?>.Fail(Barberia.Application.Services.AuthService.BarberiaDesactivada));
             return;
         }
 

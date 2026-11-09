@@ -1,6 +1,6 @@
 namespace Barberia.Application.DTOs.Barberias;
 
-public sealed class UpsertBarberiaRequest
+public class UpsertBarberiaRequest
 {
     public string Nombre { get; set; } = string.Empty;
 
