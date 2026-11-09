@@ -1,3 +1,4 @@
+using Barberia.Application.Interfaces.Services.Barberias;
 using AutoMapper;
 using Barberia.Application.DTOs.Clientes;
 using Barberia.Application.Exceptions;
@@ -18,13 +19,16 @@ public sealed class ClienteAdminService : IClienteAdminService
     private readonly IMapper mapper;
     private readonly IValidator<CreateClienteAdminRequest> createValidator;
     private readonly IValidator<UpdateClienteAdminRequest> updateValidator;
+    private readonly IBarberiaContexto barberiaContexto;
 
     public ClienteAdminService(
         IBarberiaDbContext dbContext,
         IMapper mapper,
         IValidator<CreateClienteAdminRequest> createValidator,
-        IValidator<UpdateClienteAdminRequest> updateValidator)
+        IValidator<UpdateClienteAdminRequest> updateValidator,
+        IBarberiaContexto barberiaContexto)
     {
+        this.barberiaContexto = barberiaContexto;
         this.dbContext = dbContext;
         this.mapper = mapper;
         this.createValidator = createValidator;
@@ -60,7 +64,8 @@ public sealed class ClienteAdminService : IClienteAdminService
         await ValidateAsync(request, cancellationToken);
 
         var correo = request.Correo.Trim().ToLowerInvariant();
-        var existe = await dbContext.Clientes.AnyAsync(x => x.Correo == correo, cancellationToken);
+        var barberiaId = await barberiaContexto.ObtenerIdAsync(cancellationToken);
+        var existe = await dbContext.Clientes.IgnoreQueryFilters().AnyAsync(x => x.Correo == correo && x.BarberiaId == barberiaId, cancellationToken);
         if (existe)
         {
             throw new ConflictException("Ya existe un cliente con ese correo.");
@@ -68,6 +73,7 @@ public sealed class ClienteAdminService : IClienteAdminService
 
         var cliente = new Cliente
         {
+            BarberiaId = barberiaId,
             Rol = Roles.Cliente,
             Nombre = request.Nombre.Trim(),
             Apellido = request.Apellido.Trim(),
@@ -97,7 +103,8 @@ public sealed class ClienteAdminService : IClienteAdminService
 
         var correo = request.Correo.Trim().ToLowerInvariant();
         var correoOcupado = await dbContext.Clientes
-            .AnyAsync(x => x.Id != id && x.Correo == correo, cancellationToken);
+            .IgnoreQueryFilters()
+            .AnyAsync(x => x.Id != id && x.Correo == correo && x.BarberiaId == cliente.BarberiaId, cancellationToken);
 
         if (correoOcupado)
         {

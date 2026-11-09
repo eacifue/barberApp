@@ -7,7 +7,7 @@ namespace Barberia.Tests.Gestion;
 
 public class ServicioServiceActivarTests : GestionTestBase
 {
-    private ServicioService NewService(Barberia.Infrastructure.Data.BarberiaDbContext context) => new(context, Mapper, null!);
+    private ServicioService NewService(Barberia.Infrastructure.Data.BarberiaDbContext context) => new(context, Mapper, null!, null!);
 
     private async Task<Guid> SeedServicioAsync(bool activo)
     {

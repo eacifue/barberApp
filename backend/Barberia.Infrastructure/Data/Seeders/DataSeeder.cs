@@ -177,6 +177,9 @@ public static class DataSeeder
             }
         }
 
+        foreach (var servicio in servicios) servicio.BarberiaId = barberia.Id;
+        foreach (var barbero in barberos) barbero.BarberiaId = barberia.Id;
+
         await context.Barberias.AddAsync(barberia, cancellationToken);
         await context.Servicios.AddRangeAsync(servicios, cancellationToken);
         await context.Barberos.AddRangeAsync(barberos, cancellationToken);

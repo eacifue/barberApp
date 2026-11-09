@@ -1,3 +1,4 @@
+using Barberia.Application.Interfaces.Services.Barberias;
 using Barberia.Application.DTOs.Users;
 using Barberia.Application.Exceptions;
 using Barberia.Application.Interfaces.Persistence.Context;
@@ -17,9 +18,11 @@ public class UsersController : ControllerBase
 {
     private readonly IBarberiaDbContext dbContext;
     private readonly ICurrentUserService currentUserService;
+    private readonly IBarberiaContexto barberiaContexto;
 
-    public UsersController(IBarberiaDbContext dbContext, ICurrentUserService currentUserService)
+    public UsersController(IBarberiaDbContext dbContext, ICurrentUserService currentUserService, IBarberiaContexto barberiaContexto)
     {
+        this.barberiaContexto = barberiaContexto;
         this.dbContext = dbContext;
         this.currentUserService = currentUserService;
     }
@@ -79,7 +82,9 @@ public class UsersController : ControllerBase
         if (currentUserService.IsAdminBarberia && role is not (Roles.Barbero or Roles.Cliente))
             return Forbid();
 
-        var assignedBarberoId = await ResolveTargetBarberoIdAsync(role, request.BarberoId, cancellationToken);
+        // El SuperAdmin no pertenece a ninguna barbería; los demás, a la del contexto.
+        Guid? barberiaId = role == Roles.Admin ? null : await barberiaContexto.ObtenerIdAsync(cancellationToken);
+        var assignedBarberoId = await ResolveTargetBarberoIdAsync(role, request.BarberoId, barberiaId, cancellationToken);
 
         var validationError = ValidateRoleAssignment(role, assignedBarberoId);
         if (validationError is not null)
@@ -99,12 +104,13 @@ public class UsersController : ControllerBase
         var correo = request.Correo.Trim().ToLowerInvariant();
         var emailExists = await dbContext.Clientes
             .IgnoreQueryFilters()
-            .AnyAsync(x => x.Correo == correo, cancellationToken);
+            .AnyAsync(x => x.Correo == correo && x.BarberiaId == barberiaId, cancellationToken);
         if (emailExists)
             return Conflict(ApiResponse<UserDto>.Fail("Ya existe un usuario con ese correo."));
 
         var cliente = new Cliente
         {
+            BarberiaId = barberiaId,
             Nombre = request.Nombre.Trim(),
             Apellido = request.Apellido.Trim(),
             Correo = correo,
@@ -155,7 +161,8 @@ public class UsersController : ControllerBase
             cliente.Rol = newRole;
         }
 
-        var assignedBarberoId = await ResolveTargetBarberoIdAsync(newRole, request.BarberoId ?? cliente.BarberoId, cancellationToken);
+        Guid? barberiaId = newRole == Roles.Admin ? null : cliente.BarberiaId ?? await barberiaContexto.ObtenerIdAsync(cancellationToken);
+        var assignedBarberoId = await ResolveTargetBarberoIdAsync(newRole, request.BarberoId ?? cliente.BarberoId, barberiaId, cancellationToken);
 
         var validationError = ValidateRoleAssignment(newRole, assignedBarberoId);
         if (validationError is not null)
@@ -168,6 +175,7 @@ public class UsersController : ControllerBase
 
         cliente.BarberoId = assignedBarberoId;
         cliente.Rol = newRole;
+        cliente.BarberiaId = barberiaId;
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return Ok(ApiResponse<UserDto>.Ok(ToDto(cliente), "Usuario actualizado."));
@@ -204,7 +212,7 @@ public class UsersController : ControllerBase
     private static UserDto ToDto(Cliente c) =>
         new(c.Id, c.Nombre, c.Apellido, c.Correo, c.Telefono, c.Rol, c.BarberoId, c.Activo, c.CreatedAt);
 
-    private async Task<Guid?> ResolveTargetBarberoIdAsync(string role, Guid? requestedBarberoId, CancellationToken cancellationToken)
+    private async Task<Guid?> ResolveTargetBarberoIdAsync(string role, Guid? requestedBarberoId, Guid? barberiaId, CancellationToken cancellationToken)
     {
         if (role != Roles.Barbero)
             return null;
@@ -214,10 +222,10 @@ public class UsersController : ControllerBase
 
         var exists = await dbContext.Barberos
             .IgnoreQueryFilters()
-            .AnyAsync(x => x.Id == requestedBarberoId.Value && x.Activo, cancellationToken);
+            .AnyAsync(x => x.Id == requestedBarberoId.Value && x.Activo && x.BarberiaId == barberiaId, cancellationToken);
 
         if (!exists)
-            throw new ValidationException("El barbero indicado no existe.");
+            throw new ValidationException("El barbero indicado no existe en esta barbería.");
 
         return requestedBarberoId;
     }

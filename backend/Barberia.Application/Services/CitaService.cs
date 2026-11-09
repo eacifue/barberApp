@@ -78,6 +78,16 @@ public class CitaService : ICitaService
             throw new NotFoundException("El servicio no existe.");
         }
 
+        if (cliente.BarberiaId != barbero.BarberiaId)
+        {
+            throw new AppValidationException("Solo puedes reservar en tu barbería.");
+        }
+
+        if (servicio.BarberiaId != barbero.BarberiaId)
+        {
+            throw new AppValidationException("El servicio no es de la barbería de este barbero.");
+        }
+
         var relacion = await dbContext.BarberoServicios
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.BarberoId == request.BarberoId && x.ServicioId == request.ServicioId && x.Activo, cancellationToken);
@@ -123,6 +133,7 @@ public class CitaService : ICitaService
 
         var cita = new Cita
         {
+            BarberiaId = barbero.BarberiaId,
             ClienteId = request.ClienteId,
             BarberoId = request.BarberoId,
             ServicioId = request.ServicioId,
