@@ -9,6 +9,7 @@ import '../../../../shared/format/formato.dart';
 import '../../../../shared/widgets/bsm/bsm.dart';
 import '../../data/admin_repository.dart';
 import '../../data/models/admin_barberia_model.dart';
+import '../../data/admin_barberia_repository_helper.dart';
 import '../providers/admin_barberias_provider.dart';
 import '../widgets/admin_kit.dart';
 
@@ -31,20 +32,24 @@ String _hhmm(String v) => v.length >= 5 ? v.substring(0, 5) : v;
 int _min(String hhmm) => int.parse(hhmm.substring(0, 2)) * 60 + int.parse(hhmm.substring(3, 5));
 String _hora(String hhmm) => Formato.horaDe(int.parse(hhmm.substring(0, 2)), int.parse(hhmm.substring(3, 5)));
 
-/// «Mi negocio» (design/pantallas/panel-web/Mi-negocio): la app maneja una sola
-/// barbería, así que es un formulario de configuración, sin crear ni eliminar.
+/// «Mi negocio» (design/pantallas/panel-web/Mi-negocio): la configuración de la
+/// barbería elegida, sin crear ni eliminar (eso es del panel del SuperAdmin).
 class AdminBarberiasTab extends ConsumerWidget {
   const AdminBarberiasTab({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(adminBarberiasProvider);
+    final elegidaId = ref.watch(adminBarberiaIdProvider).valueOrNull;
     return async.when(
       loading: () => const AdminLoading(),
       error: (e, _) => AdminError(title: 'No pudimos cargar tu barbería', error: e, onRetry: () => ref.invalidate(adminBarberiasProvider)),
-      data: (lista) => lista.isEmpty
-          ? const BsmEmptyState(icon: LucideIcons.store, title: 'No hay una barbería configurada', body: 'Créala desde la carga inicial de datos o contacta a soporte.')
-          : _NegocioForm(key: ValueKey(lista.first.id), barberia: lista.first),
+      data: (lista) {
+        final barberia = lista.where((b) => b.id == elegidaId).firstOrNull;
+        return barberia == null
+            ? const BsmEmptyState(icon: LucideIcons.store, title: 'No encontramos tu barbería', body: 'Cierra sesión y elige tu barbería de nuevo.')
+            : _NegocioForm(key: ValueKey(barberia.id), barberia: barberia);
+      },
     );
   }
 }

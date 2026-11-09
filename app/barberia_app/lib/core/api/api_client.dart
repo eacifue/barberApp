@@ -7,6 +7,7 @@ import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 import '../config/app_config.dart';
 import '../config/router.dart';
+import '../../features/barberias/presentation/providers/barberia_elegida_provider.dart';
 import '../errors/exceptions.dart';
 import '../storage/secure_storage.dart';
 import 'api_response.dart';
@@ -19,12 +20,27 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 });
 
 class ApiClient {
-  /// Va en cada petición. `X-Barberia-Id`: la barbería de esta app; el API la usa en
-  /// login, registro y catálogo (con sesión manda el token). El selector llega después.
-  static const encabezadosBase = <String, String>{
-    'Content-Type': 'application/json',
-    'X-Barberia-Id': AppConfig.defaultBarberiaId,
-  };
+  static const barberiaHeader = 'X-Barberia-Id';
+  static const _mensajeBarberiaInexistente = 'La barbería no existe.';
+
+  /// Para el listado de barberías (el selector): esa petición no va a ninguna en particular.
+  static const sinBarberia = <String, dynamic>{'sinBarberia': true};
+
+  /// `X-Barberia-Id`: la barbería elegida en este dispositivo. El API la usa en login,
+  /// registro, recuperación y catálogo; con sesión manda el token (salvo el SuperAdmin,
+  /// que opera la barbería del header).
+  static void aplicarBarberia(RequestOptions options, String? barberiaId) {
+    if (barberiaId == null || barberiaId.isEmpty || options.extra['sinBarberia'] == true) {
+      options.headers.remove(barberiaHeader);
+    } else {
+      options.headers[barberiaHeader] = barberiaId;
+    }
+  }
+
+  /// Sin sesión, el API responde 404 «La barbería no existe.» cuando la barbería
+  /// guardada fue desactivada o eliminada: hay que elegir otra.
+  static bool barberiaYaNoExiste(int? statusCode, Object? data, {required bool conSesion}) =>
+      !conSesion && statusCode == 404 && data is Map && data['message'] == _mensajeBarberiaInexistente;
 
   ApiClient({
     required Ref ref,
@@ -36,7 +52,7 @@ class ApiClient {
            baseUrl: AppConfig.baseUrl,
            connectTimeout: AppConfig.connectTimeout,
            receiveTimeout: AppConfig.receiveTimeout,
-           headers: encabezadosBase,
+           headers: const {'Content-Type': 'application/json'},
          ),
        ) {
     _dio.interceptors.add(
@@ -46,6 +62,7 @@ class ApiClient {
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
+          aplicarBarberia(options, await _secureStorageService.getBarberiaId());
           handler.next(options);
         },
         onError: (error, handler) async {
@@ -66,6 +83,20 @@ class ApiClient {
           }
 
           final responseData = error.response?.data;
+          final conSesion = error.requestOptions.headers.containsKey('Authorization');
+          if (barberiaYaNoExiste(statusCode, responseData, conSesion: conSesion)) {
+            await _secureStorageService.clearBarberia();
+            _ref.invalidate(barberiaElegidaProvider);
+            _ref.read(routerProvider).go('/elegir-barberia');
+            handler.reject(
+              DioException(
+                requestOptions: error.requestOptions,
+                error: NotFoundException('La barbería que tenías elegida ya no recibe reservas. Elige otra.'),
+              ),
+            );
+            return;
+          }
+
           final message = responseData is Map<String, dynamic>
               ? (responseData['message'] as String? ??
                     'Ocurrió un error inesperado.')
@@ -169,11 +200,13 @@ class ApiClient {
   Future<ApiResponse<T>> getList<T>(
     String endpoint, {
     Map<String, dynamic>? queryParams,
+    Map<String, dynamic>? extra,
     required T Function(List<dynamic>) fromJson,
   }) async {
     final response = await _dio.get<Map<String, dynamic>>(
       endpoint,
       queryParameters: queryParams,
+      options: extra == null ? null : Options(extra: extra),
     );
     return ApiResponse<T>.fromJsonList(response.data ?? const {}, fromJson);
   }

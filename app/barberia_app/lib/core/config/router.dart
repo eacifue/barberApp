@@ -11,6 +11,7 @@ import '../../features/auth/presentation/screens/recuperar_screen.dart';
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
 import '../../features/auth/presentation/screens/registro_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
+import '../../features/barberias/presentation/screens/elegir_barberia_screen.dart';
 import '../../features/barberos/presentation/screens/seleccion_barbero_screen.dart';
 import '../../features/citas/presentation/screens/confirmacion_screen.dart';
 import '../../features/citas/presentation/screens/calificar_cita_screen.dart';
@@ -43,7 +44,9 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       final token = await storage.getToken();
       final isLoggedIn = token != null && token.isNotEmpty;
+      final eligiendo = state.matchedLocation == '/elegir-barberia';
       final isAuthRoute =
+          eligiendo ||
           state.matchedLocation == '/login' ||
           state.matchedLocation == '/registro' ||
           state.matchedLocation == '/recuperar';
@@ -54,6 +57,12 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (!isLoggedIn && !isAuthRoute) {
         return '/login';
+      }
+
+      // Sin barbería elegida no hay dónde entrar ni registrarse: primero se elige.
+      if (!isLoggedIn && !eligiendo) {
+        final barberiaId = await storage.getBarberiaId();
+        if (barberiaId == null || barberiaId.isEmpty) return '/elegir-barberia';
       }
 
       if (isLoggedIn && isAuthRoute) {
@@ -88,6 +97,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
       GoRoute(path: '/bienvenida', builder: (context, state) => const OnboardingScreen()),
+      GoRoute(path: '/elegir-barberia', builder: (context, state) => const ElegirBarberiaScreen()),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
         path: '/recuperar',

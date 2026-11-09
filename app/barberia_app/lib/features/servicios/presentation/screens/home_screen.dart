@@ -14,6 +14,7 @@ import '../../../../shared/widgets/bsm/bsm.dart';
 import '../../../barberias/domain/barbershop_model.dart';
 import '../../../barberias/presentation/abrir_mapas.dart';
 import '../../../barberias/presentation/providers/barbershops_provider.dart';
+import '../../../barberias/presentation/widgets/barberia_elegida_linea.dart';
 import '../../../barberos/presentation/providers/barberos_provider.dart';
 import '../../../citas/domain/models/cita_model.dart';
 import '../../../citas/presentation/providers/citas_provider.dart';
@@ -348,7 +349,7 @@ class _Barberos extends ConsumerWidget {
   }
 }
 
-class _LaBarberia extends StatelessWidget {
+class _LaBarberia extends ConsumerWidget {
   const _LaBarberia({required this.barbershop});
 
   final BarbershopModel barbershop;
@@ -379,7 +380,7 @@ class _LaBarberia extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final p = context.palette;
     final (estado, abierto) = _estadoHoy(DateTime.now());
     final (ah, am) = _hm(barbershop.horaApertura);
@@ -443,6 +444,14 @@ class _LaBarberia extends StatelessWidget {
                 final ok = await abrirMapas(barbershop);
                 if (!ok && context.mounted) showBsmToast(context, 'No pudimos abrir la aplicación de mapas.', tone: BsmToastTone.danger);
               },
+            ),
+            const SizedBox(height: AppSpace.s2),
+            BsmButton(
+              label: 'Cambiar de barbería',
+              icon: LucideIcons.store,
+              variant: BsmButtonVariant.ghost,
+              block: true,
+              onPressed: () => cambiarDeBarberia(context, ref),
             ),
           ],
         ),

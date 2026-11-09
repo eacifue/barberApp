@@ -12,6 +12,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/bsm/bsm.dart';
+import '../../../barberias/presentation/widgets/barberia_elegida_linea.dart';
 import '../../data/auth_repository.dart';
 import 'auth_validators.dart';
 
@@ -85,6 +86,8 @@ class _RegistroScreenState extends ConsumerState<RegistroScreen> {
                 Semantics(header: true, child: Text('Crea tu cuenta', style: AppTextStyles.display.copyWith(color: p.ink))),
                 const SizedBox(height: AppSpace.s2),
                 Text('Solo lo necesario para tus reservas.', style: AppTextStyles.bodyLg.copyWith(color: p.inkMuted)),
+                const SizedBox(height: AppSpace.s5),
+                BarberiaElegidaLinea(disabled: _cargando),
                 const SizedBox(height: AppSpace.s6),
                 AutofillGroup(
                   child: Form(

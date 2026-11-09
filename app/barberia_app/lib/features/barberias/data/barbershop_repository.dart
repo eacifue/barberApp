@@ -17,6 +17,7 @@ class BarbershopRepository {
   Future<List<BarbershopModel>> getBarbershops() async {
     final response = await _apiClient.getList<List<BarbershopModel>>(
       ApiEndpoints.barberias,
+      extra: ApiClient.sinBarberia,
       fromJson: (list) {
         return list
             .whereType<Map<String, dynamic>>()

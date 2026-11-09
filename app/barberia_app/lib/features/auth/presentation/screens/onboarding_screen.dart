@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/config/destino_inicial.dart';
 import '../../../../core/services/permiso_notificaciones.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -42,8 +43,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final router = GoRouter.of(context);
     final storage = ref.read(secureStorageProvider);
     await storage.marcarOnboardingVisto();
-    final token = await storage.getToken();
-    router.go(token != null && token.isNotEmpty ? '/dashboard' : '/login');
+    router.go(await resolverDestinoInicial(
+      storage,
+      onboardingVisto: true,
+      token: await storage.getToken(),
+      barberiaId: await storage.getBarberiaId(),
+    ));
   }
 
   Future<void> _activar() async {
