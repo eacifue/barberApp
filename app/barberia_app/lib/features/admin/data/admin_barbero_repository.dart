@@ -14,9 +14,11 @@ class AdminBarberoRepository {
 
   final ApiClient _apiClient;
 
-  Future<List<BarberoModel>> getBarberosPorBarberia(String barberiaId) async {
+  /// Con [incluirInactivos] también llegan los desactivados (solo admin).
+  Future<List<BarberoModel>> getBarberosPorBarberia(String barberiaId, {bool incluirInactivos = false}) async {
     final response = await _apiClient.getList<List<BarberoModel>>(
       ApiEndpoints.barberosPorBarberia(barberiaId),
+      queryParams: incluirInactivos ? const {'incluirInactivos': true} : null,
       fromJson: (list) {
         return list
             .whereType<Map<String, dynamic>>()
@@ -126,5 +128,21 @@ class AdminBarberoRepository {
             : response.message,
       );
     }
+  }
+
+  /// Reactiva un barbero desactivado.
+  Future<BarberoModel> activarBarbero(String id) async {
+    final response = await _apiClient.put<Map<String, dynamic>>(
+      '${ApiEndpoints.barberoPorId(id)}/activar',
+      fromJson: (json) => json,
+    );
+
+    if (!response.success || response.data == null) {
+      throw AppException(
+        response.message.isEmpty ? 'No fue posible activar el barbero.' : response.message,
+      );
+    }
+
+    return BarberoModel.fromJson(response.data!);
   }
 }

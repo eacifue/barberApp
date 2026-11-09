@@ -34,7 +34,7 @@ import {
   type AppointmentStatus,
   type ServiceType,
 } from '../../components/bsm'
-import { useTheme } from '../../components/theme/ThemeProvider'
+import { useTheme } from '../../components/theme/themeContext'
 import { toast } from '../../stores/toastStore'
 
 // Galería de componentes del sistema (solo en desarrollo, ruta /_componentes).

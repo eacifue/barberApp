@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import {
   getThemeChoice,
@@ -8,17 +8,7 @@ import {
   type ResolvedTheme,
   type ThemeChoice,
 } from '../../theme'
-
-type ThemeContextValue = {
-  /** Tema aplicado ahora mismo. */
-  theme: ResolvedTheme
-  /** Elección guardada: claro, oscuro o seguir al sistema. */
-  choice: ThemeChoice
-  setChoice: (choice: ThemeChoice) => void
-  toggleTheme: () => void
-}
-
-const ThemeContext = createContext<ThemeContextValue | null>(null)
+import { ThemeContext, type ThemeContextValue } from './themeContext'
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [choice, setChoiceState] = useState<ThemeChoice>(() => getThemeChoice())
@@ -40,12 +30,4 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [choice, theme])
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
-}
-
-export function useTheme() {
-  const context = useContext(ThemeContext)
-  if (!context) {
-    throw new Error('useTheme debe usarse dentro de ThemeProvider')
-  }
-  return context
 }

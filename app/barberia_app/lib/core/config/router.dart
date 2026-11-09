@@ -18,6 +18,7 @@ import '../../features/citas/presentation/screens/detalle_cita_screen.dart';
 import '../../features/citas/presentation/screens/mis_citas_screen.dart';
 import '../../features/citas/domain/models/cita_model.dart';
 import '../../features/admin/presentation/screens/admin_screen.dart';
+import '../../features/citas/presentation/screens/agenda_barbero_screen.dart';
 import '../../features/dev/componentes_screen.dart';
 import '../../features/horarios/presentation/screens/seleccion_horario_screen.dart';
 import '../../features/servicios/presentation/screens/home_screen.dart';
@@ -62,6 +63,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (!JwtUtils.isAdminRole(role)) {
           return '/dashboard';
         }
+      }
+
+      // El barbero usa la app para ver su agenda; reservar es del cliente.
+      if (isLoggedIn) {
+        final esBarbero = JwtUtils.isBarberoRole(JwtUtils.tryGetRole(token));
+        final enAgenda = state.matchedLocation == '/agenda';
+        if (esBarbero && !enAgenda) return '/agenda';
+        if (!esBarbero && enAgenda) return '/dashboard';
       }
 
       if (state.matchedLocation == '/home') {
@@ -137,6 +146,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(path: '/admin', builder: (context, state) => const AdminScreen()),
+      GoRoute(path: '/agenda', builder: (context, state) => const AgendaBarberoScreen()),
       if (kDebugMode)
         GoRoute(path: '/_componentes', builder: (context, state) => const ComponentesScreen()),
     ],

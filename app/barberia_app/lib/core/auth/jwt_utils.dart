@@ -51,6 +51,14 @@ class JwtUtils {
     return null;
   }
 
+  /// Claim `barberoId` que el backend agrega a las cuentas con rol Barbero.
+  static String? tryGetBarberoId(String token) {
+    final value = _tryDecodePayload(token)?['barberoId'];
+    return value is String && value.isNotEmpty ? value : null;
+  }
+
+  static bool isBarberoRole(String? role) => role != null && role.trim().toLowerCase() == 'barbero';
+
   static bool isAdminRole(String? role) {
     if (role == null || role.trim().isEmpty) {
       return false;

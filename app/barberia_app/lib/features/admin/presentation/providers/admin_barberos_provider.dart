@@ -30,7 +30,7 @@ final adminBarberosTabProvider = FutureProvider.autoDispose<AdminBarberosTabData
   final serviciosRepo = ref.watch(adminServicioRepositoryProvider);
 
   final results = await Future.wait([
-    barberosRepo.getBarberosPorBarberia(barberiaId),
+    barberosRepo.getBarberosPorBarberia(barberiaId, incluirInactivos: true),
     serviciosRepo.getServiciosPorBarberia(barberiaId),
   ]);
 

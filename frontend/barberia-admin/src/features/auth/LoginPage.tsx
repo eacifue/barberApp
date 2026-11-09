@@ -4,7 +4,7 @@ import axios from 'axios'
 import { useQueryClient } from '@tanstack/react-query'
 
 import { Banner, Button, Input, Logo, Tabs } from '../../components/bsm'
-import { useTheme } from '../../components/theme/ThemeProvider'
+import { useTheme } from '../../components/theme/themeContext'
 import { useAuthStore } from '../../stores/authStore'
 import { toast } from '../../stores/toastStore'
 import { http } from '../../services/http'
