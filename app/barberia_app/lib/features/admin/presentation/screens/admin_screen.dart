@@ -17,9 +17,10 @@ typedef PestanaAdmin = ({String label, IconData icon, Widget Function() build});
 class AdminScreen extends ConsumerWidget {
   const AdminScreen({super.key});
 
-  /// Como en el panel: «Mi negocio» (editar la barbería) es solo del SuperAdmin.
+  /// Las mismas para el SuperAdmin y el administrador de barbería; el API limita a
+  /// cada uno a lo suyo («Mi negocio» del administrador es solo su barbería).
   static List<PestanaAdmin> pestanasPara(String? role) => [
-        if (JwtUtils.isAdminRole(role)) (label: 'Mi negocio', icon: LucideIcons.store, build: () => const AdminBarberiasTab()),
+        if (JwtUtils.puedeAdministrar(role)) (label: 'Mi negocio', icon: LucideIcons.store, build: () => const AdminBarberiasTab()),
         (label: 'Equipo', icon: LucideIcons.users, build: () => const AdminBarberosTab()),
         (label: 'Servicios', icon: LucideIcons.clipboardList, build: () => const AdminServiciosTab()),
         (label: 'Clientes', icon: LucideIcons.userRound, build: () => const AdminClientesTab()),

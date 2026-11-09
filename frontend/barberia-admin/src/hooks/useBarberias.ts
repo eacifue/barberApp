@@ -6,13 +6,14 @@ import type { BarberiaUpsertInput, CrearBarberiaInput } from '../types/barberia'
 
 export function useBarberias() {
   const queryClient = useQueryClient()
-  const isAdmin = useAuthStore((s) => s.usuario?.rol === 'Admin')
+  // Admin: todas. Admin Barbería: /admin/barberias le devuelve solo la suya.
+  const usaListadoAdmin = useAuthStore((s) => s.usuario?.rol === 'Admin' || s.usuario?.rol === 'AdministradorBarberia')
 
   // /admin/barberias (todas, también desactivadas) exige SuperAdmin; el resto usa el
   // listado público y toma de ahí la barbería de su sesión.
   const barberiasQuery = useQuery({
-    queryKey: ['barberias', isAdmin],
-    queryFn: () => (isAdmin ? barberiaService.getAll() : barberiaService.getAllPublic()),
+    queryKey: ['barberias', usaListadoAdmin],
+    queryFn: () => (usaListadoAdmin ? barberiaService.getAll() : barberiaService.getAllPublic()),
   })
 
   const invalidar = async () => {

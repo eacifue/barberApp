@@ -174,4 +174,113 @@ public sealed class GestionBarberiasHttpTests(ApiFactory api) : IClassFixture<Ap
         Assert.Equal(1, deA.BarberosActivos);
         Assert.Equal(HttpStatusCode.Forbidden, deAdminDeBarberia.StatusCode);
     }
+
+    // «Mi negocio»: el administrador de una barbería edita los datos de la suya, y solo de la suya.
+    private static object DatosNegocio(string nombre) => new
+    {
+        nombre,
+        telefono = "3011419610",
+        correo = "negocio@correo.co",
+        direccion = "Cra 76 #33",
+        ciudad = "Medellín",
+        departamento = "Antioquia",
+        pais = "Colombia",
+        horaApertura = "09:00",
+        horaCierre = "19:00",
+    };
+
+    private Task<string> NombreAsync(Guid id) => api.ConBaseAsync(async db => (await db.Barberias.SingleAsync(x => x.Id == id)).Nombre);
+
+    [Fact]
+    public async Task El_administrador_de_barberia_edita_los_datos_de_su_barberia()
+    {
+        var (a, _) = await DosBarberias.CrearAsync(api);
+
+        var respuesta = await api.ComoUsuario(a.Admin).PutAsJsonAsync($"/api/v1/admin/barberias/{a.Id}", DatosNegocio("Barbería A renovada"), Json);
+
+        Assert.True(respuesta.StatusCode == HttpStatusCode.OK, $"{(int)respuesta.StatusCode}: {await respuesta.Content.ReadAsStringAsync()}");
+        Assert.Equal("Barbería A renovada", await NombreAsync(a.Id));
+    }
+
+    [Fact]
+    public async Task El_administrador_de_barberia_no_puede_editar_otra_barberia()
+    {
+        var (a, b) = await DosBarberias.CrearAsync(api);
+        var nombreDeB = await NombreAsync(b.Id);
+
+        var respuesta = await api.ComoUsuario(a.Admin).PutAsJsonAsync($"/api/v1/admin/barberias/{b.Id}", DatosNegocio("Tomada por A"), Json);
+
+        Assert.Equal(HttpStatusCode.NotFound, respuesta.StatusCode);
+        Assert.Equal(nombreDeB, await NombreAsync(b.Id));
+    }
+
+    [Fact]
+    public async Task El_administrador_de_barberia_solo_ve_su_barberia_en_el_listado_de_administracion()
+    {
+        var (a, b) = await DosBarberias.CrearAsync(api);
+
+        var lista = await DataAsync<List<BarberiaDto>>(await api.ComoUsuario(a.Admin).GetAsync("/api/v1/admin/barberias"), HttpStatusCode.OK);
+
+        Assert.Equal([a.Id], lista.Select(x => x.Id));
+    }
+
+    [Fact]
+    public async Task El_administrador_de_barberia_no_puede_ver_otra_barberia_por_id()
+    {
+        var (a, b) = await DosBarberias.CrearAsync(api);
+        var http = api.ComoUsuario(a.Admin);
+
+        var suya = await http.GetAsync($"/api/v1/admin/barberias/{a.Id}");
+        var ajena = await http.GetAsync($"/api/v1/admin/barberias/{b.Id}");
+
+        Assert.Equal(HttpStatusCode.OK, suya.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, ajena.StatusCode);
+    }
+
+    [Fact]
+    public async Task El_administrador_de_barberia_no_puede_desactivar_ni_activar_barberias()
+    {
+        var (a, _) = await DosBarberias.CrearAsync(api);
+        var http = api.ComoUsuario(a.Admin);
+
+        var desactivar = await http.PutAsync($"/api/v1/admin/barberias/{a.Id}/desactivar", null);
+        var activar = await http.PutAsync($"/api/v1/admin/barberias/{a.Id}/activar", null);
+
+        Assert.Equal(HttpStatusCode.Forbidden, desactivar.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, activar.StatusCode);
+        Assert.True(await ActivaAsync(a.Id));
+    }
+
+    [Fact]
+    public async Task El_superadmin_ve_y_edita_cualquier_barberia()
+    {
+        var (a, b) = await DosBarberias.CrearAsync(api);
+        var http = SuperAdmin();
+
+        var lista = await DataAsync<List<BarberiaDto>>(await http.GetAsync("/api/v1/admin/barberias"), HttpStatusCode.OK);
+        var editar = await http.PutAsJsonAsync($"/api/v1/admin/barberias/{b.Id}", DatosNegocio("B editada por el SuperAdmin"), Json);
+
+        Assert.Contains(lista, x => x.Id == a.Id);
+        Assert.Contains(lista, x => x.Id == b.Id);
+        Assert.Equal(HttpStatusCode.OK, editar.StatusCode);
+        Assert.Equal("B editada por el SuperAdmin", await NombreAsync(b.Id));
+    }
+
+    [Fact]
+    public async Task Al_guardar_mi_negocio_el_administrador_de_barberia_no_puede_desactivarla()
+    {
+        // Activar y desactivar es del SuperAdmin; desde «Mi negocio» el campo se ignora.
+        var (a, _) = await DosBarberias.CrearAsync(api);
+        var datos = new Dictionary<string, object?>
+        {
+            ["nombre"] = "Barbería A", ["telefono"] = "3011419610", ["correo"] = "negocio@correo.co", ["direccion"] = "Cra 76 #33",
+            ["ciudad"] = "Medellín", ["departamento"] = "Antioquia", ["pais"] = "Colombia", ["horaApertura"] = "09:00", ["horaCierre"] = "19:00",
+            ["activa"] = false,
+        };
+
+        var respuesta = await api.ComoUsuario(a.Admin).PutAsJsonAsync($"/api/v1/admin/barberias/{a.Id}", datos, Json);
+
+        Assert.Equal(HttpStatusCode.OK, respuesta.StatusCode);
+        Assert.True(await ActivaAsync(a.Id));
+    }
 }

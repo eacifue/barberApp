@@ -86,6 +86,8 @@ export function BarberiasList() {
 
 function Editor({ barberia }: { barberia: Barberia }) {
   const { updateMutation } = useBarberias()
+  // Activar o desactivar la barbería es del SuperAdmin; el API lo ignora para los demás.
+  const { isAdmin } = useTenantBarberia()
   const [base, setBase] = useState<Form>(() => formDe(barberia))
   const [form, setForm] = useState<Form>(base)
   const [errores, setErrores] = useState<Errores>({})
@@ -213,14 +215,16 @@ function Editor({ barberia }: { barberia: Barberia }) {
             </div>
           </Seccion>
 
-          <Seccion titulo="Estado">
-            <Switch label="Barbería activa" hint={form.activa ? 'Visible en la app y recibiendo reservas.' : 'Oculta en la app: nadie puede reservar.'} checked={form.activa} onChange={(on) => set('activa', on)} />
-            {!form.activa && base.activa && (
-              <Banner tone="warning" title="Al guardar, la barbería deja de verse en la app">
-                Las citas ya agendadas se mantienen, pero nadie podrá reservar hasta que la actives de nuevo.
-              </Banner>
-            )}
-          </Seccion>
+          {isAdmin && (
+            <Seccion titulo="Estado">
+              <Switch label="Barbería activa" hint={form.activa ? 'Visible en la app y recibiendo reservas.' : 'Oculta en la app: nadie puede reservar.'} checked={form.activa} onChange={(on) => set('activa', on)} />
+              {!form.activa && base.activa && (
+                <Banner tone="warning" title="Al guardar, la barbería deja de verse en la app">
+                  Las citas ya agendadas se mantienen, pero nadie podrá reservar hasta que la actives de nuevo.
+                </Banner>
+              )}
+            </Seccion>
+          )}
         </div>
 
         <aside className="flex flex-col gap-2 lg:sticky lg:top-4" aria-label="Vista previa en la app">

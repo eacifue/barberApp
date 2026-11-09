@@ -35,8 +35,8 @@ void main() {
       expect(JwtUtils.puedeAdministrar(null), isFalse);
     });
 
-    test('el administrador de barbería no ve «Mi negocio» (editar la barbería es del SuperAdmin, como en el panel)', () {
-      expect(AdminScreen.pestanasPara('AdministradorBarberia').map((p) => p.label), ['Equipo', 'Servicios', 'Clientes']);
+    test('el administrador de barbería también edita «Mi negocio» (el de su barbería)', () {
+      expect(AdminScreen.pestanasPara('AdministradorBarberia').map((p) => p.label), ['Mi negocio', 'Equipo', 'Servicios', 'Clientes']);
       expect(AdminScreen.pestanasPara('Admin').map((p) => p.label), ['Mi negocio', 'Equipo', 'Servicios', 'Clientes']);
     });
   });
